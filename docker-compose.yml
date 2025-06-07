@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  postgres:
+    image: postgres:17
+    container_name: carpool-postgres-container
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - carpool-db-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+volumes:
+  carpool-db-data:
