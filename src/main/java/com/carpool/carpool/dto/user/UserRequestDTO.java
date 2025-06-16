@@ -13,42 +13,40 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserRequestDTO {
-    @NotNull(message = "The Name cannot be null.")
-    @Pattern(regexp = "^[a-zA-Z ]+$", message = "The Name must contain only letters and spaces.")
+
+    @NotNull(message = "El nombre no puede ser nulo.")
+    @Pattern(regexp = "^[a-zA-Z ]+$", message = "El nombre debe contener sólo letras y espacios.")
     private String name;
 
-    @NotNull(message = "The Lastname cannot be null.")
-    @Pattern(regexp = "^[a-zA-Z ]+$", message = "The Lastname must contain only letters and spaces.")
+    @NotNull(message = "El apellido no puede ser nulo.")
+    @Pattern(regexp = "^[a-zA-Z ]+$", message = "El apellido debe contener sólo letras y espacios.")
     private String lastname;
 
-    @NotBlank(message = "The Username cannot be blank.")
-    @NotNull(message = "The Username cannot be null.")
-    @Size(min = 6, message = "The Username must be at least 6 characters long.")
-    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "The Username must contain only letters, numbers, and underscores.")
-    @Column(unique = true)
+    @NotBlank(message = "El nombre de usuario no puede quedar en blanco.")
+    @NotNull(message = "El nombre de usuario no puede ser nulo.")
+    @Size(min = 6, message = "El nombre de usuario debe tener al menos 6 caracteres.")
+    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "El nombre de usuario debe contener únicamente letras, números y guiones bajos.")
     private String username;
 
-    @NotNull(message = "The Email cannot be null.")
-    @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "The Email must be a valid email address.")
-    @Column(unique = true)
+    @NotNull(message = "El correo electrónico no puede ser nulo.")
+    @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "El correo electrónico debe ser una direccón de correo válida.")
     private String email;
 
-    @NotNull(message = "The Password cannot be null.")
-    @Size(min = 8, message = "The Password must be at least 8 characters long.")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$", message = "The Password must contain at least one lowercase letter, one uppercase letter, and one number")
+    @NotNull(message = "La contraseña no puede ser nula.La contraseña no puede ser nula.")
+    @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres.")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$", message = "La contraseña debe contener al menos una letra minúscula, una letra mayúscula y un número.La contraseña debe contener al menos una letra minúscula, una letra mayúscula y un número.")
     private String password;
 
-    @NotNull(message = "The Password cannot be null.")
-    @Size(min = 8, message = "The Password must be at least 8 characters long.")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$", message = "The Password must contain at least one lowercase letter, one uppercase letter, and one number")
+    @NotNull(message = "La contraseña no puede ser nula.La contraseña no puede ser nula.")
+    @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres.")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$", message = "La contraseña debe contener al menos una letra minúscula, una letra mayúscula y un número.La contraseña debe contener al menos una letra minúscula, una letra mayúscula y un número.")
     private String confirmPassword;
 
-    @NotNull(message = "The DNI number cannot be null.")
-    @Pattern(regexp = "^[0-9]{7,8}$", message = "The DNI number must be a valid 7 or 8 digit number.")
-    @Column(unique = true)
+    @NotNull(message = "El número del DNI no puede ser nulo.")
+    @Pattern(regexp = "^[0-9]{8}$", message = "El número de DNI debe contener 8 dígitos.")
     private String dni;
 
-    @NotNull(message = "The Phone number cannot be null.")
-    @Pattern(regexp = "^[0-9\\-\\+\\s]*$", message = "The phone number must contain only numbers, dashes, plus signs, and spaces.")
+    @NotNull(message = "El número de teléfono no puede ser nulo.")
+    @Pattern(regexp = "^[0-9\\-\\+\\s]*$", message = "El número de teléfono debe contener únicamente números, guiones, signos + y espacios.")
     private String phone;
 }

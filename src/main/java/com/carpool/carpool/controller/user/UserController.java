@@ -41,6 +41,4 @@ public class UserController {
         
         return ResponseEntity.ok().body(userService.saveUser(userRequestDTO));
     }
-    
-
 }

@@ -1,4 +1,4 @@
-package com.carpool.carpool.security;
+package com.carpool.carpool.security.config;
 
 import java.util.Arrays;
 
@@ -52,8 +52,6 @@ public class SpringSecurityConfig {
         .cors(cors-> cors.configurationSource(corsConfigurationSource()))
         .sessionManagement(managment->managment.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .build();
-
-        
     }
 
     @Bean

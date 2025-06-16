@@ -1,4 +1,4 @@
-package com.carpool.carpool.security;
+package com.carpool.carpool.security.utils;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

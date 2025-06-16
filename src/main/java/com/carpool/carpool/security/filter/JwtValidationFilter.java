@@ -1,12 +1,13 @@
 package com.carpool.carpool.security.filter;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
+import com.carpool.carpool.response.Response;
+import com.carpool.carpool.utils.ResponseUtils;
+import org.apache.tomcat.util.http.ResponseUtil;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -14,7 +15,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
-import com.carpool.carpool.security.SimpleGrantedAuthorityJsonCreator;
+import com.carpool.carpool.security.utils.SimpleGrantedAuthorityJsonCreator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.jsonwebtoken.Claims;
@@ -24,13 +25,32 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import static com.carpool.carpool.security.TokenJwtConfig.*; 
+import static com.carpool.carpool.security.config.TokenJwtConfig.*;
 
+/**
+ * Clase que se encarga de validar si el JWT es válido.
+ */
 public class JwtValidationFilter extends BasicAuthenticationFilter{
+
+    private static final ObjectMapper mapper = new ObjectMapper()
+            .addMixIn(SimpleGrantedAuthority.class, SimpleGrantedAuthorityJsonCreator.class);
+
     public JwtValidationFilter(AuthenticationManager authenticationManager) {
         super(authenticationManager);
     }
 
+    /**
+     * Filtro que intercepta todas las peticiones y valida si existe y si es válido el token JWT.
+     *
+     * Si el token es válido, se extran las credenciales del usuario y se registra en el contexto de seguridad de Spring.
+     *
+     * Caso contrario, se interrumpe el flujo y se devuelve una respuesta con estado HTTP 401.
+     * @param request petición HTTP.
+     * @param response respuesta HTTP.
+     * @param chain cadena de filtros de seguridad.
+     * @throws IOException
+     * @throws ServletException
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
         throws IOException, ServletException {
@@ -44,28 +64,39 @@ public class JwtValidationFilter extends BasicAuthenticationFilter{
         String token = header.replace(PREFIX_TOKEN, "");
 
         try {
-            Claims claims = Jwts.parser().verifyWith(SECRET_KEY).build().parseSignedClaims(token).getPayload();
-            String usename = claims.getSubject();
-            Object authoritiesClaims = claims.get("authorities");
-
-            Collection<? extends GrantedAuthority> authorities = Arrays.asList(
-                    new ObjectMapper()
-                .addMixIn(SimpleGrantedAuthority.class, 
-                                    SimpleGrantedAuthorityJsonCreator.class)
-                .readValue(authoritiesClaims.toString().getBytes(), SimpleGrantedAuthority[].class)
-                );
-
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(usename, null, authorities);
+            UsernamePasswordAuthenticationToken authenticationToken = getAuthenticationFromToken(token);
             SecurityContextHolder .getContext().setAuthentication(authenticationToken);
             chain.doFilter(request, response);
         } catch (JwtException e) {
-            Map<String, String> body = new HashMap<>();
-            body.put("error", e.getMessage());
-            body.put("message", "El token JWT es invalido!");
+            ResponseEntity<Response<String>> entity = ResponseUtils.buildErrorResponseUtil(
+                    HttpStatus.UNAUTHORIZED,
+                    List.of("El token JWT es inválido", e.getMessage())
+            );
 
-            response.getWriter().write(new ObjectMapper().writeValueAsString(body));
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            response.setContentType(CONTENT_TYPE);
+            ResponseUtils.writeResponse(response, entity, CONTENT_TYPE);
         }
+    }
+
+    /**
+     * Este método deserealiza el token que recibe por parámetro y extra el username y roles para que luego se pueda autenticar al usuario.
+     * @param token
+     * @return UsernamePasswordAuthenticationToken para que sea validado
+     * @throws IOException
+     */
+    private UsernamePasswordAuthenticationToken getAuthenticationFromToken(String token) throws IOException{
+        Claims claims = Jwts.parser()
+                .verifyWith(SECRET_KEY)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        String username = claims.getSubject();
+        String rawAuthorities = claims.get(JwtAuthenticationFilter.AUTHORITIES).toString();
+
+        Collection<? extends GrantedAuthority> authorities = Arrays.asList(
+                mapper.readValue(rawAuthorities.getBytes(), SimpleGrantedAuthority[].class)
+        );
+
+        return new UsernamePasswordAuthenticationToken(username, null, authorities);
     }
 }
