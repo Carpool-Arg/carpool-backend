@@ -76,6 +76,8 @@ public class User implements Serializable {
     )
     private List<Role> roles;
 
+    
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime created_at;
 
@@ -107,4 +109,12 @@ public class User implements Serializable {
 
     @Column(name = "deleted_by")
     private Long deleted_by;
+
+    public boolean isEnabled(){
+        if(deleted_by != null){
+            return false;
+        }else{
+            return true;
+        }
+    }
 }

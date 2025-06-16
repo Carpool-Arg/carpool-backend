@@ -38,7 +38,6 @@ public class UserImplementation implements IUserService {
     @Transactional
     public Response<User> saveUser(UserRequestDTO userRequestDTO) {
         if(userRequestDTO.getPassword().equals(userRequestDTO.getConfirmPassword())){
-
             Optional<Role> optionalRoleUser = roleRepository.findByName("ROLE_USER");
 
             List<Role> roles = new ArrayList<>();
