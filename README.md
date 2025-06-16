@@ -31,10 +31,6 @@ cd carpool-backend
 Este archivo contendrá las variables de entorno necesarias para la base de datos y JWT:
 
 ```env
-# Puerto del backend
-SERVER_PORT
-
-# Configuración de PostgreSQL
 POSTGRES_DB
 POSTGRES_USER
 POSTGRES_PASSWORD
