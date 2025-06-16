@@ -37,7 +37,7 @@ public class UserController {
             content = @Content(mediaType = "application/json"))
     })
     @PostMapping
-    public ResponseEntity<Response<User>> postMethodName(@Valid @RequestBody UserRequestDTO userRequestDTO) {
+    public ResponseEntity<Response<User>> save(@Valid @RequestBody UserRequestDTO userRequestDTO) {
         
         return ResponseEntity.ok().body(userService.saveUser(userRequestDTO));
     }
