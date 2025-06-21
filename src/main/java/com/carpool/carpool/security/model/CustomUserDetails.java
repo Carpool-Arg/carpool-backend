@@ -1,16 +1,17 @@
 package com.carpool.carpool.security.model;
 
-import com.carpool.carpool.model.role.Role;
-import com.carpool.carpool.model.user.User;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.carpool.carpool.model.user.User;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 /**
  * Esta clase es creada con el fin de no exponer datos extras para autenticar un usuario. De esta manera, a la hora de autenticar un

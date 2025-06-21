@@ -10,9 +10,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
-import com.carpool.carpool.dto.user.UserLoginDTO;
-import com.carpool.carpool.security.model.CustomUserDetails;
-import com.carpool.carpool.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -22,13 +19,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.carpool.carpool.dto.user.UserLoginDTO;
 import com.carpool.carpool.response.Response;
-import com.carpool.carpool.response.ResponseStateEnum;
+import com.carpool.carpool.security.model.CustomUserDetails;
+import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.core.exc.StreamReadException;
-import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.jsonwebtoken.Claims;
@@ -95,8 +92,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
      * @throws IOException si ocurre algún error durante la autenticación.
      */
     @Override
-    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
-            Authentication authResult) throws IOException {
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException {
 
         CustomUserDetails authenticatedUser = (CustomUserDetails) authResult.getPrincipal();
         String username = authenticatedUser.getUsername();
@@ -119,11 +115,14 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         response.addHeader(HEADER_AUTHORIZATION, PREFIX_TOKEN + token);
 
-        ResponseEntity<Response<String>> responseBody = ResponseUtils.buildOKResponseUtil(
-                HttpStatus.OK,
+        ResponseEntity<Response<String>> responseBody = new ResponseEntity<>(
+            ResponseUtils.buildOKResponse(
                 List.of(username + ": Ha iniciado sesión exitosamente."),
                 token
+            ), 
+            HttpStatus.OK
         );
+
         ResponseUtils.writeResponse(response, responseBody, CONTENT_TYPE);
     }
 
@@ -136,12 +135,11 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
      * @throws IOException si ocurre algún error durante el proceso.
      */
     @Override
-    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
-            AuthenticationException failed) throws IOException {
+    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException {
 
-        ResponseEntity<Response<String>> responseBody = ResponseUtils.buildErrorResponseUtil(
-                HttpStatus.UNAUTHORIZED,
-                List.of( "Error en la autenticación")
+        ResponseEntity<Response<Void>> responseBody = new ResponseEntity<>(
+            ResponseUtils.buildErrorResponse(List.of( "Error en la autenticación")),
+            HttpStatus.UNAUTHORIZED
         );
 
         ResponseUtils.writeResponse(response, responseBody, CONTENT_TYPE);

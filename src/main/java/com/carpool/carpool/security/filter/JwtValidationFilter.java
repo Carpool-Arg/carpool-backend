@@ -1,11 +1,15 @@
 package com.carpool.carpool.security.filter;
 
-import java.io.IOException;
-import java.util.*;
+import static com.carpool.carpool.security.config.TokenJwtConfig.CONTENT_TYPE;
+import static com.carpool.carpool.security.config.TokenJwtConfig.HEADER_AUTHORIZATION;
+import static com.carpool.carpool.security.config.TokenJwtConfig.PREFIX_TOKEN;
+import static com.carpool.carpool.security.config.TokenJwtConfig.SECRET_KEY;
 
-import com.carpool.carpool.response.Response;
-import com.carpool.carpool.utils.ResponseUtils;
-import org.apache.tomcat.util.http.ResponseUtil;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,7 +19,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
+import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.utils.SimpleGrantedAuthorityJsonCreator;
+import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.jsonwebtoken.Claims;
@@ -25,7 +31,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import static com.carpool.carpool.security.config.TokenJwtConfig.*;
 
 /**
  * Clase que se encarga de validar si el JWT es válido.
@@ -68,11 +73,11 @@ public class JwtValidationFilter extends BasicAuthenticationFilter{
             SecurityContextHolder .getContext().setAuthentication(authenticationToken);
             chain.doFilter(request, response);
         } catch (JwtException e) {
-            ResponseEntity<Response<String>> entity = ResponseUtils.buildErrorResponseUtil(
-                    HttpStatus.UNAUTHORIZED,
-                    List.of("El token JWT es inválido", e.getMessage())
-            );
-
+            ResponseEntity<Response<Void>> entity = new ResponseEntity<>(
+                ResponseUtils.buildErrorResponse(
+                    List.of("El token JWT es inválido", e.getMessage())), 
+                HttpStatus.UNAUTHORIZED);
+            
             ResponseUtils.writeResponse(response, entity, CONTENT_TYPE);
         }
     }

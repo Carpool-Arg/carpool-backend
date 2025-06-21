@@ -1,12 +1,6 @@
 package com.carpool.carpool.service.user;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import com.carpool.carpool.security.model.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -15,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.repository.user.UserRepository;
+import com.carpool.carpool.security.model.CustomUserDetails;
 
 /**
  * Clase encargada de realizar validaciones al usuario que solicita acceso a la aplicación para poder autorizar al mismo.
