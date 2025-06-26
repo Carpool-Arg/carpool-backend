@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.carpool.carpool.exception.ConflictException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import jakarta.transaction.Transactional;
 
 @Service
 public class UserImplementation implements IUserService {
+
     @Autowired
     private RoleRepository roleRepository;
 
@@ -33,7 +35,8 @@ public class UserImplementation implements IUserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-
+    private static final String EXIST_USER = "Ya existe un usuario con el ";
+    private static final String ROLE_USER = "ROLE_USER";
     /**
      * Metodo utilizado para almacenar un usuario en la base de datos. Se realizan controles para 
      * lanzar las excepciones correspondientes
@@ -50,32 +53,36 @@ public class UserImplementation implements IUserService {
         existsByEmail(userRequestDTO.getEmail());
         existsByDni(userRequestDTO.getDni());
 
-        Optional<Role> optionalRoleUser = roleRepository.findByName("ROLE_USER");
-
+        Optional<Role> optionalRoleUser = roleRepository.findByName(ROLE_USER);
         List<Role> roles = new ArrayList<>();
-        
         optionalRoleUser.ifPresent(roles::add);
 
-        
         User user = userMapper.convertUserRequestDTOToUser(
             userRequestDTO, 
             passwordEncoder.encode(userRequestDTO.getPassword()), 
             roles);
         userRepository.save(user);
-        
 
         return ResponseUtils.buildOKResponse(List.of("Usuario creado") , null); 
+    }
+
+    /**
+     * Metodo para validar si un username ingresado por una persona se encuentra disponible o no.
+     * @param username el nombre de usuario ingresado por la persona.
+     */
+    public void validateUsername(String username){
+        existsByUsername(username);
     }
 
     /**
      * Metodo para comprobar que las contraseña y la confirmacion de la misma coinciden
      * @param userPassword la contraseña del usuario
      * @param userConfirmPassword la confirmacion de la contraseña del usuario
-     * @throws IllegalArgumentException si no coinciden
+     * @throws ConflictException si no coinciden
      */
     private void passwordsMatch(String userPassword, String userConfirmPassword){
         if(!userPassword.equals(userConfirmPassword)){
-            throw new IllegalArgumentException("Las contraseñas ingresadas no coinciden");
+            throw new ConflictException("Las contraseñas ingresadas no coinciden");
         }
     }
     
@@ -83,11 +90,11 @@ public class UserImplementation implements IUserService {
      * Metodo para comprobar no exista otro usuario en la base de datos
      * con el mismo email que el ingresado 
      * @param email el email ingresado por el usuario
-     * @throws IllegalArgumentException si hay un usuario registrado con este email
+     * @throws ConflictException si hay un usuario registrado con este email
      */
     private void existsByEmail(String email){
         userRepository.findByEmail(email).ifPresent(user -> {
-            throw new IllegalArgumentException("Ya existe un usuario con el correo electrónico ingresado.");
+            throw new ConflictException(EXIST_USER.concat("correo electrónico ingresado."));
         });
     }
 
@@ -95,12 +102,12 @@ public class UserImplementation implements IUserService {
      * Meotodo para comprobar que no exista otro usuario en la base de datos 
      * con el mismo nombre de usuario que el ingresado
      * @param username el nombre de usuario ingresado
-     * @throws IllegalArgumentException si hay un usuario con este nombre de usuario
+     * @throws ConflictException si hay un usuario con este nombre de usuario
      */
 
     private void existsByUsername(String username){
         userRepository.findByUsername(username).ifPresent(user -> {
-            throw new IllegalArgumentException("Ya existe un usuario con el nombre de usuario ingresado.");
+            throw new ConflictException(EXIST_USER.concat("nombre de usuario ingresado."));
         });
     } 
 
@@ -108,11 +115,11 @@ public class UserImplementation implements IUserService {
      * Metodo para comprobar que no exista otro usuario en la base de datos
      *  con el mismo dni que el ingresado
      * @param dni dni ingresado por el usuario
-     * @throws IllegalArgumentException si hay un usuario registrado con este dni
+     * @throws ConflictException si hay un usuario registrado con este dni
      */
     private void existsByDni(String dni){
         userRepository.findByDni(dni).ifPresent(user -> { 
-            throw new IllegalArgumentException("Ya existe un usuario con el DNI ingresado.");
+            throw new ConflictException(EXIST_USER.concat("DNI ingresado."));
         });
     }
 

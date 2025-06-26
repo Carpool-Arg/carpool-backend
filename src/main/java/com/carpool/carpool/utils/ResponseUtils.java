@@ -21,6 +21,12 @@ public class ResponseUtils {
     private static final ObjectMapper mapper = new ObjectMapper().addMixIn(SimpleGrantedAuthority.class, SimpleGrantedAuthorityJsonCreator.class);
 
     /**
+     * Constructor privado para evitar el instanciamiento de una clase Utils.
+     */
+    private ResponseUtils(){
+
+    }
+    /**
      * Método utilizado para escribir una Response
      * @param response
      * @param entity

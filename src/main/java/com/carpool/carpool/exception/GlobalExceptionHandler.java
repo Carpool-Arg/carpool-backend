@@ -59,6 +59,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Response<Void>> handleArgumentMismatch(MethodArgumentTypeMismatchException ex) {
         return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of("Tipo de argumento inválido", ex.getMessage())), HttpStatus.BAD_REQUEST);
     }
+
     /**
      * Excepcion utilizada para cuando hay un error del lado del cliente.
      * @param ex Excepción
@@ -66,8 +67,17 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Response<Void>> handleIllegalArgument(IllegalArgumentException ex) {
-        //return ResponseUtils.buildErrorReponseEntity(HttpStatus.BAD_REQUEST, List.of(ex.getMessage()));
         return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(ex.getMessage())), HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Excepcion utilizada para cuando un registro se encuentra en uso.
+     * @param ex Excepción
+     * @return ResponseEntity<Response<Void>>
+     */
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<Response<Void>> handleConflict(ConflictException ex) {
+        return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(ex.getMessage())), HttpStatus.CONFLICT);
     }
 
     /**
