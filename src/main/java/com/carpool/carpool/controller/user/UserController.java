@@ -1,6 +1,5 @@
 package com.carpool.carpool.controller.user;
 
-import com.carpool.carpool.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,9 +15,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-
-import java.util.List;
-
 
 @RestController
 @Tag(name = "Pasajeros", description = "Operaciones relacionadas con el pasajero")
@@ -39,26 +35,21 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<Response<Void>> save(@Valid @RequestBody UserRequestDTO userRequestDTO) {
-        //TODO: Cambiar ya que siempre se retorna 200 aunque la peticion sea con estado ERROR
         return new ResponseEntity<>(userService.saveUser(userRequestDTO), HttpStatus.CREATED);
     }
-    
 
     @GetMapping("/validate-username")
-    public ResponseEntity<Response> validateUsername(@RequestParam String username) {
-        userService.validateUsername(username);
-        return ResponseEntity.ok(ResponseUtils.buildOKResponse(List.of("Nombre de usuario disponible"), null));
+    public ResponseEntity<Response<Void>> validateUsername(@RequestParam String username) {
+        return new ResponseEntity<>(userService.validateUsername(username), HttpStatus.OK);
     }
 
     @GetMapping("/validate-email")
     public ResponseEntity<Response> validateEmail(@RequestParam String email){
-    userService.validateEmail(email);
-        return ResponseEntity.ok(ResponseUtils.buildOKResponse(List.of("El Email del usuario disponible"), null));
+        return new ResponseEntity<>(userService.validateEmail(email), HttpStatus.OK);
     } 
 
     @GetMapping("/validate-dni")
     public ResponseEntity<Response> validateDni(@RequestParam String dni) {
-        userService.validateDni(dni);
-        return ResponseEntity.ok(ResponseUtils.buildOKResponse(List.of("El DNI del usuario disponible"), null));
+        return new ResponseEntity<>(userService.validateDni(dni), HttpStatus.OK);
     }
 }

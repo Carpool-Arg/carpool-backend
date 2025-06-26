@@ -37,6 +37,7 @@ public class UserImplementation implements IUserService {
 
     private static final String EXIST_USER = "Ya existe un usuario con el ";
     private static final String ROLE_USER = "ROLE_USER";
+
     /**
      * Metodo utilizado para almacenar un usuario en la base de datos. Se realizan controles para 
      * lanzar las excepciones correspondientes
@@ -47,7 +48,6 @@ public class UserImplementation implements IUserService {
     @Transactional
     public Response<Void> saveUser(UserRequestDTO userRequestDTO) {
 
-        //Validacion de datos
         passwordsMatch(userRequestDTO.getPassword(), userRequestDTO.getConfirmPassword());
         existsByUsername(userRequestDTO.getUsername());
         existsByEmail(userRequestDTO.getEmail());
@@ -63,15 +63,16 @@ public class UserImplementation implements IUserService {
             roles);
         userRepository.save(user);
 
-        return ResponseUtils.buildOKResponse(List.of("Usuario creado") , null); 
+        return ResponseUtils.buildOKResponse(List.of("Usuario creado") , null);
     }
 
     /**
      * Metodo para validar si un username ingresado por una persona se encuentra disponible o no.
      * @param username el nombre de usuario ingresado por la persona.
      */
-    public void validateUsername(String username){
+    public Response<Void> validateUsername(String username){
         existsByUsername(username);
+        return ResponseUtils.buildOKResponse(List.of("Nombre de usuario disponible") , null);
     }
 
     /**
@@ -79,8 +80,9 @@ public class UserImplementation implements IUserService {
      * @param email el email ingresado por la persona.
      */
     @Override
-    public void validateEmail(String email) {
+    public Response<Void> validateEmail(String email) {
         existsByEmail(email);
+        return ResponseUtils.buildOKResponse(List.of("Email disponible") , null);
     }
 
     /**
@@ -88,8 +90,9 @@ public class UserImplementation implements IUserService {
      * @param dni el dni ingresado por la persona.
      */
     @Override
-    public void validateDni(String dni) {
+    public Response<Void> validateDni(String dni) {
         existsByDni(dni);
+        return ResponseUtils.buildOKResponse(List.of("DNI disponible") , null);
     }
 
     /**
@@ -112,7 +115,7 @@ public class UserImplementation implements IUserService {
      */
     private void existsByEmail(String email){
         userRepository.findByEmail(email).ifPresent(user -> {
-            throw new ConflictException(EXIST_USER.concat("correo electrónico ingresado."));
+            throw new IllegalArgumentException(EXIST_USER.concat("correo electrónico ingresado."));
         });
     }
 
