@@ -75,6 +75,24 @@ public class UserImplementation implements IUserService {
     }
 
     /**
+     * Método para validar si un email ingresado por una persona se encuentra disponible o no.
+     * @param email el email ingresado por la persona.
+     */
+    @Override
+    public void validateEmail(String email) {
+        existsByEmail(email);
+    }
+
+    /**
+     * Metodo para validar si un dni ingresado por una persona se encuentra disponible o no.
+     * @param dni el dni ingresado por la persona.
+     */
+    @Override
+    public void validateDni(String dni) {
+        existsByDni(dni);
+    }
+
+    /**
      * Metodo para comprobar que las contraseña y la confirmacion de la misma coinciden
      * @param userPassword la contraseña del usuario
      * @param userConfirmPassword la confirmacion de la contraseña del usuario

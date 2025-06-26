@@ -42,10 +42,23 @@ public class UserController {
         //TODO: Cambiar ya que siempre se retorna 200 aunque la peticion sea con estado ERROR
         return new ResponseEntity<>(userService.saveUser(userRequestDTO), HttpStatus.CREATED);
     }
+    
 
     @GetMapping("/validate-username")
     public ResponseEntity<Response> validateUsername(@RequestParam String username) {
         userService.validateUsername(username);
         return ResponseEntity.ok(ResponseUtils.buildOKResponse(List.of("Nombre de usuario disponible"), null));
+    }
+
+    @GetMapping("/validate-email")
+    public ResponseEntity<Response> validateEmail(@RequestParam String email){
+    userService.validateEmail(email);
+        return ResponseEntity.ok(ResponseUtils.buildOKResponse(List.of("El Email del usuario disponible"), null));
+    } 
+
+    @GetMapping("/validate-dni")
+    public ResponseEntity<Response> validateDni(@RequestParam String dni) {
+        userService.validateDni(dni);
+        return ResponseEntity.ok(ResponseUtils.buildOKResponse(List.of("El DNI del usuario disponible"), null));
     }
 }
