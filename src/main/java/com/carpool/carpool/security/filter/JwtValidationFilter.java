@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import com.carpool.carpool.service.auth.blacklist.IAuthBlacklistService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -40,8 +41,11 @@ public class JwtValidationFilter extends BasicAuthenticationFilter{
     private static final ObjectMapper mapper = new ObjectMapper()
             .addMixIn(SimpleGrantedAuthority.class, SimpleGrantedAuthorityJsonCreator.class);
 
-    public JwtValidationFilter(AuthenticationManager authenticationManager) {
+    private final IAuthBlacklistService authBlacklistService;
+
+    public JwtValidationFilter(AuthenticationManager authenticationManager, IAuthBlacklistService authBlacklistService) {
         super(authenticationManager);
+        this.authBlacklistService = authBlacklistService;
     }
 
     /**
@@ -67,6 +71,18 @@ public class JwtValidationFilter extends BasicAuthenticationFilter{
             return;
         }
         String token = header.replace(PREFIX_TOKEN, "");
+
+        // Verificar si el token esta en la blacklist
+        if (authBlacklistService.isTokenBlacklisted(token)) {
+            ResponseEntity<Response<Void>> entity = new ResponseEntity<>(
+                    ResponseUtils.buildErrorResponse(
+                            List.of("Token inválido: sesión cerrada o caducada")
+                    ),
+                    HttpStatus.UNAUTHORIZED
+            );
+            ResponseUtils.writeResponse(response, entity, CONTENT_TYPE);
+            return;
+        }
 
         try {
             UsernamePasswordAuthenticationToken authenticationToken = getAuthenticationFromToken(token);
