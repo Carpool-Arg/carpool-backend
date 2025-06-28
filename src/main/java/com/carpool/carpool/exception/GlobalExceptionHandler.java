@@ -3,6 +3,7 @@ package com.carpool.carpool.exception;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.utils.ResponseUtils;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -81,6 +82,16 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Excepcion utilizada para cuando hay un error de coneccion con redis
+     * @param ex Excepción de coneccion de redis
+     * @return ResponseEntity<Response<Void>>
+     */
+    @ExceptionHandler(RedisConnectionFailureException.class)
+    public ResponseEntity<Response<Void>> handleRedisException(RedisConnectionFailureException ex) {
+        return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(ex.getMessage())), HttpStatus.CONFLICT);
+    }
+
+    /**
      * Excepcion genérica.
      * @param ex Excepción
      * @return Response
@@ -89,6 +100,4 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Response<Void>> handleGenericException(Exception ex) {
         return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of("Error inesperado",ex.getMessage())), HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
-
 }
