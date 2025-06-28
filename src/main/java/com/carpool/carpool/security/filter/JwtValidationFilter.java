@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.carpool.carpool.service.auth.blacklist.IAuthBlacklistService;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -66,30 +67,13 @@ public class JwtValidationFilter extends BasicAuthenticationFilter{
 
         String header = request.getHeader(HEADER_AUTHORIZATION);
 
-        //Si no mandan el token, devolvemos una excepcion manejada por nosotros para indicar que debe esta autenticado
-        if (header == null || !header.startsWith(PREFIX_TOKEN)) {
-            ResponseEntity<Response<Void>> entity = new ResponseEntity<>(
-                    ResponseUtils.buildErrorResponse(
-                            List.of("Debe estar autenticado para realizar esta acción")
-                    ),
-                    HttpStatus.UNAUTHORIZED
-            );
-            ResponseUtils.writeResponse(response, entity, CONTENT_TYPE);
-            return;
-        }
+        //Verificar si el token esta presente
+        if (!checkIsTokenPresent(header, response)) return;
+
         String token = header.replace(PREFIX_TOKEN, "");
 
-        // Verificar si el token esta en la blacklist
-        if (authBlacklistService.isTokenBlacklisted(token)) {
-            ResponseEntity<Response<Void>> entity = new ResponseEntity<>(
-                    ResponseUtils.buildErrorResponse(
-                            List.of("Token inválido: sesión cerrada o caducada")
-                    ),
-                    HttpStatus.UNAUTHORIZED
-            );
-            ResponseUtils.writeResponse(response, entity, CONTENT_TYPE);
-            return;
-        }
+        //Verificar si el token esta en la blacklist
+        if (!checkTokenInBlacklist(token, response)) return;
 
         try {
             UsernamePasswordAuthenticationToken authenticationToken = getAuthenticationFromToken(token);
@@ -103,6 +87,62 @@ public class JwtValidationFilter extends BasicAuthenticationFilter{
             
             ResponseUtils.writeResponse(response, entity, CONTENT_TYPE);
         }
+    }
+
+    /**
+     * Verifica que el header de autorización
+     * @param header
+     * @param response
+     * @return boolean
+     * @throws IOException
+     */
+    private boolean checkIsTokenPresent(String header, HttpServletResponse response)
+            throws IOException {
+        //Si no mandan el token, devolvemos una excepcion manejada por nosotros para indicar que debe esta autenticado
+        if (header == null || !header.startsWith(PREFIX_TOKEN)) {
+            ResponseEntity<Response<Void>> entity = new ResponseEntity<>(
+                    ResponseUtils.buildErrorResponse(
+                            List.of("Debe estar autenticado para realizar esta acción")
+                    ),
+                    HttpStatus.UNAUTHORIZED
+            );
+            ResponseUtils.writeResponse(response, entity, CONTENT_TYPE);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Verifica si el token JWT recibido se encuentra en la blacklist.
+     * @param token el JWT ya limpio (sin el prefijo "Bearer ")
+     * @param response
+     * @return boolean
+     * @throws IOException
+     */
+    private boolean checkTokenInBlacklist(String token, HttpServletResponse response)
+            throws IOException {
+        try {
+            if (authBlacklistService.isTokenBlacklisted(token)) {
+                ResponseEntity<Response<Void>> entity = new ResponseEntity<>(
+                        ResponseUtils.buildErrorResponse(
+                                List.of("Token inválido: sesión cerrada o caducada")
+                        ),
+                        HttpStatus.UNAUTHORIZED
+                );
+                ResponseUtils.writeResponse(response, entity, CONTENT_TYPE);
+                return false;
+            }
+        } catch (RedisConnectionFailureException ex) {
+            ResponseEntity<Response<Void>> entity = new ResponseEntity<>(
+                    ResponseUtils.buildErrorResponse(
+                            List.of("Error de conexión con Redis")
+                    ),
+                    HttpStatus.SERVICE_UNAVAILABLE
+            );
+            ResponseUtils.writeResponse(response, entity, CONTENT_TYPE);
+            return false;
+        }
+        return true;
     }
 
     /**

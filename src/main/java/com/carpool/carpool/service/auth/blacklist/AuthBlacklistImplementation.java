@@ -4,6 +4,7 @@ import com.carpool.carpool.response.Response;
 import com.carpool.carpool.response.ResponseStateEnum;
 import com.carpool.carpool.security.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -37,16 +38,20 @@ public class AuthBlacklistImplementation implements IAuthBlacklistService{
      */
     @Override
     public Response<Void> blacklistToken(String token) {
-        //Obtenemos el token
-        String jwtToken = token.replace("Bearer ", "");
+        try {
+            //Obtenemos el token
+            String jwtToken = token.replace("Bearer ", "");
 
-        //Calcular el tiempo de expiracion de dicho token
-        long expirationTime = jwtUtils.getTokenExpiration(jwtToken);
+            //Calcular el tiempo de expiracion de dicho token
+            long expirationTime = jwtUtils.getTokenExpiration(jwtToken);
 
-        //Cargar el token en redis, con el prefijo especificado  y el valor true (sirve para saber que la clave existe)
-        redisTemplate.opsForValue().set(TOKEN_BLACKLIST_PREFIX + jwtToken, "true", expirationTime, TimeUnit.SECONDS);
+            //Cargar el token en redis, con el prefijo especificado  y el valor true (sirve para saber que la clave existe)
+            redisTemplate.opsForValue().set(TOKEN_BLACKLIST_PREFIX + jwtToken, "true", expirationTime, TimeUnit.SECONDS);
 
-        return new Response<>(List.of("Sesión cerrada correctamente"), ResponseStateEnum.OK);
+            return new Response<>(List.of("Sesión cerrada correctamente"), ResponseStateEnum.OK);
+        } catch (RedisConnectionFailureException e) {
+            throw new RedisConnectionFailureException(e.getMessage());
+        }
     }
 
     /**
@@ -57,6 +62,10 @@ public class AuthBlacklistImplementation implements IAuthBlacklistService{
      */
     @Override
     public boolean isTokenBlacklisted(String token) {
-        return redisTemplate.hasKey(TOKEN_BLACKLIST_PREFIX + token);
+        try {
+            return redisTemplate.hasKey(TOKEN_BLACKLIST_PREFIX + token);
+        } catch (RedisConnectionFailureException e) {
+            throw new RedisConnectionFailureException(e.getMessage());
+        }
     }
 }
