@@ -66,8 +66,15 @@ public class JwtValidationFilter extends BasicAuthenticationFilter{
 
         String header = request.getHeader(HEADER_AUTHORIZATION);
 
+        //Si no mandan el token, devolvemos una excepcion manejada por nosotros para indicar que debe esta autenticado
         if (header == null || !header.startsWith(PREFIX_TOKEN)) {
-            chain.doFilter(request, response);
+            ResponseEntity<Response<Void>> entity = new ResponseEntity<>(
+                    ResponseUtils.buildErrorResponse(
+                            List.of("Debe estar autenticado para realizar esta acción")
+                    ),
+                    HttpStatus.UNAUTHORIZED
+            );
+            ResponseUtils.writeResponse(response, entity, CONTENT_TYPE);
             return;
         }
         String token = header.replace(PREFIX_TOKEN, "");
