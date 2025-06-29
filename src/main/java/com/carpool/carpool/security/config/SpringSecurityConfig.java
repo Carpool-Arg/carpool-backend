@@ -2,6 +2,7 @@ package com.carpool.carpool.security.config;
 
 import java.util.Arrays;
 
+import com.carpool.carpool.security.handler.JwtAuthenticationEntryPoint;
 import com.carpool.carpool.service.auth.blacklist.IAuthBlacklistService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -46,13 +47,16 @@ public class SpringSecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
+    SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) throws Exception{
         return http.authorizeHttpRequests((authz)-> authz
         .requestMatchers(HttpMethod.POST,"/users").permitAll()
         .requestMatchers(HttpMethod.GET, "/users/validate-username").permitAll()
         .requestMatchers(HttpMethod.GET, "/users/validate-email").permitAll()
         .requestMatchers(HttpMethod.GET, "/users/validate-dni").permitAll()
         .anyRequest().authenticated())
+        .exceptionHandling(config -> config
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+        )
         .addFilter(new JwtAuthenticationFilter(authenticationManager()))
         .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService))
         .csrf(config-> config.disable())
