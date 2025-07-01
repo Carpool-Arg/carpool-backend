@@ -44,12 +44,12 @@ public class UserController {
     }
 
     @GetMapping("/validate-email")
-    public ResponseEntity<Response> validateEmail(@RequestParam String email){
+    public ResponseEntity<Response<Void>> validateEmail(@RequestParam String email){
         return new ResponseEntity<>(userService.validateEmail(email), HttpStatus.OK);
     } 
 
     @GetMapping("/validate-dni")
-    public ResponseEntity<Response> validateDni(@RequestParam String dni) {
+    public ResponseEntity<Response<Void>> validateDni(@RequestParam String dni) {
         return new ResponseEntity<>(userService.validateDni(dni), HttpStatus.OK);
     }
 }

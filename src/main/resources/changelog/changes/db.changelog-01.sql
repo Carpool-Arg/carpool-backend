@@ -24,6 +24,3 @@ COMMENT ON COLUMN public.users.updated_at IS 'Fecha de actualizacion del registr
 --changeset AgustinAnil:modificar_columnas_tabla_role_01
 ALTER TABLE public."role" ALTER COLUMN "name" TYPE varchar(100) USING "name"::varchar(100);
 ALTER TABLE public."role" ALTER COLUMN "name" SET NOT NULL;
-
-INSERT INTO public."role" (id, "name") VALUES(1, 'ROLE_USER');
-
