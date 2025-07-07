@@ -12,6 +12,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,9 +22,11 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.carpool.carpool.dto.security.TokensDTO;
 import com.carpool.carpool.dto.user.UserLoginDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.model.CustomUserDetails;
+import com.carpool.carpool.security.utils.JwtUtils;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,6 +51,9 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private static final Logger LOGGER = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private AuthenticationManager authenticationManager;
+
+    @Autowired
+    JwtUtils jwtUtils;
 
     public JwtAuthenticationFilter(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
@@ -105,20 +111,35 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 .add(USERNAME, username)
         .build();
 
-        String token = Jwts.builder()
-                .subject(username)
-                .claims(claims)
-                .expiration(new Date(System.currentTimeMillis() + 3600000))
-                .issuedAt(new Date())
-                .signWith(SECRET_KEY)
-                .compact();
+        String accessToken = jwtUtils.generateToken(username, 86400000, claims);
+        
+        // Jwts.builder()
+        //         .subject(username)
+        //         .claims(claims)
+        //         .expiration(new Date(System.currentTimeMillis() + 86400000)) // Un dia de duracion
+        //         .issuedAt(new Date())
+        //         .signWith(SECRET_KEY)
+        //         .compact();
 
-        response.addHeader(HEADER_AUTHORIZATION, PREFIX_TOKEN + token);
 
-        ResponseEntity<Response<String>> responseBody = new ResponseEntity<>(
+        String refreshToken = jwtUtils.generateToken(username, 604800000, claims);
+        
+        // String refreshToken = Jwts.builder()
+        //         .subject(username)
+        //         .claims(claims)
+        //         .expiration(new Date(System.currentTimeMillis() + 604800000)) // 7 dias de duracion 
+        //         .issuedAt(new Date())
+        //         .signWith(SECRET_KEY)
+        //         .compact();
+
+        response.addHeader(HEADER_AUTHORIZATION, PREFIX_TOKEN + accessToken);
+
+        TokensDTO tokens = new TokensDTO(accessToken,refreshToken);
+        
+        ResponseEntity<Response<TokensDTO>> responseBody = new ResponseEntity<>(
             ResponseUtils.buildOKResponse(
                 List.of(username + ": Ha iniciado sesión exitosamente."),
-                token
+                tokens
             ), 
             HttpStatus.OK
         );
