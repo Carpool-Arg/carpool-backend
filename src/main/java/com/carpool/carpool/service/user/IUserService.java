@@ -4,7 +4,6 @@ import com.carpool.carpool.dto.user.UserRequestDTO;
 import com.carpool.carpool.response.Response;
 
 public interface IUserService {
-
     /**
      * Metodo utilizado para almacenar un usuario en la base de datos. Se realizan controles para
      * lanzar las excepciones correspondientes

@@ -20,7 +20,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
-import com.carpool.carpool.dto.user.UserLoginDTO;
+import com.carpool.carpool.dto.security.login.loginRequestDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.model.CustomUserDetails;
 import com.carpool.carpool.security.utils.JwtUtils;
@@ -71,10 +71,10 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException {
 
-        UserLoginDTO userLogin = null;
+        loginRequestDTO userLogin = null;
 
         try {
-            userLogin = new ObjectMapper().readValue(request.getInputStream(), UserLoginDTO.class);
+            userLogin = new ObjectMapper().readValue(request.getInputStream(), loginRequestDTO.class);
         } catch (StreamReadException e) {
         } catch (IOException e) {
             throw new RuntimeException("Error al leer las credenciales de la petición", e);
@@ -97,42 +97,36 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException {
 
+        // Obtener el usuario autenticado casteado a CustomUserDetails
         CustomUserDetails authenticatedUser = (CustomUserDetails) authResult.getPrincipal();
+
+        // Extraer el nombre de usuario del usuario autenticado
         String username = authenticatedUser.getUsername();
+
+        // Obtener los roles/authorities del usuario para incluirlos en el token
         Collection<? extends GrantedAuthority> authorities = authenticatedUser.getAuthorities();
 
         LOGGER.info("AUTENTICACION EXITOSA DEL USUARIO: {}", username);
 
+        // Construir los claims para el JWT, agregando roles y username
         Claims claims = Jwts.claims()
                 .add(AUTHORITIES, new ObjectMapper().writeValueAsString(authorities))
                 .add(USERNAME, username)
         .build();
 
+        // Generar el access token con duración de 1 día (86400000 ms) y los claims
         String accessToken = jwtUtils.generateToken(username, 86400000, claims);
-        
-        // Jwts.builder()
-        //         .subject(username)
-        //         .claims(claims)
-        //         .expiration(new Date(System.currentTimeMillis() + 86400000)) // Un dia de duracion
-        //         .issuedAt(new Date())
-        //         .signWith(SECRET_KEY)
-        //         .compact();
 
-
+        // Generar el refresh token con duración de 7 días (604800000 ms) y los mismos claims
         String refreshToken = jwtUtils.generateToken(username, 604800000, claims);
-        
-        // String refreshToken = Jwts.builder()
-        //         .subject(username)
-        //         .claims(claims)
-        //         .expiration(new Date(System.currentTimeMillis() + 604800000)) // 7 dias de duracion 
-        //         .issuedAt(new Date())
-        //         .signWith(SECRET_KEY)
-        //         .compact();
 
+        // Agregar el access token en el header Authorization de la respuesta HTTP
         response.addHeader(HEADER_AUTHORIZATION, PREFIX_TOKEN + accessToken);
 
+        // Crear un DTO que contiene ambos tokens para enviarlo en el cuerpo de la respuesta
         TokenResponseDTO tokens = new TokenResponseDTO(accessToken,refreshToken);
-        
+
+        // Construir el ResponseEntity con mensaje de éxito, DTO y código HTTP 200 OK
         ResponseEntity<Response<TokenResponseDTO>> responseBody = new ResponseEntity<>(
             ResponseUtils.buildOKResponse(
                 List.of(username + ": Ha iniciado sesión exitosamente."),
@@ -141,6 +135,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             HttpStatus.OK
         );
 
+        // Escribir el cuerpo de la respuesta en formato JSON y enviarla al cliente
         ResponseUtils.writeResponse(response, responseBody, CONTENT_TYPE);
     }
 
