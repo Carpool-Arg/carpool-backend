@@ -1,7 +1,8 @@
 package com.carpool.carpool.service.auth;
 
-import com.carpool.carpool.dto.security.TokensDTO;
+import com.carpool.carpool.dto.security.token.TokenResponseDTO;
+import com.carpool.carpool.response.Response;
 
 public interface IAuthService {
-    TokensDTO refreshToken(String authHeader);
+    Response<TokenResponseDTO> refreshToken(String authHeader);
 }

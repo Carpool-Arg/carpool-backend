@@ -3,6 +3,7 @@ package com.carpool.carpool.security.config;
 import java.util.Arrays;
 
 import com.carpool.carpool.security.handler.JwtAuthenticationEntryPoint;
+import com.carpool.carpool.security.utils.JwtUtils;
 import com.carpool.carpool.service.auth.blacklist.IAuthBlacklistService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -36,6 +37,9 @@ public class SpringSecurityConfig {
     @Autowired
     private IAuthBlacklistService authBlacklistService;
 
+    @Autowired
+    private JwtUtils  jwtUtils;
+
     @Bean
     AuthenticationManager authenticationManager() throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
@@ -57,7 +61,7 @@ public class SpringSecurityConfig {
         .exceptionHandling(config -> config
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         )
-        .addFilter(new JwtAuthenticationFilter(authenticationManager()))
+        .addFilter(new JwtAuthenticationFilter(authenticationManager(), jwtUtils))
         .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService))
         .csrf(config-> config.disable())
         .cors(cors-> cors.configurationSource(corsConfigurationSource()))

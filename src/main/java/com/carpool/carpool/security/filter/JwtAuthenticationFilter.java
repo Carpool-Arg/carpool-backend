@@ -3,16 +3,13 @@ package com.carpool.carpool.security.filter;
 import static com.carpool.carpool.security.config.TokenJwtConfig.CONTENT_TYPE;
 import static com.carpool.carpool.security.config.TokenJwtConfig.HEADER_AUTHORIZATION;
 import static com.carpool.carpool.security.config.TokenJwtConfig.PREFIX_TOKEN;
-import static com.carpool.carpool.security.config.TokenJwtConfig.SECRET_KEY;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,7 +19,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.carpool.carpool.dto.security.TokensDTO;
+import com.carpool.carpool.dto.security.token.TokenResponseDTO;
 import com.carpool.carpool.dto.user.UserLoginDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.model.CustomUserDetails;
@@ -52,11 +49,11 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     private AuthenticationManager authenticationManager;
 
-    @Autowired
-    JwtUtils jwtUtils;
+    private final JwtUtils jwtUtils;
 
-    public JwtAuthenticationFilter(AuthenticationManager authenticationManager) {
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, JwtUtils jwtUtils) {
         this.authenticationManager = authenticationManager;
+        this.jwtUtils = jwtUtils;
     }
 
     /**
@@ -134,9 +131,9 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         response.addHeader(HEADER_AUTHORIZATION, PREFIX_TOKEN + accessToken);
 
-        TokensDTO tokens = new TokensDTO(accessToken,refreshToken);
+        TokenResponseDTO tokens = new TokenResponseDTO(accessToken,refreshToken);
         
-        ResponseEntity<Response<TokensDTO>> responseBody = new ResponseEntity<>(
+        ResponseEntity<Response<TokenResponseDTO>> responseBody = new ResponseEntity<>(
             ResponseUtils.buildOKResponse(
                 List.of(username + ": Ha iniciado sesión exitosamente."),
                 tokens
