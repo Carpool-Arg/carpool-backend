@@ -31,7 +31,7 @@ public class UserDetailsServiceImpl implements UserDetailsService{
     @Transactional(readOnly = true)
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User userDB = userRepository.findByUsername(username)
+        User userDB = userRepository.findByUsernameAndDeletedAtIsNull(username)
                 .orElseThrow(() ->  new UsernameNotFoundException(
                         String.format("El nombre de usuario %s no existe en el sistema!", username)));
 

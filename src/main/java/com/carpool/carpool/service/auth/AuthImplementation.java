@@ -1,11 +1,9 @@
 package com.carpool.carpool.service.auth;
 
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
-import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.utils.JwtUtils;
-import com.carpool.carpool.service.auth.blacklist.IAuthBlacklistService;
 import com.carpool.carpool.utils.ResponseUtils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -27,9 +25,6 @@ public class AuthImplementation implements IAuthService{
     @Autowired
     UserRepository userRepository;
 
-    @Autowired
-    private IAuthBlacklistService authBlacklistService;
-
     /**
      * Genera un nuevo access token a partir de un refresh token válido.
      *
@@ -40,18 +35,8 @@ public class AuthImplementation implements IAuthService{
     @Override
     public Response<TokenResponseDTO> refreshToken(String authHeader) {
 
-        // Validar formato del encabezado Authorization
-        if(authHeader == null || !authHeader.startsWith(PREFIX_TOKEN)){
-            throw new IllegalArgumentException("Bearer Token Inválido");
-        }
-
         // Extraer el token desde el header (sin "Bearer ")
         final String refreshToken = authHeader.substring(7);
-
-        // Verificar si está en la blacklist
-        if (authBlacklistService.isTokenBlacklisted(refreshToken)) {
-            throw new IllegalArgumentException("Refresh Token inválido o ya expirado");
-        }
 
         // Extraer el username desde el token
         final String username = jwtUtils.extractUsernameRefreshToken(refreshToken);
@@ -60,14 +45,10 @@ public class AuthImplementation implements IAuthService{
             throw new IllegalArgumentException("Refresh Token Inválido");
         }
 
-        // Buscar al usuario en base de datos
-        final User user = userRepository.findByUsername(username)
+        // Buscar al usuario en base de datos y comprobar que el usuario del token este 
+        //en la base de datos y este activo
+        userRepository.findByUsernameAndDeletedAtIsNull(username)
             .orElseThrow(()-> new UsernameNotFoundException("El nombre de usuario del token no existe en el sistema"));
-
-        // Validar el token contra los datos del usuario (firma, expiración, etc.)
-        if (!jwtUtils.isRefreshTokenValid(refreshToken, user)){
-            throw new IllegalArgumentException("Refresh Token Inválido");
-        }
 
         // Clonar los claims del token original para reutilizarlos en el nuevo access token
         Claims claims = Jwts.parser()

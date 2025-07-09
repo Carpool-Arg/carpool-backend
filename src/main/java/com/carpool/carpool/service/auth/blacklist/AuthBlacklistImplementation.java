@@ -9,7 +9,6 @@ import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -46,7 +45,7 @@ public class AuthBlacklistImplementation implements IAuthBlacklistService{
             String jwtToken = token.replace("Bearer ", "");
 
             //Calcular el tiempo de expiracion del access token
-            long expirationTime = jwtUtils.getTokenExpiration(jwtToken);
+            long expirationTime = jwtUtils.getAccessTokenExpiration(jwtToken);
 
             //Cargar el token en redis, con el prefijo especificado  y el valor true (sirve para saber que la clave existe)
             redisTemplate.opsForValue().set(TOKEN_BLACKLIST_PREFIX + jwtToken, "true", expirationTime, TimeUnit.SECONDS);

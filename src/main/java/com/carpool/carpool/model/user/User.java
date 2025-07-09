@@ -112,6 +112,6 @@ public class User implements Serializable {
     private Long deleted_by;
 
     public boolean isEnabled(){
-        return deleted_by == null;
+        return deleted_at == null;
     }
 }

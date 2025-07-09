@@ -127,7 +127,7 @@ public class UserImplementation implements IUserService {
      */
 
     private void existsByUsername(String username){
-        userRepository.findByUsername(username).ifPresent(user -> {
+        userRepository.findByUsernameAndDeletedAtIsNull(username).ifPresent(user -> {
             throw new ConflictException(EXIST_USER.concat("nombre de usuario ingresado."));
         });
     } 
