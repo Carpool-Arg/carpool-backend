@@ -1,5 +1,6 @@
 package com.carpool.carpool.service.auth.blacklist;
 
+import com.carpool.carpool.dto.security.logout.LogoutRequestDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.response.ResponseStateEnum;
 import com.carpool.carpool.security.utils.JwtUtils;
@@ -7,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -32,21 +34,36 @@ public class AuthBlacklistImplementation implements IAuthBlacklistService{
     /**
      * Agrega un token JWT a la blacklist con un tiempo de expiración igual
      * al tiempo restante de vida del token.
-     *
      * @param token token JWT completo (con prefijo "Bearer ")
+     * @param logoutRequestDTO dto con el refresh token
      * @return response respuesta con mensaje y estado de la operación
      */
     @Override
-    public Response<Void> blacklistToken(String token) {
+    public Response<Void> blacklistToken(String token, LogoutRequestDTO logoutRequestDTO) {
         try {
-            //Obtenemos el token
+            //Obtenemos el access token
             String jwtToken = token.replace("Bearer ", "");
 
-            //Calcular el tiempo de expiracion de dicho token
-            long expirationTime = jwtUtils.getTokenExpiration(jwtToken);
+            //Calcular el tiempo de expiracion del access token
+            long expirationTime = jwtUtils.getAccessTokenExpiration(jwtToken);
 
             //Cargar el token en redis, con el prefijo especificado  y el valor true (sirve para saber que la clave existe)
             redisTemplate.opsForValue().set(TOKEN_BLACKLIST_PREFIX + jwtToken, "true", expirationTime, TimeUnit.SECONDS);
+
+            //Obtener el refresh token
+            String refreshToken = logoutRequestDTO.getRefreshToken();
+
+            //Verificar si envían el token con la palabra Bearer
+            if (refreshToken.startsWith("Bearer ")) {
+                //En caso de ser así, eliminarla
+                refreshToken = refreshToken.replace("Bearer ", "");
+            }
+
+            //Calcular el tiempo de expiracion del refresh token
+            long refreshTokenExpiration = jwtUtils.getRefreshTokenExpiration(refreshToken);
+
+            //Cargar el token en redis, con el prefijo especificado  y el valor true (sirve para saber que la clave existe)
+            redisTemplate.opsForValue().set(TOKEN_BLACKLIST_PREFIX + refreshToken, "true", refreshTokenExpiration, TimeUnit.SECONDS);
 
             return new Response<>(List.of("Sesión cerrada correctamente"), ResponseStateEnum.OK);
         } catch (RedisConnectionFailureException e) {

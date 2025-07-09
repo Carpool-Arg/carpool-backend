@@ -114,7 +114,7 @@ public class UserImplementation implements IUserService {
      * @throws ConflictException si hay un usuario registrado con este email
      */
     private void existsByEmail(String email){
-        userRepository.findByEmail(email).ifPresent(user -> {
+        userRepository.findByEmailAndDeletedAtIsNull(email).ifPresent(user -> {
             throw new IllegalArgumentException(EXIST_USER.concat("correo electrónico ingresado."));
         });
     }
@@ -127,7 +127,7 @@ public class UserImplementation implements IUserService {
      */
 
     private void existsByUsername(String username){
-        userRepository.findByUsername(username).ifPresent(user -> {
+        userRepository.findByUsernameAndDeletedAtIsNull(username).ifPresent(user -> {
             throw new ConflictException(EXIST_USER.concat("nombre de usuario ingresado."));
         });
     } 
@@ -139,7 +139,7 @@ public class UserImplementation implements IUserService {
      * @throws ConflictException si hay un usuario registrado con este dni
      */
     private void existsByDni(String dni){
-        userRepository.findByDni(dni).ifPresent(user -> { 
+        userRepository.findByDniAndDeletedAtIsNull(dni).ifPresent(user -> {
             throw new ConflictException(EXIST_USER.concat("DNI ingresado."));
         });
     }

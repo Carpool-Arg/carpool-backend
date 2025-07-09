@@ -3,11 +3,9 @@ package com.carpool.carpool.security.filter;
 import static com.carpool.carpool.security.config.TokenJwtConfig.CONTENT_TYPE;
 import static com.carpool.carpool.security.config.TokenJwtConfig.HEADER_AUTHORIZATION;
 import static com.carpool.carpool.security.config.TokenJwtConfig.PREFIX_TOKEN;
-import static com.carpool.carpool.security.config.TokenJwtConfig.SECRET_KEY;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -21,9 +19,11 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.carpool.carpool.dto.user.UserLoginDTO;
+import com.carpool.carpool.dto.security.token.TokenResponseDTO;
+import com.carpool.carpool.dto.security.login.loginRequestDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.model.CustomUserDetails;
+import com.carpool.carpool.security.utils.JwtUtils;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,8 +49,11 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     private AuthenticationManager authenticationManager;
 
-    public JwtAuthenticationFilter(AuthenticationManager authenticationManager) {
+    private final JwtUtils jwtUtils;
+
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, JwtUtils jwtUtils) {
         this.authenticationManager = authenticationManager;
+        this.jwtUtils = jwtUtils;
     }
 
     /**
@@ -68,10 +71,10 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException {
 
-        UserLoginDTO userLogin = null;
+        loginRequestDTO userLogin = null;
 
         try {
-            userLogin = new ObjectMapper().readValue(request.getInputStream(), UserLoginDTO.class);
+            userLogin = new ObjectMapper().readValue(request.getInputStream(), loginRequestDTO.class);
         } catch (StreamReadException e) {
         } catch (IOException e) {
             throw new RuntimeException("Error al leer las credenciales de la petición", e);
@@ -94,35 +97,45 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException {
 
+        // Obtener el usuario autenticado casteado a CustomUserDetails
         CustomUserDetails authenticatedUser = (CustomUserDetails) authResult.getPrincipal();
+
+        // Extraer el nombre de usuario del usuario autenticado
         String username = authenticatedUser.getUsername();
+
+        // Obtener los roles/authorities del usuario para incluirlos en el token
         Collection<? extends GrantedAuthority> authorities = authenticatedUser.getAuthorities();
 
         LOGGER.info("AUTENTICACION EXITOSA DEL USUARIO: {}", username);
 
+        // Construir los claims para el JWT, agregando roles y username
         Claims claims = Jwts.claims()
                 .add(AUTHORITIES, new ObjectMapper().writeValueAsString(authorities))
                 .add(USERNAME, username)
         .build();
 
-        String token = Jwts.builder()
-                .subject(username)
-                .claims(claims)
-                .expiration(new Date(System.currentTimeMillis() + 3600000))
-                .issuedAt(new Date())
-                .signWith(SECRET_KEY)
-                .compact();
+        // Generar el access token con duración de 1 día y los claims
+        String accessToken = jwtUtils.generateAccessToken(username, claims);
 
-        response.addHeader(HEADER_AUTHORIZATION, PREFIX_TOKEN + token);
+        // Generar el refresh token con duración de 7 días (604800000 ms) y los mismos claims
+        String refreshToken = jwtUtils.generateRefreshToken(username, claims);
 
-        ResponseEntity<Response<String>> responseBody = new ResponseEntity<>(
+        // Agregar el access token en el header Authorization de la respuesta HTTP
+        response.addHeader(HEADER_AUTHORIZATION, PREFIX_TOKEN + accessToken);
+
+        // Crear un DTO que contiene ambos tokens para enviarlo en el cuerpo de la respuesta
+        TokenResponseDTO tokens = new TokenResponseDTO(accessToken,refreshToken);
+
+        // Construir el ResponseEntity con mensaje de éxito, DTO y código HTTP 200 OK
+        ResponseEntity<Response<TokenResponseDTO>> responseBody = new ResponseEntity<>(
             ResponseUtils.buildOKResponse(
                 List.of(username + ": Ha iniciado sesión exitosamente."),
-                token
+                tokens
             ), 
             HttpStatus.OK
         );
 
+        // Escribir el cuerpo de la respuesta en formato JSON y enviarla al cliente
         ResponseUtils.writeResponse(response, responseBody, CONTENT_TYPE);
     }
 

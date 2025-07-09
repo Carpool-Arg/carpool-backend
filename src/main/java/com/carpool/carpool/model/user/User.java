@@ -44,13 +44,10 @@ public class User implements Serializable {
     @NotBlank(message = "El nombre de usuario no puede quedar en blanco.")
     @Size(min = 3, max = 25, message = "El nombre de usuario debe tener entre 3 y 25 caracteres.")
     @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "El nombre de usuario debe contener únicamente letras, números y guiones bajos.")
-    @Column(unique = true)
     private String username;
 
     @NotBlank(message = "El correo electrónico no puede quedar en blanco.")
     @Size(max = 75, message = "El correo electrónico debe tener como máximo 75 caracteres.")
-    @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "El correo electrónico debe ser una direccón de correo válida.")
-    @Column(unique = true)
     private String email;
 
     @NotBlank(message = "La contraseña no puede quedar en blanco.")
@@ -61,7 +58,6 @@ public class User implements Serializable {
     @NotBlank(message = "El número del DNI no puede quedar en blanco.")
     @Size(min = 7, max = 50, message = "El número del DNI debe tener entre 7 y 50 caracteres.")
     @Pattern(regexp = "^[0-9]+$", message = "El número del DNI debe contener únicamente números.")
-    @Column(unique = true)
     private String dni;
 
     @NotBlank(message = "El número de teléfono no puede quedar en blanco.")
@@ -106,12 +102,12 @@ public class User implements Serializable {
     }
 
     @Column(name = "deleted_at")
-    private LocalDateTime deleted_at;
+    private LocalDateTime deletedAt;
 
     @Column(name = "deleted_by")
     private Long deleted_by;
 
     public boolean isEnabled(){
-        return deleted_by == null;
+        return deletedAt == null;
     }
 }
