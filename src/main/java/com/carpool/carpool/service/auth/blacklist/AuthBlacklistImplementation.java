@@ -61,7 +61,7 @@ public class AuthBlacklistImplementation implements IAuthBlacklistService{
             }
 
             //Calcular el tiempo de expiracion del refresh token
-            long refreshTokenExpiration = jwtUtils.getTokenExpiration(refreshToken);
+            long refreshTokenExpiration = jwtUtils.getRefreshTokenExpiration(refreshToken);
 
             //Cargar el token en redis, con el prefijo especificado  y el valor true (sirve para saber que la clave existe)
             redisTemplate.opsForValue().set(TOKEN_BLACKLIST_PREFIX + refreshToken, "true", refreshTokenExpiration, TimeUnit.SECONDS);

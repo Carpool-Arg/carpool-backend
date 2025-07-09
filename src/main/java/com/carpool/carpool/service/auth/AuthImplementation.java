@@ -54,7 +54,7 @@ public class AuthImplementation implements IAuthService{
         }
 
         // Extraer el username desde el token
-        final String username = jwtUtils.extractUsername(refreshToken);
+        final String username = jwtUtils.extractUsernameRefreshToken(refreshToken);
 
         if(username == null){
             throw new IllegalArgumentException("Refresh Token Inválido");
@@ -65,19 +65,19 @@ public class AuthImplementation implements IAuthService{
             .orElseThrow(()-> new UsernameNotFoundException("El nombre de usuario del token no existe en el sistema"));
 
         // Validar el token contra los datos del usuario (firma, expiración, etc.)
-        if (!jwtUtils.isTokenValid(refreshToken, user)){
+        if (!jwtUtils.isRefreshTokenValid(refreshToken, user)){
             throw new IllegalArgumentException("Refresh Token Inválido");
         }
 
         // Clonar los claims del token original para reutilizarlos en el nuevo access token
         Claims claims = Jwts.parser()
-                .verifyWith(SECRET_KEY)
+                .verifyWith(SECRET_KEY_REFRESH)
                 .build()
                 .parseSignedClaims(refreshToken)
                 .getPayload();
 
         // Generar nuevo access token (válido por 1 día)
-        final String accessToken = jwtUtils.generateToken(username,86400000,claims);
+        final String accessToken = jwtUtils.generateAccessToken(username,claims);
 
         // Construir el DTO de respuesta con el nuevo access token y el mismo refresh token
         TokenResponseDTO dto = new TokenResponseDTO(accessToken, refreshToken);

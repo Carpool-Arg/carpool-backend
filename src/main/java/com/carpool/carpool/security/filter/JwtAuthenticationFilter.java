@@ -114,11 +114,11 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 .add(USERNAME, username)
         .build();
 
-        // Generar el access token con duración de 1 día (86400000 ms) y los claims
-        String accessToken = jwtUtils.generateToken(username, 86400000, claims);
+        // Generar el access token con duración de 1 día y los claims
+        String accessToken = jwtUtils.generateAccessToken(username, claims);
 
         // Generar el refresh token con duración de 7 días (604800000 ms) y los mismos claims
-        String refreshToken = jwtUtils.generateToken(username, 604800000, claims);
+        String refreshToken = jwtUtils.generateRefreshToken(username, claims);
 
         // Agregar el access token en el header Authorization de la respuesta HTTP
         response.addHeader(HEADER_AUTHORIZATION, PREFIX_TOKEN + accessToken);
