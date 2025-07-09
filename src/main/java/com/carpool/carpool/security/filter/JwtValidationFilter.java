@@ -16,6 +16,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
+import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.utils.SimpleGrantedAuthorityJsonCreator;
 import com.carpool.carpool.utils.ResponseUtils;
@@ -40,10 +41,12 @@ public class JwtValidationFilter extends BasicAuthenticationFilter{
             .addMixIn(SimpleGrantedAuthority.class, SimpleGrantedAuthorityJsonCreator.class);
 
     private final IAuthBlacklistService authBlacklistService;
+    private final UserRepository userRepository;
 
-    public JwtValidationFilter(AuthenticationManager authenticationManager, IAuthBlacklistService authBlacklistService) {
+    public JwtValidationFilter(AuthenticationManager authenticationManager, IAuthBlacklistService authBlacklistService, UserRepository userRepository) {
         super(authenticationManager);
         this.authBlacklistService = authBlacklistService;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -69,12 +72,13 @@ public class JwtValidationFilter extends BasicAuthenticationFilter{
             chain.doFilter(request, response);
             return;
         }
-
+        
         String token = header.replace(PREFIX_TOKEN, "");
-
+        
         //Verificar si el token esta en la blacklist
         if (!checkTokenInBlacklist(token, response)) return;
-
+        
+        
         try {
             UsernamePasswordAuthenticationToken authenticationToken = getAuthenticationFromToken(token, request);
             SecurityContextHolder .getContext().setAuthentication(authenticationToken);
@@ -148,6 +152,10 @@ public class JwtValidationFilter extends BasicAuthenticationFilter{
         }
 
         String username = claims.getSubject();
+
+        userRepository.findByUsernameAndDeletedAtIsNull(username)
+            .orElseThrow(()-> new JwtException("El nombre de usuario del token no existe en el sistema"));
+
         String rawAuthorities = claims.get(JwtAuthenticationFilter.AUTHORITIES).toString();
 
         Collection<? extends GrantedAuthority> authorities = Arrays.asList(

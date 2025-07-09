@@ -24,6 +24,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.security.filter.JwtAuthenticationFilter;
 import com.carpool.carpool.security.filter.JwtValidationFilter;
 
@@ -39,6 +40,9 @@ public class SpringSecurityConfig {
 
     @Autowired
     private JwtUtils  jwtUtils;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Bean
     AuthenticationManager authenticationManager() throws Exception {
@@ -62,7 +66,7 @@ public class SpringSecurityConfig {
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         )
         .addFilter(new JwtAuthenticationFilter(authenticationManager(), jwtUtils))
-        .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService))
+        .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService, userRepository))
         .csrf(config-> config.disable())
         .cors(cors-> cors.configurationSource(corsConfigurationSource()))
         .sessionManagement(managment->managment.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

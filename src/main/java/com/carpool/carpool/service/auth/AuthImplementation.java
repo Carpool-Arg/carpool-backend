@@ -8,7 +8,6 @@ import com.carpool.carpool.utils.ResponseUtils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import static com.carpool.carpool.security.config.TokenJwtConfig.*;
 
@@ -40,15 +39,6 @@ public class AuthImplementation implements IAuthService{
 
         // Extraer el username desde el token
         final String username = jwtUtils.extractUsernameRefreshToken(refreshToken);
-
-        if(username == null){
-            throw new IllegalArgumentException("Refresh Token Inválido");
-        }
-
-        // Buscar al usuario en base de datos y comprobar que el usuario del token este 
-        //en la base de datos y este activo
-        userRepository.findByUsernameAndDeletedAtIsNull(username)
-            .orElseThrow(()-> new UsernameNotFoundException("El nombre de usuario del token no existe en el sistema"));
 
         // Clonar los claims del token original para reutilizarlos en el nuevo access token
         Claims claims = Jwts.parser()
