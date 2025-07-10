@@ -15,9 +15,11 @@ import org.springframework.stereotype.Service;
 import com.carpool.carpool.dto.driver.DriverRequestDTO;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.mappers.driver.DriverMapper;
+import com.carpool.carpool.model.city.City;
 import com.carpool.carpool.model.driver.Driver;
 import com.carpool.carpool.model.role.Role;
 import com.carpool.carpool.model.user.User;
+import com.carpool.carpool.repository.city.CityRepository;
 import com.carpool.carpool.repository.driver.DriverRepository;
 import com.carpool.carpool.repository.role.RoleRepository;
 import com.carpool.carpool.repository.user.UserRepository;
@@ -43,6 +45,10 @@ public class DriverImplementation implements IDriverService {
     @Autowired
     private RoleRepository roleRepository; 
 
+    @Autowired
+    private CityRepository cityRepository;
+
+
     private static final String ROLE_DRIVER = "ROLE_DRIVER";
     private static final String EXIST_DRIVER_PROFILE = "Ya existe un perfil de chofer para este usuario.";
     private static final int MIN_DRIVER_AGE = 18;
@@ -60,18 +66,32 @@ public class DriverImplementation implements IDriverService {
     public Response<Void> saveDriver(DriverRequestDTO driverRequestDTO) {
         
         checkDriverAge(driverRequestDTO.getBirthDate());
-        checkIfDriverProfileExists(); 
 
         //Obtener el usuario autenticado. 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
+
         //Buscar el usuario por su nombre de usuario.
         User user = userRepository.findByUsername(username)
                 .orElseThrow( () -> new ConflictException("Usuario no encontrado.")); 
         
+        checkIfDriverProfileExists(user.getId()); 
+
+        System.out.println("----------------------------------");
+        System.out.println(user.getUsername());
+        System.out.println("----------------------------------");
         
-        Driver driver = driverMapper.convertDriverRequestDTOToDriver(driverRequestDTO, user);
+
+        City city = cityRepository.findById(driverRequestDTO.getAddressLocalityId())
+                .orElseThrow( () -> new ConflictException("Ciudad no encontrada."));
+
+        System.out.println("----------------------------------");
+        System.out.println(city.getName());
+        System.out.println("----------------------------------");
+        Driver driver = driverMapper.convertDriverRequestDTOToDriver(driverRequestDTO, user, city);
+        
         assignDriverRoleToUser(user); 
+
         driverRepository.save(driver);
         updateSecurityContext(user); 
 
@@ -101,14 +121,8 @@ public class DriverImplementation implements IDriverService {
      * @param userId id del usuario
      * @return void
      */
-    private void checkIfDriverProfileExists() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow( () -> new ConflictException("Usuario no encontrado."));
-
-        Optional<Driver> existingDriver = driverRepository.findByUserId(user.getId());
+    private void checkIfDriverProfileExists(Long userId) { 
+        Optional<Driver> existingDriver = driverRepository.findByUserId(userId);
         if (existingDriver.isPresent()) {
             throw new ConflictException(EXIST_DRIVER_PROFILE);
         }

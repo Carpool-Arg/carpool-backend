@@ -2,6 +2,7 @@ package com.carpool.carpool.model.driver;
 
 import java.time.LocalDate;
 
+import com.carpool.carpool.model.city.City;
 import com.carpool.carpool.model.user.User;
 
 import jakarta.persistence.*;
@@ -62,10 +63,10 @@ public class Driver {
     @Size(max = 255, message = "El domicilio debe tener un máximo de 255 caracteres.")
     private String addressNumber;
 
-    @NotBlank(message = "La ciudad no puede estar en blanco.")
-    @Size(max = 100, message = "La ciudad debe tener un máximo de 100 caracteres.")
-    private String addressLocality; 
-
+    @ManyToOne
+    @JoinColumn(name = "locality_id",referencedColumnName = "id", nullable = false)
+    private City city;
+    
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, unique = true)
     private User user;
