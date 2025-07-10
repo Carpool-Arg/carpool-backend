@@ -29,4 +29,9 @@ public class AuthController {
     public ResponseEntity<Response<TokenResponseDTO>> refresh(@RequestHeader("Authorization") String refreshToken) {
         return new ResponseEntity<>(authService.refreshToken(refreshToken), HttpStatus.OK);
     }
+
+    @GetMapping("/verify-token")
+    public ResponseEntity<Response<Void>> verifyToken(@RequestHeader("Authorization") String authHeader) {
+        return new ResponseEntity<>(authService.verifyToken(authHeader), HttpStatus.OK);
+    }
 }
