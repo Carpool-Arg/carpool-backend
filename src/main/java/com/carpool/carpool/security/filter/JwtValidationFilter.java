@@ -145,7 +145,7 @@ public class JwtValidationFilter extends BasicAuthenticationFilter{
                     .getPayload();
         } else {
             claims = Jwts.parser()
-                    .verifyWith(SECRET_KEY)
+                    .verifyWith(SECRET_KEY_ACCESS)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();

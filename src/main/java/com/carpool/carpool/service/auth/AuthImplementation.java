@@ -56,4 +56,30 @@ public class AuthImplementation implements IAuthService{
         // Devolver respuesta exitosa con mensaje y DTO
         return ResponseUtils.buildOKResponse(List.of("Token refrescado correctamente"), dto);
     }
+
+    /**
+     * Verifica la validez de un token JWT contenido en el encabezado Authorization.
+     * @param authHeader el valor del encabezado Authorization que debe comenzar con "Bearer " seguido del token JWT.
+     * @return response respuesta con mensaje y estado de la operación
+     */
+    public Response<Void> verifyToken(String authHeader) {
+        //Extraer la palabra Bearer
+        String token = authHeader.substring(7);
+
+        // Validar si el access token es valido en cuanto a la firma, si lo alteraron, vencimiento, etc
+        boolean valid = jwtUtils.isValidAccessToken(token);
+
+        //Si no es valido (aunque no debería entrar nunca acá porque salta en el filtro primero)
+        if (!valid) {
+            return ResponseUtils.buildErrorResponse(
+                    List.of("Token válido")
+            );
+        }
+
+        // Si el token es válido, devolver una respuesta exitosa sin payload
+        return ResponseUtils.buildOKResponse(
+                List.of("Token válido"),
+                null
+        );
+    }
 }

@@ -93,7 +93,7 @@ public class JwtUtils {
                 .claims(claims)
                 .expiration(new Date(System.currentTimeMillis() + 86400000)) //  1 dia de duracion
                 .issuedAt(new Date()) // Fecha de creación
-                .signWith(SECRET_KEY) // Firma con clave secreta
+                .signWith(SECRET_KEY_ACCESS) // Firma con clave secreta
                 .compact();
     }
 
@@ -105,7 +105,7 @@ public class JwtUtils {
      */
     public long getAccessTokenExpiration(String token) {
         Claims claims = Jwts.parser()
-                .verifyWith(SECRET_KEY)
+                .verifyWith(SECRET_KEY_ACCESS)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
@@ -114,5 +114,33 @@ public class JwtUtils {
         long now = System.currentTimeMillis(); // tiempo actual en ms desde Epoch
 
         return (expirationTime - now) / 1000; // en segundos
+    }
+
+    /**
+     * Valida si un access token JWT es válido.
+     *
+     * Verifica tanto la firma del token con la clave secreta correspondiente,
+     * como que el token no haya expirado (campo 'exp').
+     *
+     * @param token el access token JWT en formato String (sin el prefijo "Bearer ")
+     * @return true si el token es válido (firma correcta y no expirado); false en cualquier otro caso
+     */
+    public boolean isValidAccessToken(String token) {
+        try {
+            // Intenta parsear y verificar la firma del token con la clave del access token
+            Claims claims = Jwts.parser()
+                    .verifyWith(SECRET_KEY_ACCESS)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+            // Verificar si el token está expirado
+            Date expiration = claims.getExpiration();
+            return expiration.after(new Date());
+
+        } catch (Exception e) {
+            // Si hay cualquier excepción (firma inválida, token corrupto, etc.), el token es inválido
+            return false;
+        }
     }
 }
