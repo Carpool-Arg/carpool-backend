@@ -2,6 +2,7 @@ package com.carpool.carpool.security.config;
 
 import java.util.Arrays;
 
+import com.carpool.carpool.security.filter.RecaptchaFilter;
 import com.carpool.carpool.security.handler.JwtAuthenticationEntryPoint;
 import com.carpool.carpool.security.utils.JwtUtils;
 import com.carpool.carpool.service.auth.blacklist.IAuthBlacklistService;
@@ -19,6 +20,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -65,6 +67,7 @@ public class SpringSecurityConfig {
         .exceptionHandling(config -> config
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         )
+        .addFilterBefore(new RecaptchaFilter(), UsernamePasswordAuthenticationFilter.class)
         .addFilter(new JwtAuthenticationFilter(authenticationManager(), jwtUtils))
         .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService, userRepository))
         .csrf(config-> config.disable())
