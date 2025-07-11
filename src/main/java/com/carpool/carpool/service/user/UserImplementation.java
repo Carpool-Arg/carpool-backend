@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.carpool.carpool.exception.ConflictException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,18 +22,12 @@ import com.carpool.carpool.utils.ResponseUtils;
 import jakarta.transaction.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class UserImplementation implements IUserService {
 
-    @Autowired
     private RoleRepository roleRepository;
-
-    @Autowired
     private UserMapper userMapper;
-
-    @Autowired
     private UserRepository userRepository;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private static final String EXIST_USER = "Ya existe un usuario con el ";

@@ -1,7 +1,7 @@
 package com.carpool.carpool.service.auth.blacklist;
 
 import com.carpool.carpool.response.Response;
-import com.carpool.carpool.response.ResponseStateEnum;
+import com.carpool.carpool.enums.response.ResponseStateEnum;
 import com.carpool.carpool.security.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.RedisConnectionFailureException;

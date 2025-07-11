@@ -1,4 +1,4 @@
-package com.carpool.carpool.service.user;
+package com.carpool.carpool.service.user.details;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,7 +15,7 @@ import com.carpool.carpool.security.model.CustomUserDetails;
  * Clase encargada de realizar validaciones al usuario que solicita acceso a la aplicación para poder autorizar al mismo.
  */
 @Service
-public class UserDetailsServiceImpl implements UserDetailsService{
+public class UserDetailsImplementation implements UserDetailsService{
 
     @Autowired
     private UserRepository userRepository;

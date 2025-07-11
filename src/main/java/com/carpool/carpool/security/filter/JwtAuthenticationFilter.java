@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import com.carpool.carpool.security.utils.JwtUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -43,7 +44,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter{
 
     public final static String AUTHORITIES = "authorities";
-    private final static String USERNAME = "username";
+    public final static String USERNAME = "username";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
@@ -99,19 +100,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         Collection<? extends GrantedAuthority> authorities = authenticatedUser.getAuthorities();
 
         LOGGER.info("AUTENTICACION EXITOSA DEL USUARIO: {}", username);
-
-        Claims claims = Jwts.claims()
-                .add(AUTHORITIES, new ObjectMapper().writeValueAsString(authorities))
-                .add(USERNAME, username)
-        .build();
-
-        String token = Jwts.builder()
-                .subject(username)
-                .claims(claims)
-                .expiration(new Date(System.currentTimeMillis() + 3600000))
-                .issuedAt(new Date())
-                .signWith(SECRET_KEY)
-                .compact();
+        String token = JwtUtils.generateToken(username, authorities);
 
         response.addHeader(HEADER_AUTHORIZATION, PREFIX_TOKEN + token);
 
