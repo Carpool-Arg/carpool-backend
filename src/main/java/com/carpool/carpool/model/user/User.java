@@ -2,8 +2,10 @@ package com.carpool.carpool.model.user;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
+import com.carpool.carpool.enums.UserStatus;
 import com.carpool.carpool.model.role.Role;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -101,13 +103,28 @@ public class User implements Serializable {
         this.updated_at = LocalDateTime.now();
     }
 
+
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
     @Column(name = "deleted_by")
     private Long deleted_by;
 
+    @Column(name="account_status")
+    @Enumerated(EnumType.STRING)
+    private UserStatus accountStatus;
+
+    @Column(name="failed_attempts")
+    private int failedAttempts;
+
+    @Column(name="lock_time")
+    private Date lockTime;
+
     public boolean isEnabled(){
         return deletedAt == null;
+    }
+
+    public boolean isAccountNonLockedOrSuspended(){
+        return accountStatus==UserStatus.ACTIVE;
     }
 }
