@@ -15,7 +15,7 @@ public class DriverMapper {
             .birthDate(driverRequestDTO.getBirthDate())
             .addressStreet(driverRequestDTO.getAddressStreet())
             .addressNumber(driverRequestDTO.getAddressNumber())
-            .addressLocality(driverRequestDTO.getAddressLocality())
+            .addressLocality(driverRequestDTO.getLocality())
             .user(user)
             .build();
     } 

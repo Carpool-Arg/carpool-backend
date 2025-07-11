@@ -34,7 +34,7 @@ public class Driver {
     private Long id;
 
     @NotBlank(message = "El carnet no puede estar en blanco.")
-    @Size(max= 5, message = "El carnet debe tener un máximo de 5 caracteres.")
+    @Size(max= 2, message = "El carnet debe tener un máximo de 5 caracteres.")
     @Pattern(regexp = "^(A[1-3]|B[1-2]|C[1-3]|D[1-4]|E[1-2]|F|G[1-3])$",
              message = "La clase del carnet de conducir no es válida. Debe ser de las categorías vigentes.")
     private String licenseClass;
@@ -46,11 +46,11 @@ public class Driver {
      *       Utilizamos esta validación para asegurarnos de que la fecha de nacimiento del conductor
      */
 
-    @NotNull(message = "La fecha de venciminto del Carnet es obligatoria.")
+    @NotNull(message = "La fecha de vencimiento del carnet no puede ser nula.")
     @FutureOrPresent(message = "La fecha de vencimiento del carnet debe ser una fecha futura o presente.")
     private LocalDate licenseExpirationDate;
 
-    @NotNull(message= "La fecha de nacimiento es obligatoria.") 
+    @NotNull(message= "La fecha de nacimiento no puede ser nula.") 
     @Past(message = "La fecha de nacimiento debe ser una fecha pasada.")
     private LocalDate birthDate;
 

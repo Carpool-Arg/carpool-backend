@@ -72,6 +72,7 @@ public class DriverImplementation implements IDriverService {
         
         Driver driver = driverMapper.convertDriverRequestDTOToDriver(driverRequestDTO, user);
         assignDriverRoleToUser(user); 
+        normalizedDriverFields(driver); 
         driverRepository.save(driver);
         updateSecurityContext(user); 
 
@@ -152,5 +153,17 @@ public class DriverImplementation implements IDriverService {
                 );
 
         SecurityContextHolder.getContext().setAuthentication(newAuthentication);
+    }
+
+    /**
+     * Metodo utilizado para normalizar los campos del chofer.
+     * Este metodo se puede utilizar para realizar cualquier normalizacion de los campos del chofer.
+     * @param driver
+     * @return void
+     */
+    private void normalizedDriverFields(Driver driver){
+        driver.setLicenseClass(driver.getLicenseClass().toUpperCase().trim());
+        driver.setAddressStreet(driver.getAddressStreet().toUpperCase().trim());
+        driver.setAddressLocality(driver.getAddressLocality().toUpperCase().trim());
     }
 }
