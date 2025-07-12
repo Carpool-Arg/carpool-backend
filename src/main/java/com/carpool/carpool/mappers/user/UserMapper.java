@@ -2,6 +2,7 @@ package com.carpool.carpool.mappers.user;
 
 import java.util.List;
 
+import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
 import com.carpool.carpool.enums.user.UserStatus;
 import org.springframework.stereotype.Component;
 
@@ -23,5 +24,17 @@ public class UserMapper {
             .status(UserStatus.PENDING_VERIFICATION)
             .roles(roles)
             .build();
-    } 
+    }
+
+    public User convertUserUpdateRequestDTOToUser(User user, UserUpdateRequestDTO userUpdateRequestDTO, String encritpedPassword, List<Role> roles){
+        return user.toBuilder()
+                .lastname(userUpdateRequestDTO.getLastname())
+                .username(userUpdateRequestDTO.getUsername())
+                .password(encritpedPassword)
+                .dni(userUpdateRequestDTO.getDni())
+                .phone(userUpdateRequestDTO.getPhone())
+                .status(UserStatus.PENDING_VERIFICATION)
+                .roles(roles)
+                .build();
+    }
 }

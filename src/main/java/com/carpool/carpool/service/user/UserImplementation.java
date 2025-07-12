@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
+import com.carpool.carpool.enums.user.UserStatus;
 import com.carpool.carpool.exception.ConflictException;
+import com.carpool.carpool.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,14 +24,14 @@ import com.carpool.carpool.utils.ResponseUtils;
 
 import jakarta.transaction.Transactional;
 
-@Service
 @RequiredArgsConstructor
+@Service
 public class UserImplementation implements IUserService {
 
-    private RoleRepository roleRepository;
-    private UserMapper userMapper;
-    private UserRepository userRepository;
-    private PasswordEncoder passwordEncoder;
+    private final RoleRepository roleRepository;
+    private final UserMapper userMapper;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     private static final String EXIST_USER = "Ya existe un usuario con el ";
     private static final String ROLE_USER = "ROLE_USER";
@@ -59,6 +62,34 @@ public class UserImplementation implements IUserService {
         userRepository.save(user);
 
         return ResponseUtils.buildOKResponse(List.of("Usuario creado") , null);
+    }
+
+    /**
+     * Metodo utilizado para actualizar un usuario con registro parcial en la base de datos. Se realizan controles para
+     * lanzar las excepciones correspondientes
+     * @param {@link UserUpdateRequestDTO} request con los datos del usuario a guardar
+     * @return {@link Response<Void>} devolviendo el mensaje si el usuario fue creado
+     */
+    @Override
+    @Transactional
+    public Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO, String email) {
+
+        User user = getUserByEmail(email);
+        passwordsMatch(userUpdateRequestDTO.getPassword(), userUpdateRequestDTO.getConfirmPassword());
+        existsByUsername(userUpdateRequestDTO.getUsername());
+        existsByDni(userUpdateRequestDTO.getDni());
+
+        Optional<Role> optionalRoleUser = roleRepository.findByName(ROLE_USER);
+        List<Role> roles = new ArrayList<>();
+        optionalRoleUser.ifPresent(roles::add);
+        user = userMapper.convertUserUpdateRequestDTOToUser(
+                user,
+                userUpdateRequestDTO,
+                passwordEncoder.encode(userUpdateRequestDTO.getPassword()),
+                roles);
+        userRepository.save(user);
+
+        return ResponseUtils.buildOKResponse(List.of("Usuario con registro parcial creado") , null);
     }
 
     /**
@@ -115,12 +146,22 @@ public class UserImplementation implements IUserService {
     }
 
     /**
+     * Meotodo para comprobar que exista un usuario en la base de datos
+     * con el correo electronico recibido de {@link UserUpdateRequestDTO}
+     * @param email el email del usuario
+     * @throws {@link ResourceNotFoundException} si no hay un usuario con el email
+     */
+    private User getUserByEmail(String email){
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontró el correo: " + email));
+    }
+
+    /**
      * Meotodo para comprobar que no exista otro usuario en la base de datos 
      * con el mismo nombre de usuario que el ingresado
      * @param username el nombre de usuario ingresado
      * @throws ConflictException si hay un usuario con este nombre de usuario
      */
-
     private void existsByUsername(String username){
         userRepository.findByUsername(username).ifPresent(user -> {
             throw new ConflictException(EXIST_USER.concat("nombre de usuario ingresado."));

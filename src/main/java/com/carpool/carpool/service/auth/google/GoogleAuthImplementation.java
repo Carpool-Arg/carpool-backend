@@ -1,6 +1,6 @@
 package com.carpool.carpool.service.auth.google;
 
-import com.carpool.carpool.dto.user.google.GoogleAuthResponse;
+import com.carpool.carpool.dto.google.GoogleAuthResponse;
 import com.carpool.carpool.enums.user.UserStatus;
 import com.carpool.carpool.exception.InvalidGoogleTokenException;
 import com.carpool.carpool.model.user.User;

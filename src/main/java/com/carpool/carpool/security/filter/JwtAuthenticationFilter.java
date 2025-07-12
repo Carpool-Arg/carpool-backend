@@ -3,11 +3,9 @@ package com.carpool.carpool.security.filter;
 import static com.carpool.carpool.security.config.TokenJwtConfig.CONTENT_TYPE;
 import static com.carpool.carpool.security.config.TokenJwtConfig.HEADER_AUTHORIZATION;
 import static com.carpool.carpool.security.config.TokenJwtConfig.PREFIX_TOKEN;
-import static com.carpool.carpool.security.config.TokenJwtConfig.SECRET_KEY;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 
 import com.carpool.carpool.security.utils.JwtUtils;
@@ -29,8 +27,6 @@ import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

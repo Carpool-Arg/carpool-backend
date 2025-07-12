@@ -3,6 +3,7 @@ package com.carpool.carpool.exception;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.utils.ResponseUtils;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -71,6 +72,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Response<Void>> handleIllegalArgument(IllegalArgumentException ex) {
         return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(ex.getMessage())), HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Excepcion utilizada para cuando un recurso no se encuentra.
+     * @param ex Excepción
+     * @return {@link ResponseEntity} que contiene {@link Response} con data {@link Void}
+     */
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Response<Void>> handleNotFound(IllegalArgumentException ex) {
+        return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(ex.getMessage())), HttpStatus.NOT_FOUND);
     }
 
     /**

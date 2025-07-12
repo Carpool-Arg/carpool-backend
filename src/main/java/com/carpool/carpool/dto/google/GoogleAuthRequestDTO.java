@@ -1,4 +1,4 @@
-package com.carpool.carpool.dto.user.google;
+package com.carpool.carpool.dto.google;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;

@@ -1,4 +1,4 @@
-package com.carpool.carpool.dto.user.google;
+package com.carpool.carpool.dto.google;
 
 import com.carpool.carpool.enums.user.UserStatus;
 import io.swagger.v3.oas.annotations.media.Schema;

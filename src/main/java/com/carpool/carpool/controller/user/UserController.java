@@ -1,5 +1,6 @@
 package com.carpool.carpool.controller.user;
 
+import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,7 @@ import jakarta.validation.Valid;
 @RequiredArgsConstructor
 public class UserController {
 
-    private IUserService userService;
+    private final IUserService userService;
 
     @Operation(
             summary = "Registrar un nuevo usuario"
@@ -32,12 +33,26 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "Bad request"),
             @ApiResponse(responseCode = "409", description = "Errores de validaciones", content = @Content)
     })
-    @PostMapping
+    @PostMapping()
     public ResponseEntity<Response<Void>> save(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Request para crear un usuario", required = true)
             @Valid
             @RequestBody UserRequestDTO userRequestDTO) {
         return new ResponseEntity<>(userService.saveUser(userRequestDTO), HttpStatus.CREATED);
+    }
+    @Operation(summary = "Completado del registro parcial de un usuario")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Usuario creado con exito"),
+            @ApiResponse(responseCode = "404", description = "Bad request"),
+            @ApiResponse(responseCode = "409", description = "Errores de validaciones", content = @Content)
+    })
+    @PostMapping("/complete-registration")
+    public ResponseEntity<Response<Void>> update(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Request para completar el registro parcial de un usuario", required = true)
+            @Valid
+            @RequestParam String email,
+            @RequestBody UserUpdateRequestDTO userUpdateRequestDTO) {
+        return new ResponseEntity<>(userService.updateUser(userUpdateRequestDTO, email), HttpStatus.OK);
     }
 
     @Operation(summary = "Validar si un username se encuentra en uso")

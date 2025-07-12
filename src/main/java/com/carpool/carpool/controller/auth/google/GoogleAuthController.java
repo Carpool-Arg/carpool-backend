@@ -1,7 +1,7 @@
 package com.carpool.carpool.controller.auth.google;
 
-import com.carpool.carpool.dto.user.google.GoogleAuthRequestDTO;
-import com.carpool.carpool.dto.user.google.GoogleAuthResponse;
+import com.carpool.carpool.dto.google.GoogleAuthRequestDTO;
+import com.carpool.carpool.dto.google.GoogleAuthResponse;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.auth.google.IGoogleAuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Tag(name = "Auth Google", description = "Operaciones relacionadas con autenticacion con Google")
-@RequestMapping("/auth")
+@RequestMapping("/auth-google")
 @RequiredArgsConstructor
 public class GoogleAuthController {
 
@@ -33,7 +33,7 @@ public class GoogleAuthController {
             @ApiResponse(responseCode = "200", description = "Token correcto"),
             @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
     })
-    @PostMapping("/google")
+    @PostMapping
     public ResponseEntity<Response<GoogleAuthResponse>> authenticateWithGoogle(@Valid @RequestBody GoogleAuthRequestDTO request){
         return new ResponseEntity<>(googleAuthService.authenticate(request.getIdToken()), HttpStatus.OK);
     }
