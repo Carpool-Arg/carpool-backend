@@ -61,6 +61,7 @@ public class SpringSecurityConfig {
         .requestMatchers(HttpMethod.GET, "/users/validate-username").permitAll()
         .requestMatchers(HttpMethod.GET, "/users/validate-email").permitAll()
         .requestMatchers(HttpMethod.GET, "/users/validate-dni").permitAll()
+        .requestMatchers(HttpMethod.POST, "/drivers/become_driver").authenticated()
         .anyRequest().authenticated())
         .exceptionHandling(config -> config
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
