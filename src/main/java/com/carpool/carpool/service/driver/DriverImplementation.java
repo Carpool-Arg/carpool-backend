@@ -44,36 +44,44 @@ public class DriverImplementation implements IDriverService {
     private RoleRepository roleRepository; 
 
     private static final String ROLE_DRIVER = "ROLE_DRIVER";
-    private static final String EXIST_DRIVER_PROFILE = "Ya existe un perfil de chofer para este usuario.";
-    private static final int MIN_DRIVER_AGE = 18;
 
+    private static final String EXIST_DRIVER_PROFILE = "Ya existe un perfil de chofer para este usuario.";
+
+    private static final int MIN_DRIVER_AGE = 18;
 
     /**
      * Metodo utilizado para almacenar un chofer en la base de datos. Se realizan controles para
      * lanzar las excepciones correspondientes.
      * @param driverRequestDTO request con los datos del chofer a guardar
      * @return Response<Void> devolviendo el mensaje si el chofer fue creado
-     * 
+     * @throws ConflictException si el usuario no fue encontrado
      */
     @Override
     @Transactional
     public Response<Void> saveDriver(DriverRequestDTO driverRequestDTO) {
-        
         checkDriverAge(driverRequestDTO.getBirthDate());
+
         checkIfDriverProfileExists(); 
 
         //Obtener el usuario autenticado. 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
         String username = authentication.getName();
+
         //Buscar el usuario por su nombre de usuario.
         User user = userRepository.findByUsername(username)
                 .orElseThrow( () -> new ConflictException("Usuario no encontrado.")); 
-        
-        
+
         Driver driver = driverMapper.convertDriverRequestDTOToDriver(driverRequestDTO, user);
-        assignDriverRoleToUser(user); 
-        normalizedDriverFields(driver); 
+
+        //Asignar el rol de chofer, si aun no lo posee
+        assignDriverRoleToUser(user);
+
+        normalizedDriverFields(driver);
+
         driverRepository.save(driver);
+
+        // Actualizamos el contexto de seguridad con los nuevos roles asignados
         updateSecurityContext(user); 
 
         return ResponseUtils.buildOKResponse(List.of("El perfil de chofer ha sido creado correctamente."), null);
@@ -83,14 +91,18 @@ public class DriverImplementation implements IDriverService {
      * Metodo utilizado para verificar la edad del chofer.
      * Se lanza una excepcion si la fecha de nacimiento es en el futuro o si el chofer es menor de edad.
      * @param birthDate fecha de nacimiento del chofer
-     * @return void 
+     * @return void
+     * @throws ConflictException si la fecha de nacimiento es futura o el chofer es menor de edad.
      */
     private void checkDriverAge(LocalDate birthDate) {
         LocalDate currentDate = LocalDate.now();
+
         if (birthDate.isAfter(currentDate)) {
             throw new ConflictException("La fecha de nacimiento no puede ser en el futuro.");
         }
+
         int age = Period.between(birthDate, currentDate).getYears();
+
         if (age < MIN_DRIVER_AGE) { 
             throw new ConflictException("El chofer debe tener al menos " + MIN_DRIVER_AGE + " años de edad.");
         }
@@ -99,17 +111,20 @@ public class DriverImplementation implements IDriverService {
     /**
      * Metodo utilizado para verificar si el usuario ya tiene un perfil de chofer.
      * Si ya existe un perfil de chofer, se lanza una excepcion.
-     * @param userId id del usuario
+     *
      * @return void
+     * @throws ConflictException si el usuario no se encuentra o ya existe un perfil de chofer.
      */
     private void checkIfDriverProfileExists() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
         String username = authentication.getName();
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow( () -> new ConflictException("Usuario no encontrado."));
 
         Optional<Driver> existingDriver = driverRepository.findByUserId(user.getId());
+
         if (existingDriver.isPresent()) {
             throw new ConflictException(EXIST_DRIVER_PROFILE);
         }
@@ -120,13 +135,15 @@ public class DriverImplementation implements IDriverService {
      * Se verifica si el usuario ya tiene el rol de chofer,
      * @param user
      * @return void
+     * @throws ConflictException si el rol "ROLE_DRIVER" no existe en la base de datos.
      */
     private void assignDriverRoleToUser(User user) {
         // Usamos la constante ROLE_DRIVER definida arriba
         Role driverRole = roleRepository.findByName(ROLE_DRIVER) // <-- ¡Aquí se usa la constante!
              .orElseThrow( () -> new ConflictException("Rol '" + ROLE_DRIVER + "' no encontrado.")); 
         
-        List<Role> userRoles = new ArrayList<>(user.getRoles()); 
+        List<Role> userRoles = new ArrayList<>(user.getRoles());
+
         if (!userRoles.contains(driverRole)) { 
             userRoles.add(driverRole); 
             user.setRoles(userRoles); 

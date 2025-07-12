@@ -35,7 +35,7 @@ public class DriverController {
             content = @Content(mediaType = "application/json"))
     })
 
-    @PostMapping("/become_driver")    
+    @PostMapping
     ResponseEntity<Response<Void>> createDriverProfile(@Valid @RequestBody DriverRequestDTO driverRequestDTO) {
         Response<Void> serviceResponse = driverService.saveDriver(driverRequestDTO);
         return new ResponseEntity<>(serviceResponse, HttpStatus.CREATED);
