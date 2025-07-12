@@ -83,27 +83,6 @@ public class User implements Serializable {
     @Column(name = "updated_at")
     private LocalDateTime updated_at;
 
-    /*
-     * Para el created_at empleamos la anotacicón @PrePersist.
-     * Esto hace que que el método onCreate() se ejecute justo antes de que la
-     * entidad se inserte en la base de datos.
-     */
-    @PrePersist
-    protected void onCreate() {
-        this.created_at = LocalDateTime.now();
-    }
-
-    /*
-     * Para el updated_at empleamos la anotación @PreUpdate.
-     * Esto hace que el método onUpdate() se ejecute justo antes de que la entidad
-     * se actualice en la base de datos.
-     */
-    @PreUpdate
-    protected void onUpdate() {
-        this.updated_at = LocalDateTime.now();
-    }
-
-
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
@@ -119,6 +98,35 @@ public class User implements Serializable {
 
     @Column(name="lock_time")
     private Date lockTime;
+
+    @Column(name="last_failed_login_time")
+    private Date lastFailedLoginTime;
+
+    /*
+     * Para el created_at, los failed_attempts y el accountStatus empleamos la anotacicón @PrePersist.
+     * Esto hace que que el método onCreate() se ejecute justo antes de que la
+     * entidad se inserte en la base de datos.
+     */
+    @PrePersist
+    protected void onCreate() {
+        this.created_at = LocalDateTime.now();
+        this.failedAttempts = 0;
+        this.accountStatus = UserStatus.ACTIVE;
+    }
+
+
+    /*
+     * Para el updated_at empleamos la anotación @PreUpdate.
+     * Esto hace que el método onUpdate() se ejecute justo antes de que la entidad
+     * se actualice en la base de datos.
+     */
+    @PreUpdate
+    protected void onUpdate() {
+        this.updated_at = LocalDateTime.now();
+    }
+
+
+
 
     public boolean isEnabled(){
         return deletedAt == null;

@@ -7,6 +7,7 @@ import static com.carpool.carpool.security.config.TokenJwtConfig.PREFIX_TOKEN;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,8 +30,7 @@ import com.carpool.carpool.dto.security.login.loginRequestDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.model.CustomUserDetails;
 import com.carpool.carpool.security.utils.JwtUtils;
-import com.carpool.carpool.service.user.IUserAccountService;
-import com.carpool.carpool.service.user.UserAccountServiceImpl;
+import com.carpool.carpool.service.account.IUserAccountService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,7 +41,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import static com.carpool.carpool.service.user.UserAccountServiceImpl.*;
 
 /**
  * Filtro personalizado que intercepta peticiones realizadas al endpoint {@link /login} y se encarga de autenticar al usuario con sus credenciales (username y password).
@@ -63,6 +62,8 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private final UserRepository userRepository;
 
     private final IUserAccountService userAccountService;
+
+    private String currentUsername;
 
     public JwtAuthenticationFilter(AuthenticationManager authenticationManager, JwtUtils jwtUtils, UserRepository userRepository,
     IUserAccountService userAccountService) {
@@ -91,6 +92,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         try {
             userLogin = new ObjectMapper().readValue(request.getInputStream(), loginRequestDTO.class);
+            this.currentUsername= userLogin.getUsername();
         } catch (StreamReadException e) {
         } catch (IOException e) {
             throw new RuntimeException("Error al leer las credenciales de la petición", e);
@@ -116,8 +118,16 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         // Obtener el usuario autenticado casteado a CustomUserDetails
         CustomUserDetails authenticatedUser = (CustomUserDetails) authResult.getPrincipal();
 
+
+        //Extraemos el objeto User del usuario autenticado
+        User user = authenticatedUser.getUser();
+
+        //Reseteamos la cantidad de intentos fallidos para ese usuario (a 0)
+        userAccountService.resetFailedAttempts(user);
+
+
         // Extraer el nombre de usuario del usuario autenticado
-        String username = authenticatedUser.getUsername();
+        String username = user.getUsername();
 
         // Obtener los roles/authorities del usuario para incluirlos en el token
         Collection<? extends GrantedAuthority> authorities = authenticatedUser.getAuthorities();
@@ -165,55 +175,96 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
      */
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException {
-
-        String username = request.getParameter("username");
+        //Obtenemos el nombre de usuario de la variable de la clase
+        //No se puede obtener de la request porque viene nulo, ya que username y password vienen en el cuerpo de la peticion como JSON
+        // no como parametros
+        String username = this.currentUsername;
+        this.currentUsername = null;
         
+        //Buscamos si el usuario existe en la base de datos
         Optional<User> optionalUser = userRepository.findByUsernameAndDeletedAtIsNull(username);
-        List<String> mensajes = new ArrayList<>();
+        List<String> messages = new ArrayList<>();
+        //Si el usuario existe realizamos toda la logica
         if(optionalUser.isPresent()){
             User user = optionalUser.get();
 
+           
+            //Verificamos que la cuenta no este bloqueada, si esta bloqueda permanetemente enviamos un mensaje indicando la situacion
+            //Si la cuenta no esta bloqueada y han pasado mas de 4 horas desde el utimo intento de inicio de sesion del usuario, 
+            //seteamos la cantidad de intentos fallidos en 0.
             if(user.getAccountStatus() == UserStatus.LOCKED){
-                mensajes.add("Su cuenta se encuentra bloqueada permanentemente");
+                messages.add("Su cuenta se encuentra bloqueada permanentemente.");
+            }else if(userAccountService.resetTimeExpired(user)){
+                user.setFailedAttempts(0);
             }
 
-
+            //Si la cuenta esta activa realizamos las comprobaciones para saber cuantos intentos fallidos lleva el usuario 
             if(user.getAccountStatus() == UserStatus.ACTIVE){
+
+                //Incrementamos la cantidad de intentos fallidos del usuario
+                userAccountService.increaseFailedAttempts(user);
+
+                //Esto se hace debido a que el userAccountService acutaliza el objeto en la base de datos, pero
+                //esta actualizacion no se ve reflejada en el objeto que se tiene guardado en memoria, por lo que hay que hacerlo 
+                //manualmente
+                user.setFailedAttempts(user.getFailedAttempts() + 1);
+
+                //Segun la cantidad de intentos fallidos que tenga el usuario hacemos las acciones correspondientes 
+                /*
+                 * Con 4 intentos avisamos que en el siguiente se va a suspender la cuenta por 15 minutos
+                 * Con 5 avisamos que la cuenta ha sido suspendida y cambiamos el estado de la cuenta 
+                 * Lo mismo para 9 y 10 pero con 10 bloqueamos la cuenta
+                 */
                 switch (user.getFailedAttempts()) {
-                    case 2:
-                        userAccountService.increaseFailedAttempts(user);
-                        mensajes.add("Ingreso fallido. Si ingresa mal su contraseña nuevamente su cuenta sera suspendida por 15 minutos.");
+                    case 4:
+                        messages.add("Ingreso fallido. Si ingresa mal su contraseña nuevamente su cuenta sera suspendida por 15 minutos.");
                         break;
-                    case 3:
-                        userAccountService.suspendAccount(user);
-                        mensajes.add("Ha ingresado incorrectamente su contraseña 3 veces. Su cuenta se encuentra suspendida por los proximos 15 minutos.");
                     case 5:
-                        userAccountService.increaseFailedAttempts(user);
-                        mensajes.add("Ingreso fallido. Si ingresa mal su contraseña nuevamente su cuenta sera bloqueada permanentemente!!");
+                        userAccountService.suspendAccount(user);
+                        messages.add("Ha ingresado incorrectamente su contraseña 5 veces. Su cuenta se encuentra suspendida por los proximos 15 minutos.");
                         break;
-                    case 6:
+                    case 9:
+                        messages.add("Ingreso fallido. Si ingresa mal su contraseña nuevamente su cuenta sera bloqueada permanentemente!!");
+                        break;
+                    case 10:
                         userAccountService.lockAccount(user);
-                        mensajes.add("Ha ingresado incorrectamente su contraseña 6 veces. Su cuenta se encuentra bloqueada permanentemente.");
+                        messages.add("Ha ingresado incorrectamente su contraseña 10 veces. Su cuenta se encuentra bloqueada permanentemente.");
+                        break;
                     default:
-                        userAccountService.increaseFailedAttempts(user);
+                        messages.add("Error en la autenticación");
                         break;
                 }
+            /*
+             * Si la cuenta del usuario esta suspendida verificamos si el tiempo de suspension de 15 ha pasado
+             * Si ya paso indicamos al usuario que puede volver a intentar acceder a la cuenta y la desuspendemos
+             * Esta desuspension no reinicia la cantidad de intentos, solo la pasa a estado activa
+             * Si la cuenta aun esta suspendida enviamos un mensaje
+             */
             }else if(user.getAccountStatus() == UserStatus.SUSPENDED){
                 if(userAccountService.lockTimeExpired(user)){
-                    mensajes.add("La cuenta se encuentra desbloqueada. Por favor, intente ingresar nuevamente");
+                    userAccountService.unSuspendAccount(user);
+                    messages.add("La cuenta se encuentra desbloqueada. Por favor, intente ingresar nuevamente");
                 }else{
-                    mensajes.add("Su cuenta se encuentra suspendida por repetidos intentos de inicio de sesión. Vuelva a intentarlo mas tarde");
+                    messages.add("Su cuenta se encuentra suspendida por repetidos intentos de inicio de sesión. Vuelva a intentarlo mas tarde");
                 }
             }
             
-
+            /*
+             * Seteamos la fecha actual como ultimo intento de inicio fallido y guardamos el usuario en la base de datos
+             */
+            user.setLastFailedLoginTime(new Date());
+            userRepository.save(user);
+        /*
+         * Si el usuario no existe solo indicamos que hubo un error de autenticacion
+         */
         }else{
-            mensajes.add("Error en la autenticación");
+            messages.add("Error en la autenticación");
         }
 
+        
 
         ResponseEntity<Response<Void>> responseBody = new ResponseEntity<>(
-            ResponseUtils.buildErrorResponse(mensajes),
+            ResponseUtils.buildErrorResponse(messages),
             HttpStatus.UNAUTHORIZED);
         ResponseUtils.writeResponse(response, responseBody, CONTENT_TYPE);
     }
