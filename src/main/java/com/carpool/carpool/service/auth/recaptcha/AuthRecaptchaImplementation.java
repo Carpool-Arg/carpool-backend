@@ -11,7 +11,7 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class AuthRecaptchaImplementation implements IAuthRecaptchaService {
 
-    @Value("${recaptcha.secretKey]")
+    @Value("${recaptcha.secretKey}")
     private String secretKey;
 
     @Value("${recaptcha.verifyUrl}")
@@ -43,7 +43,6 @@ public class AuthRecaptchaImplementation implements IAuthRecaptchaService {
      */
     @Override
     public RecaptchaResponseDTO validateToken(String recaptchaToken) {
-
         // Crear headers HTTP: Content-Type = application/x-www-form-urlencoded
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -67,5 +66,4 @@ public class AuthRecaptchaImplementation implements IAuthRecaptchaService {
         // Devolver el cuerpo de la respuesta (objeto con success, score y demas)
         return response.getBody();
     }
-
 }
