@@ -8,6 +8,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -18,6 +20,8 @@ import java.util.List;
 
 public class RecaptchaFilter extends OncePerRequestFilter {
     private final IAuthRecaptchaService authRecaptchaService;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RecaptchaFilter.class);
 
     public RecaptchaFilter(IAuthRecaptchaService authRecaptchaService) {
         this.authRecaptchaService = authRecaptchaService;
@@ -46,8 +50,9 @@ public class RecaptchaFilter extends OncePerRequestFilter {
                     //  Analizar la respuesta, si el success es false, o el score es menor a 0.5, el recaptcha falla
                     //  Score mas cercano a 1 es humano, mas cercano a 0 es un bot
                     if (!recaptchaResponse.getSuccess() || recaptchaResponse.getScore() < 0.5){
-                        throw new BadCredentialsException("Recaptcha token invalido");
+                        throw new BadCredentialsException("No se pudo verificar que eres un humano. Por favor, intenta nuevamente.");
                     }
+                    LOGGER.info("AUTENTICACION RECAPTCHA EXITOSA: {}, recaptchaToken: {}", recaptchaResponse,recaptcha);
                 }
             }
 
