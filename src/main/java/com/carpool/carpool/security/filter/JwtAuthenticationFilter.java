@@ -167,7 +167,8 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     /**
      * Método que se invoca cuando la autenticación no es exitosa.
-     *
+     * Hace el manejo de la cantidad de intentos ed inicio de sesion fallidos de cada usuario, para el 
+     * control del estado de cada cuenta
      * @param request petición HTTP.
      * @param response respuesta HTTP.
      *
@@ -260,8 +261,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         }else{
             messages.add("Error en la autenticación");
         }
-
-        
 
         ResponseEntity<Response<Void>> responseBody = new ResponseEntity<>(
             ResponseUtils.buildErrorResponse(messages),
