@@ -28,9 +28,9 @@ public class RecaptchaFilter extends OncePerRequestFilter {
     }
 
     /**Filtro Para verificar que el token recaptcha sea válido, comprobando el campo success y también el score
-     * @param request
-     * @param response
-     * @param filterChain
+     * @param request petición HTTP.
+     * @param response respuesta HTTP.
+     * @param filterChain cadena de filtros de seguridad.
      * @throws ServletException
      * @throws IOException
      */
