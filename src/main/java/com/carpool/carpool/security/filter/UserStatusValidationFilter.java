@@ -57,7 +57,7 @@ public class UserStatusValidationFilter extends OncePerRequestFilter {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
             String username = authentication.getName();
-            Optional<User> optionalUser = userRepository.findByUsername(username);
+            Optional<User> optionalUser = userRepository.findByUsernameAndDeletedAtIsNull(username);
 
             if (optionalUser.isPresent()) {
                 User user = optionalUser.get();

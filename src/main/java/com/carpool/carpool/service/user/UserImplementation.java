@@ -120,7 +120,7 @@ public class UserImplementation implements IUserService {
      * @throws ConflictException si hay un usuario registrado con este email
      */
     private void existsByEmail(String email){
-        userRepository.findByEmail(email).ifPresent(user -> {
+        userRepository.findByEmailAndDeletedAtIsNull(email).ifPresent(user -> {
             throw new IllegalArgumentException(EXIST_USER.concat("correo electrónico ingresado."));
         });
     }
@@ -132,7 +132,7 @@ public class UserImplementation implements IUserService {
      * @throws {@link ResourceNotFoundException} si no hay un usuario con el email
      */
     private User getUserByEmail(String email){
-        return userRepository.findByEmail(email)
+        return userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontró el correo: " + email));
     }
 
@@ -143,7 +143,7 @@ public class UserImplementation implements IUserService {
      * @throws ConflictException si hay un usuario con este nombre de usuario
      */
     private void existsByUsername(String username){
-        userRepository.findByUsername(username).ifPresent(user -> {
+        userRepository.findByUsernameAndDeletedAtIsNull(username).ifPresent(user -> {
             throw new ConflictException(EXIST_USER.concat("nombre de usuario ingresado."));
         });
     } 
@@ -155,7 +155,7 @@ public class UserImplementation implements IUserService {
      * @throws ConflictException si hay un usuario registrado con este dni
      */
     private void existsByDni(String dni){
-        userRepository.findByDni(dni).ifPresent(user -> { 
+        userRepository.findByDniAndDeletedAtIsNull(dni).ifPresent(user -> {
             throw new ConflictException(EXIST_USER.concat("DNI ingresado."));
         });
     }

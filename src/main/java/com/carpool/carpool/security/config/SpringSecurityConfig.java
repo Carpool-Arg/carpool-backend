@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.carpool.carpool.security.handler.JwtAuthenticationEntryPoint;
 import com.carpool.carpool.service.auth.blacklist.IAuthBlacklistService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,18 +23,18 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.security.filter.JwtAuthenticationFilter;
 import com.carpool.carpool.security.filter.JwtValidationFilter;
 
 @Configuration
+@RequiredArgsConstructor
 @EnableMethodSecurity(prePostEnabled=true)
 public class SpringSecurityConfig {
 
-    @Autowired
-    private AuthenticationConfiguration authenticationConfiguration;
-
-    @Autowired
-    private IAuthBlacklistService authBlacklistService;
+    private final AuthenticationConfiguration authenticationConfiguration;
+    private final IAuthBlacklistService authBlacklistService;
+    private final UserRepository userRepository;
 
     @Bean
     AuthenticationManager authenticationManager() throws Exception {
@@ -53,12 +53,13 @@ public class SpringSecurityConfig {
         .requestMatchers("/users/**").permitAll()
         .requestMatchers(HttpMethod.POST, "/auth-google/**").permitAll()
         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+        .requestMatchers(HttpMethod.POST, "/drivers/become_driver").authenticated()
         .anyRequest().authenticated())
         .exceptionHandling(config -> config
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         )
         .addFilter(new JwtAuthenticationFilter(authenticationManager()))
-        .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService))
+        .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService, userRepository))
         .csrf(config-> config.disable())
         .cors(cors-> cors.configurationSource(corsConfigurationSource()))
         .sessionManagement(managment->managment.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

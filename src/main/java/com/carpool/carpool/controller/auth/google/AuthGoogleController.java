@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
+
 @RestController
 @Tag(name = "Auth Google", description = "Operaciones relacionadas con autenticacion con Google")
 @RequestMapping("/auth-google")
@@ -34,7 +36,7 @@ public class AuthGoogleController {
             @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
     })
     @PostMapping
-    public ResponseEntity<Response<GoogleAuthResponse>> authenticateWithGoogle(@Valid @RequestBody GoogleAuthRequestDTO request){
+    public ResponseEntity<Response<GoogleAuthResponse>> authenticateWithGoogle(@Valid @RequestBody GoogleAuthRequestDTO request) {
         return new ResponseEntity<>(googleAuthService.authenticate(request.getIdToken()), HttpStatus.OK);
     }
 }

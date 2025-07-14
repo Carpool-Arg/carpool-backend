@@ -6,20 +6,26 @@ import com.carpool.carpool.exception.InvalidGoogleTokenException;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
+import com.carpool.carpool.security.filter.JwtAuthenticationFilter;
+import com.carpool.carpool.security.model.CustomUserDetails;
 import com.carpool.carpool.security.utils.JwtUtils;
 import com.carpool.carpool.utils.ResponseUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,7 +34,6 @@ import java.util.List;
 public class AuthImplementationGoogle implements IAuthGoogleService {
 
     private static final String NAME = "name";
-    private static final String ROLE_USER = "ROLE_USER";
 
     private final UserRepository userRepository;
 
@@ -38,19 +43,28 @@ public class AuthImplementationGoogle implements IAuthGoogleService {
     /**
      * Realiza el login con Google: si el usuario existe y está activo, se autentica, si no existe, se registra parcialmente con estado {@code PENDING_PROFILE}.
      * @param idTokenString Token id proporcionado por Google.
-     * @return Objeto {@link Response} que contiene el {@link GoogleAuthResponse}.
+     * @return Objeto {@link Response} que contiene el {@link GoogleAuthResponse} en caso de que el usuario se encuentre con estado {@code ACTIVE}.
      */
     @Override
-    public Response<GoogleAuthResponse> authenticate(String idTokenString) {
+    public Response<GoogleAuthResponse> authenticate(String idTokenString){
         GoogleIdToken idToken = verifyIdToken(idTokenString);
         Payload payload = idToken.getPayload();
         String email = payload.getEmail();
         String name = (String) payload.get(NAME);
         User user = createUserIfNotExists(email, name);
 
-        String token = JwtUtils.generateToken(user.getEmail(), List.of(new SimpleGrantedAuthority(ROLE_USER)));
-        GoogleAuthResponse response = buildResponseGoogle(user, token);
+        String token = "";
+        String refreshToken = "";
+        if(user.getStatus().equals(UserStatus.ACTIVE) || user.getStatus().equals(UserStatus.PENDING_PROFILE)){
+            CustomUserDetails userDetail = new CustomUserDetails(user);
+            Collection<? extends GrantedAuthority> authorities = userDetail.getAuthorities();
+            Claims claims = getAuthorities(userDetail);
+            token = JwtUtils.generateAccessToken(email, claims);
+            refreshToken = JwtUtils.generateRefreshToken(email, claims);
+        }
 
+        GoogleAuthResponse response = buildResponseGoogle(user, token, refreshToken);
+        //TODO: enviar mensaje en caso de que tenga estado pendiente de verificacion (donde puede solicitar reenvio de email) o suspendido (se ponga en contacto con el soporte)
         return ResponseUtils.buildOKResponse(List.of("Operación exitosa") , response);
     }
 
@@ -60,15 +74,31 @@ public class AuthImplementationGoogle implements IAuthGoogleService {
      * @param token Token generado por {@link JwtUtils}
      * @return Objeto del tipo {@link GoogleAuthResponse}
      */
-    private GoogleAuthResponse buildResponseGoogle(User user, String token) {
+    private GoogleAuthResponse buildResponseGoogle(User user, String token, String refreshToken) {
         return GoogleAuthResponse.builder()
                 .accessToken(token)
-                .refreshToken(null)
+                .refreshToken(refreshToken)
                 .email(user.getEmail())
                 .name(user.getName())
                 .status(user.getStatus())
                 .needsAction(user.getStatus() != UserStatus.ACTIVE)
                 .build();
+    }
+
+    /**
+     * Metodo que obtiene los roles que tiene asociado un usuario.
+     * @param userDetail Usuario del tipo {@link CustomUserDetails}
+     * @return Objeto {@link Claims}
+     */
+    private Claims getAuthorities(CustomUserDetails userDetail){
+        try {
+            return Jwts.claims()
+                    .add(JwtAuthenticationFilter.AUTHORITIES, new ObjectMapper().writeValueAsString(userDetail.getAuthorities()))
+                    .add(JwtAuthenticationFilter.USERNAME, userDetail.getUsername())
+                    .build();
+        } catch (Exception e) {
+            throw new InvalidGoogleTokenException("Usted no posee los roles necesarios", e);
+        }
     }
 
     /**
@@ -99,7 +129,7 @@ public class AuthImplementationGoogle implements IAuthGoogleService {
      * @return Objeto User del tipo {@link User}
      */
     private User createUserIfNotExists(String email, String name){
-        return userRepository.findByEmail(email).orElseGet(() -> {
+        return userRepository.findByEmailAndDeletedAtIsNull(email).orElseGet(() -> {
             User newUser = new User();
             newUser.setEmail(email);
             newUser.setName(name);

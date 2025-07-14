@@ -1,5 +1,6 @@
 package com.carpool.carpool.service.auth.blacklist;
 
+import com.carpool.carpool.dto.security.logout.LogoutRequestDTO;
 import com.carpool.carpool.response.Response;
 
 public interface IAuthBlacklistService {
@@ -8,9 +9,10 @@ public interface IAuthBlacklistService {
      * al tiempo restante de vida del token.
      *
      * @param token token JWT completo (con prefijo "Bearer ")
+     * @param logoutRequestDTO dto con el refresh token
      * @return response respuesta con mensaje y estado de la operación
      */
-    Response<Void> blacklistToken(String token);
+    Response<Void> blacklistToken(String token, LogoutRequestDTO logoutRequestDTO);
 
     /**
      * Verifica si un token JWT está en la blacklist.

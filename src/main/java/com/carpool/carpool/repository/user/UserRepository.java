@@ -9,7 +9,7 @@ import com.carpool.carpool.model.user.User;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    Optional<User> findByUsername(String username);
-    Optional<User> findByEmail(String email);
-    Optional<User> findByDni(String dni);
+    Optional<User> findByUsernameAndDeletedAtIsNull(String username);
+    Optional<User> findByEmailAndDeletedAtIsNull(String email);
+    Optional<User> findByDniAndDeletedAtIsNull(String dni);
 }
