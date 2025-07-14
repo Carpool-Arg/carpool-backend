@@ -25,7 +25,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class GoogleAuthImplementation implements  IGoogleAuthService{
+public class AuthImplementationGoogle implements IAuthGoogleService {
 
     private static final String NAME = "name";
     private static final String ROLE_USER = "ROLE_USER";

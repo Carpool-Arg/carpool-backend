@@ -3,7 +3,7 @@ package com.carpool.carpool.controller.auth.google;
 import com.carpool.carpool.dto.google.GoogleAuthRequestDTO;
 import com.carpool.carpool.dto.google.GoogleAuthResponse;
 import com.carpool.carpool.response.Response;
-import com.carpool.carpool.service.auth.google.IGoogleAuthService;
+import com.carpool.carpool.service.auth.google.IAuthGoogleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -22,9 +22,9 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Auth Google", description = "Operaciones relacionadas con autenticacion con Google")
 @RequestMapping("/auth-google")
 @RequiredArgsConstructor
-public class GoogleAuthController {
+public class AuthGoogleController {
 
-    private final IGoogleAuthService googleAuthService;
+    private final IAuthGoogleService googleAuthService;
 
     @Operation(
             summary = "Validar token ID Google"

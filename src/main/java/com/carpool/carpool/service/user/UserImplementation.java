@@ -5,11 +5,10 @@ import java.util.List;
 import java.util.Optional;
 
 import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
-import com.carpool.carpool.enums.user.UserStatus;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
+import com.carpool.carpool.service.email.EmailImplementation;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -32,16 +31,11 @@ public class UserImplementation implements IUserService {
     private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailImplementation emailImplementation;
 
     private static final String EXIST_USER = "Ya existe un usuario con el ";
     private static final String ROLE_USER = "ROLE_USER";
 
-    /**
-     * Metodo utilizado para almacenar un usuario en la base de datos. Se realizan controles para 
-     * lanzar las excepciones correspondientes
-     * @param userRequestDTO request con los datos del usuario a guardar 
-     * @return Response<Void> devolviendo el mensaje si el usuario fue creado
-     */
     @Override
     @Transactional
     public Response<Void> saveUser(UserRequestDTO userRequestDTO) {
@@ -61,15 +55,11 @@ public class UserImplementation implements IUserService {
             roles);
         userRepository.save(user);
 
+        emailImplementation.sendEmail(user.getEmail(), "");
+
         return ResponseUtils.buildOKResponse(List.of("Usuario creado") , null);
     }
 
-    /**
-     * Metodo utilizado para actualizar un usuario con registro parcial en la base de datos. Se realizan controles para
-     * lanzar las excepciones correspondientes
-     * @param {@link UserUpdateRequestDTO} request con los datos del usuario a guardar
-     * @return {@link Response<Void>} devolviendo el mensaje si el usuario fue creado
-     */
     @Override
     @Transactional
     public Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO, String email) {
@@ -92,29 +82,19 @@ public class UserImplementation implements IUserService {
         return ResponseUtils.buildOKResponse(List.of("Usuario con registro parcial creado") , null);
     }
 
-    /**
-     * Metodo para validar si un username ingresado por una persona se encuentra disponible o no.
-     * @param username el nombre de usuario ingresado por la persona.
-     */
+    @Override
     public Response<Void> validateUsername(String username){
         existsByUsername(username);
         return ResponseUtils.buildOKResponse(List.of("Nombre de usuario disponible") , null);
     }
 
-    /**
-     * Método para validar si un email ingresado por una persona se encuentra disponible o no.
-     * @param email el email ingresado por la persona.
-     */
+
     @Override
     public Response<Void> validateEmail(String email) {
         existsByEmail(email);
         return ResponseUtils.buildOKResponse(List.of("Email disponible") , null);
     }
 
-    /**
-     * Metodo para validar si un dni ingresado por una persona se encuentra disponible o no.
-     * @param dni el dni ingresado por la persona.
-     */
     @Override
     public Response<Void> validateDni(String dni) {
         existsByDni(dni);
