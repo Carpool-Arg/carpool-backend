@@ -77,8 +77,7 @@ public class JwtValidationFilter extends BasicAuthenticationFilter{
         
         //Verificar si el token esta en la blacklist
         if (!checkTokenInBlacklist(token, response)) return;
-        
-        
+
         try {
             UsernamePasswordAuthenticationToken authenticationToken = getAuthenticationFromToken(token, request);
             SecurityContextHolder .getContext().setAuthentication(authenticationToken);

@@ -151,7 +151,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException {
 
         ResponseEntity<Response<Void>> responseBody = new ResponseEntity<>(
-            ResponseUtils.buildErrorResponse(List.of( "Error en la autenticación")),
+            ResponseUtils.buildErrorResponse(List.of( "Nombre de usuario o contraseña incorrecta")),
             HttpStatus.UNAUTHORIZED
         );
 
