@@ -30,7 +30,7 @@ import com.carpool.carpool.dto.security.login.loginRequestDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.model.CustomUserDetails;
 import com.carpool.carpool.security.utils.JwtUtils;
-import com.carpool.carpool.service.account.IUserAccountService;
+import com.carpool.carpool.service.user.account.IUserAccountService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.databind.ObjectMapper;

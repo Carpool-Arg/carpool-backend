@@ -1,4 +1,4 @@
-package com.carpool.carpool.service.account;
+package com.carpool.carpool.service.user.account;
 
 import java.util.Date;
 
@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 
 import com.carpool.carpool.enums.UserStatus;
 import com.carpool.carpool.model.user.User;
-import com.carpool.carpool.repository.account.UserAccountRepository;
 import com.carpool.carpool.repository.user.UserRepository;
+import com.carpool.carpool.repository.user.account.UserAccountRepository;
 
 import jakarta.transaction.Transactional;
 @Service

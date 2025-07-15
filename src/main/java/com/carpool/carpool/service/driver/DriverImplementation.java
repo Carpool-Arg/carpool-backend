@@ -69,7 +69,7 @@ public class DriverImplementation implements IDriverService {
         String username = authentication.getName();
 
         //Buscar el usuario por su nombre de usuario.
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameAndDeletedAtIsNull(username)
                 .orElseThrow( () -> new ConflictException("Usuario no encontrado.")); 
 
         Driver driver = driverMapper.convertDriverRequestDTOToDriver(driverRequestDTO, user);
@@ -120,7 +120,7 @@ public class DriverImplementation implements IDriverService {
 
         String username = authentication.getName();
 
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameAndDeletedAtIsNull(username)
                 .orElseThrow( () -> new ConflictException("Usuario no encontrado."));
 
         Optional<Driver> existingDriver = driverRepository.findByUserId(user.getId());

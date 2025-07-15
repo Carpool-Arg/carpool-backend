@@ -1,4 +1,4 @@
-package com.carpool.carpool.service.account;
+package com.carpool.carpool.service.user.account;
 
 import com.carpool.carpool.model.user.User;
 
