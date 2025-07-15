@@ -12,4 +12,11 @@ public interface IAuthService {
      * @throws IllegalArgumentException si el token es inválido, está en la blacklist o ha expirado
      */
     Response<TokenResponseDTO> refreshToken(String authHeader);
+
+    /**
+     * Verifica la validez de un token JWT contenido en el encabezado Authorization.
+     * @param authHeader el valor del encabezado Authorization que debe comenzar con "Bearer " seguido del token JWT.
+     * @return response respuesta con mensaje y estado de la operación
+     */
+    Response<Void> verifyToken(String authHeader);
 }

@@ -41,7 +41,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-
 /**
  * Filtro personalizado que intercepta peticiones realizadas al endpoint {@link /login} y se encarga de autenticar al usuario con sus credenciales (username y password).
  *
@@ -167,7 +166,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     /**
      * Método que se invoca cuando la autenticación no es exitosa.
-     * Hace el manejo de la cantidad de intentos ed inicio de sesion fallidos de cada usuario, para el 
+     * Hace el manejo de la cantidad de intentos ed inicio de sesion fallidos de cada usuario, para el
      * control del estado de cada cuenta
      * @param request petición HTTP.
      * @param response respuesta HTTP.
@@ -181,7 +180,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         // no como parametros
         String username = this.currentUsername;
         this.currentUsername = null;
-        
+
         //Buscamos si el usuario existe en la base de datos
         Optional<User> optionalUser = userRepository.findByUsernameAndDeletedAtIsNull(username);
         List<String> messages = new ArrayList<>();
@@ -189,9 +188,9 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         if(optionalUser.isPresent()){
             User user = optionalUser.get();
 
-           
+
             //Verificamos que la cuenta no este bloqueada, si esta bloqueda permanetemente enviamos un mensaje indicando la situacion
-            //Si la cuenta no esta bloqueada y han pasado mas de 4 horas desde el utimo intento de inicio de sesion del usuario, 
+            //Si la cuenta no esta bloqueada y han pasado mas de 4 horas desde el utimo intento de inicio de sesion del usuario,
             //seteamos la cantidad de intentos fallidos en 0.
             if(user.getAccountStatus() == UserStatus.LOCKED){
                 messages.add("Su cuenta se encuentra bloqueada permanentemente.");
@@ -199,21 +198,21 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 user.setFailedAttempts(0);
             }
 
-            //Si la cuenta esta activa realizamos las comprobaciones para saber cuantos intentos fallidos lleva el usuario 
+            //Si la cuenta esta activa realizamos las comprobaciones para saber cuantos intentos fallidos lleva el usuario
             if(user.getAccountStatus() == UserStatus.ACTIVE){
 
                 //Incrementamos la cantidad de intentos fallidos del usuario
                 userAccountService.increaseFailedAttempts(user);
 
                 //Esto se hace debido a que el userAccountService acutaliza el objeto en la base de datos, pero
-                //esta actualizacion no se ve reflejada en el objeto que se tiene guardado en memoria, por lo que hay que hacerlo 
+                //esta actualizacion no se ve reflejada en el objeto que se tiene guardado en memoria, por lo que hay que hacerlo
                 //manualmente
                 user.setFailedAttempts(user.getFailedAttempts() + 1);
 
-                //Segun la cantidad de intentos fallidos que tenga el usuario hacemos las acciones correspondientes 
+                //Segun la cantidad de intentos fallidos que tenga el usuario hacemos las acciones correspondientes
                 /*
                  * Con 4 intentos avisamos que en el siguiente se va a suspender la cuenta por 15 minutos
-                 * Con 5 avisamos que la cuenta ha sido suspendida y cambiamos el estado de la cuenta 
+                 * Con 5 avisamos que la cuenta ha sido suspendida y cambiamos el estado de la cuenta
                  * Lo mismo para 9 y 10 pero con 10 bloqueamos la cuenta
                  */
                 switch (user.getFailedAttempts()) {
@@ -249,7 +248,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                     messages.add("Su cuenta se encuentra suspendida por repetidos intentos de inicio de sesión. Vuelva a intentarlo mas tarde");
                 }
             }
-            
+
             /*
              * Seteamos la fecha actual como ultimo intento de inicio fallido y guardamos el usuario en la base de datos
              */
@@ -259,7 +258,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
          * Si el usuario no existe solo indicamos que hubo un error de autenticacion
          */
         }else{
-            messages.add("Error en la autenticación");
+            messages.add("Nombre de usuario o contraseña incorrecta");
         }
 
         ResponseEntity<Response<Void>> responseBody = new ResponseEntity<>(
