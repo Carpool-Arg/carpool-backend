@@ -2,13 +2,18 @@ package com.carpool.carpool.service.auth.google;
 
 import com.carpool.carpool.dto.google.GoogleAuthResponse;
 import com.carpool.carpool.enums.user.UserStatus;
+import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.InvalidGoogleTokenException;
+import com.carpool.carpool.model.role.Role;
 import com.carpool.carpool.model.user.User;
+import com.carpool.carpool.repository.role.RoleRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.filter.JwtAuthenticationFilter;
 import com.carpool.carpool.security.model.CustomUserDetails;
 import com.carpool.carpool.security.utils.JwtUtils;
+import com.carpool.carpool.security.utils.UserUtils;
+import com.carpool.carpool.service.user.UserImplementation;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
@@ -25,9 +30,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+
+import static com.carpool.carpool.service.user.UserImplementation.ROLE_USER;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +41,7 @@ public class AuthImplementationGoogle implements IAuthGoogleService {
     private static final String NAME = "name";
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     @Value("${google.client-id}")
     private String googleClientId;
@@ -57,9 +63,8 @@ public class AuthImplementationGoogle implements IAuthGoogleService {
         String refreshToken = "";
         if(user.getStatus().equals(UserStatus.ACTIVE) || user.getStatus().equals(UserStatus.PENDING_PROFILE)){
             CustomUserDetails userDetail = new CustomUserDetails(user);
-            Collection<? extends GrantedAuthority> authorities = userDetail.getAuthorities();
             Claims claims = getAuthorities(userDetail);
-            token = JwtUtils.generateAccessToken(email, claims);
+            token = JwtUtils.generateAccessToken(user.getUsername(), claims);
             refreshToken = JwtUtils.generateRefreshToken(email, claims);
         }
 
@@ -133,8 +138,42 @@ public class AuthImplementationGoogle implements IAuthGoogleService {
             User newUser = new User();
             newUser.setEmail(email);
             newUser.setName(name);
+
+            String username = generateRandomUsername();
+            List<Role> roles = getRoles(ROLE_USER);
+
+            newUser.setUsername(username);
+            newUser.setRoles(roles);
             newUser.setStatus(UserStatus.PENDING_PROFILE);
             return userRepository.save(newUser);
         });
     }
+
+    /**
+     * Metodo encargado de generar un nombre de usuario unico
+     * @return Username del tipo {@link String}
+     */
+    private String generateRandomUsername(){
+        String username;
+        do {
+            username = UserUtils.generateRandomUsername();
+        } while (userRepository.findByUsername(username).isPresent());
+
+        return username;
+    }
+
+    /**
+     * Metodo encargado de obtener roles
+     * @param role Rol que se desea obtener
+     * @return Lista de roles del tipo {@link List} que contiene {@link Role}
+     */
+    private List<Role> getRoles(String role){
+        List<Role> roles = new ArrayList<>();
+        Role optionalRoleUser = roleRepository.findByName(role)
+                .orElseThrow(() -> new ConflictException("Rol '" + ROLE_USER + "' no encontrado."));
+        roles.add(optionalRoleUser);
+
+        return roles;
+    }
+
 }

@@ -34,7 +34,12 @@ public class UserImplementation implements IUserService {
     private final EmailImplementation emailImplementation;
 
     private static final String EXIST_USER = "Ya existe un usuario con el ";
-    private static final String ROLE_USER = "ROLE_USER";
+    public static final String ROLE_USER = "ROLE_USER";
+    private static final String TITLE = "Carpool";
+    private static final String ACTIVE_ACCOUNT = "ACTIVÁ TU CUENTA";
+    private static final String ACTIVE_ACCOUNT_DESCRIPTION = "Haz clic en el botón de abajo para confirmar tu correo electrónico y finalizar la configuración de tu cuenta. Este enlace es válido durante 48 horas.";
+    private static final String CONFIRM = "Confirmar";
+
 
     @Override
     @Transactional
@@ -55,7 +60,7 @@ public class UserImplementation implements IUserService {
             roles);
         userRepository.save(user);
 
-        emailImplementation.sendEmail(user.getEmail(), "");
+        emailImplementation.sendEmail(user.getEmail(), TITLE, ACTIVE_ACCOUNT, ACTIVE_ACCOUNT_DESCRIPTION, CONFIRM, "");
 
         return ResponseUtils.buildOKResponse(List.of("Usuario creado") , null);
     }
@@ -78,6 +83,8 @@ public class UserImplementation implements IUserService {
                 passwordEncoder.encode(userUpdateRequestDTO.getPassword()),
                 roles);
         userRepository.save(user);
+
+        emailImplementation.sendEmail(user.getEmail(), TITLE, ACTIVE_ACCOUNT, ACTIVE_ACCOUNT_DESCRIPTION, CONFIRM, "");
 
         return ResponseUtils.buildOKResponse(List.of("Usuario con registro parcial creado") , null);
     }
@@ -159,5 +166,4 @@ public class UserImplementation implements IUserService {
             throw new ConflictException(EXIST_USER.concat("DNI ingresado."));
         });
     }
-
 }

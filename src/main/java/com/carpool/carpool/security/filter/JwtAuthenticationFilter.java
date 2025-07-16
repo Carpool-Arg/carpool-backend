@@ -103,7 +103,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         // Obtener los roles/authorities del usuario para incluirlos en el token
         Collection<? extends GrantedAuthority> authorities = authenticatedUser.getAuthorities();
 
-        LOGGER.info("AUTENTICACION EXITOSA DEL USUARIO: {}", username);
+        LOGGER.info("Autenticación exitosa del usuario: {}", username);
 
         // Construir los claims para el JWT, agregando roles y username
         Claims claims = Jwts.claims()
