@@ -231,7 +231,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                         messages.add("Ha ingresado incorrectamente su contraseña 10 veces. Su cuenta se encuentra bloqueada permanentemente.");
                         break;
                     default:
-                        messages.add("Error en la autenticación");
+                        messages.add("Nombre de usuario o contraseña incorrecta.");
                         break;
                 }
             /*
