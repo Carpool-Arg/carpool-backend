@@ -61,7 +61,12 @@ public class SpringSecurityConfig {
         .requestMatchers(HttpMethod.GET, "/users/validate-username").permitAll()
         .requestMatchers(HttpMethod.GET, "/users/validate-email").permitAll()
         .requestMatchers(HttpMethod.GET, "/users/validate-dni").permitAll()
-        .requestMatchers(HttpMethod.POST, "/drivers/become_driver").authenticated()
+        .requestMatchers(HttpMethod.POST, "/drivers").authenticated()
+        .requestMatchers(HttpMethod.GET, "/vehicle-types").hasAnyRole("DRIVER", "ADMIN")
+        .requestMatchers(HttpMethod.POST, "/vehicles").hasRole("DRIVER")
+        .requestMatchers(HttpMethod.PUT, "/vehicles/**").hasRole("DRIVER")
+        .requestMatchers(HttpMethod.DELETE, "/vehicles/**").hasRole("DRIVER")
+        .requestMatchers(HttpMethod.GET, "/vehicles/my-vehicles").hasRole("DRIVER")
         .anyRequest().authenticated())
         .exceptionHandling(config -> config
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
