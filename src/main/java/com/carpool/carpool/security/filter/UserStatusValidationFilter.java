@@ -32,6 +32,7 @@ public class UserStatusValidationFilter extends OncePerRequestFilter {
             "/users/validate-username",
             "/users/validate-email",
             "/users/validate-dni",
+            "/users/complete-registration",
             "/auth/google"
     );
 

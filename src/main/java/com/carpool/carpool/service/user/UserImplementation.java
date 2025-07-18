@@ -7,7 +7,6 @@ import java.util.Optional;
 import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
-import com.carpool.carpool.service.email.EmailImplementation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,15 +30,14 @@ public class UserImplementation implements IUserService {
     private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailImplementation emailImplementation;
 
     private static final String EXIST_USER = "Ya existe un usuario con el ";
-    public static final String ROLE_USER = "ROLE_USER";
     private static final String TITLE = "Carpool";
     private static final String ACTIVE_ACCOUNT = "ACTIVÁ TU CUENTA";
     private static final String ACTIVE_ACCOUNT_DESCRIPTION = "Haz clic en el botón de abajo para confirmar tu correo electrónico y finalizar la configuración de tu cuenta. Este enlace es válido durante 48 horas.";
     private static final String CONFIRM = "Confirmar";
 
+    public static final String ROLE_USER = "ROLE_USER";
 
     @Override
     @Transactional
@@ -59,8 +57,6 @@ public class UserImplementation implements IUserService {
             passwordEncoder.encode(userRequestDTO.getPassword()), 
             roles);
         userRepository.save(user);
-
-        emailImplementation.sendEmail(user.getEmail(), TITLE, ACTIVE_ACCOUNT, ACTIVE_ACCOUNT_DESCRIPTION, CONFIRM, "");
 
         return ResponseUtils.buildOKResponse(List.of("Usuario creado") , null);
     }
@@ -84,8 +80,6 @@ public class UserImplementation implements IUserService {
                 roles);
         userRepository.save(user);
 
-        emailImplementation.sendEmail(user.getEmail(), TITLE, ACTIVE_ACCOUNT, ACTIVE_ACCOUNT_DESCRIPTION, CONFIRM, "");
-
         return ResponseUtils.buildOKResponse(List.of("Usuario con registro parcial creado") , null);
     }
 
@@ -94,7 +88,6 @@ public class UserImplementation implements IUserService {
         existsByUsername(username);
         return ResponseUtils.buildOKResponse(List.of("Nombre de usuario disponible") , null);
     }
-
 
     @Override
     public Response<Void> validateEmail(String email) {
