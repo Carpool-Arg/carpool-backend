@@ -53,6 +53,8 @@ public class RecaptchaFilter extends OncePerRequestFilter {
                         throw new BadCredentialsException("No se pudo verificar que eres un humano. Por favor, intenta nuevamente.");
                     }
                     LOGGER.info("AUTENTICACION RECAPTCHA EXITOSA: {}, recaptchaToken: {}", recaptchaResponse,recaptcha);
+                }else{
+                    throw new BadCredentialsException("No se pudo verificar que eres un humano. Por favor, intenta nuevamente.");
                 }
             }
 
