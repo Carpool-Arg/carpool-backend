@@ -2,9 +2,11 @@ package com.carpool.carpool.security.config;
 
 import java.util.Arrays;
 
+import com.carpool.carpool.security.filter.RecaptchaFilter;
 import com.carpool.carpool.security.handler.JwtAuthenticationEntryPoint;
 import com.carpool.carpool.service.auth.blacklist.IAuthBlacklistService;
-import lombok.RequiredArgsConstructor;
+import com.carpool.carpool.service.user.account.IUserAccountService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +20,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -35,6 +38,9 @@ public class SpringSecurityConfig {
     private final AuthenticationConfiguration authenticationConfiguration;
     private final IAuthBlacklistService authBlacklistService;
     private final UserRepository userRepository;
+
+    @Autowired
+    private IUserAccountService userAccountService;
 
     @Bean
     AuthenticationManager authenticationManager() throws Exception {
@@ -59,6 +65,8 @@ public class SpringSecurityConfig {
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         )
         .addFilter(new JwtAuthenticationFilter(authenticationManager()))
+        .addFilterBefore(new RecaptchaFilter(authRecaptchaService), UsernamePasswordAuthenticationFilter.class)
+        .addFilter(new JwtAuthenticationFilter(authenticationManager(),userRepository, userAccountService))
         .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService, userRepository))
         .csrf(config-> config.disable())
         .cors(cors-> cors.configurationSource(corsConfigurationSource()))
@@ -71,7 +79,7 @@ public class SpringSecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(Arrays.asList("*"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "DELETE", "PUT"));
-        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type","recaptcha"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

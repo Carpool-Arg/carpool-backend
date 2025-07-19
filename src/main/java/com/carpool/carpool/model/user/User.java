@@ -2,6 +2,7 @@ package com.carpool.carpool.model.user;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 import com.carpool.carpool.enums.user.UserStatus;
@@ -83,6 +84,25 @@ public class User implements Serializable {
     @Column(name = "updated_at")
     private LocalDateTime updated_at;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private Long deleted_by;
+
+    @Column(name="account_status")
+    @Enumerated(EnumType.STRING)
+    private UserStatus accountStatus;
+
+    @Column(name="failed_attempts")
+    private int failedAttempts;
+
+    @Column(name="lock_time")
+    private Date lockTime;
+
+    @Column(name="last_failed_login_time")
+    private Date lastFailedLoginTime;
+
     /*
      * Para el created_at empleamos la anotacicón @PrePersist.
      * Esto hace que que el método onCreate() se ejecute justo antes de que la
@@ -91,6 +111,8 @@ public class User implements Serializable {
     @PrePersist
     protected void onCreate() {
         this.created_at = LocalDateTime.now();
+        this.failedAttempts = 0;
+        this.accountStatus = UserStatus.ACTIVE;
     }
 
     /*
@@ -103,13 +125,11 @@ public class User implements Serializable {
         this.updated_at = LocalDateTime.now();
     }
 
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    @Column(name = "deleted_by")
-    private Long deleted_by;
-
     public boolean isEnabled(){
         return deletedAt == null;
+    }
+
+    public boolean isAccountNonLockedOrSuspended(){
+        return accountStatus==UserStatus.ACTIVE;
     }
 }
