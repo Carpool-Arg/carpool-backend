@@ -49,7 +49,7 @@ public class SpringSecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) throws Exception{
         return http.authorizeHttpRequests((authz)-> authz
-        .requestMatchers(HttpMethod.POST, "/users/complete-register").authenticated()
+        .requestMatchers(HttpMethod.POST, "/users/complete-registration").authenticated()
         .requestMatchers("/users/**").permitAll()
         .requestMatchers(HttpMethod.POST, "/auth-google/**").permitAll()
         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
