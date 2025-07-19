@@ -3,7 +3,7 @@ package com.carpool.carpool.service.auth.google;
 import com.carpool.carpool.dto.google.GoogleAuthResponse;
 import com.carpool.carpool.enums.user.UserStatus;
 import com.carpool.carpool.exception.ConflictException;
-import com.carpool.carpool.exception.InvalidGoogleTokenException;
+import com.carpool.carpool.exception.UnauthorizedException;
 import com.carpool.carpool.model.role.Role;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.repository.role.RoleRepository;
@@ -95,7 +95,7 @@ public class AuthGoogleImplementation implements IAuthGoogleService {
                     .add(JwtAuthenticationFilter.USERNAME, userDetail.getUsername())
                     .build();
         } catch (Exception e) {
-            throw new InvalidGoogleTokenException("Usted no posee los roles necesarios", e);
+            throw new UnauthorizedException("Usted no posee los roles necesarios", e);
         }
     }
 
@@ -116,7 +116,7 @@ public class AuthGoogleImplementation implements IAuthGoogleService {
             return idToken;
 
         } catch (GeneralSecurityException | IOException e) {
-            throw new InvalidGoogleTokenException("Error al verificar el token con Google", e);
+            throw new UnauthorizedException("Error al verificar el token con Google", e);
         }
     }
 

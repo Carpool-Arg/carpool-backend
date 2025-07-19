@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Optional;
 
 import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
+import com.carpool.carpool.enums.user.UserStatus;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
+import com.carpool.carpool.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,7 +23,6 @@ import com.carpool.carpool.response.Response;
 import com.carpool.carpool.utils.ResponseUtils;
 
 import jakarta.transaction.Transactional;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @RequiredArgsConstructor
 @Service
@@ -67,6 +68,9 @@ public class UserImplementation implements IUserService {
     public Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO) {
 
         User user = getUserByEmail(userUpdateRequestDTO.getEmail());
+
+        if(!user.getStatus().equals(UserStatus.PENDING_PROFILE)) throw new UnauthorizedException("El usuario no tiene un registro pendiente para completar.");
+
         passwordsMatch(userUpdateRequestDTO.getPassword(), userUpdateRequestDTO.getConfirmPassword());
         existsByUsername(userUpdateRequestDTO.getUsername());
         existsByDni(userUpdateRequestDTO.getDni());

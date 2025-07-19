@@ -108,8 +108,8 @@ public class GlobalExceptionHandler {
      * @param ex Excepción de invalidación con Google
      * @return {@link ResponseEntity} que contiene {@link Response} con data {@link Void}
      */
-    @ExceptionHandler(InvalidGoogleTokenException.class)
-    public ResponseEntity<Response<Void>> handleInvalidGoogleToken(InvalidGoogleTokenException ex) {
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<Response<Void>> handleInvalidGoogleToken(UnauthorizedException ex) {
         return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(ex.getMessage())), HttpStatus.UNAUTHORIZED);
     }
 
