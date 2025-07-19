@@ -49,10 +49,8 @@ public class UserController {
     @PostMapping("/complete-registration")
     public ResponseEntity<Response<Void>> update(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Request para completar el registro parcial de un usuario", required = true)
-            @Valid
-            @RequestParam String email,
-            @RequestBody UserUpdateRequestDTO userUpdateRequestDTO) {
-        return new ResponseEntity<>(userService.updateUser(userUpdateRequestDTO, email), HttpStatus.OK);
+            @Valid @RequestBody UserUpdateRequestDTO userUpdateRequestDTO) {
+        return new ResponseEntity<>(userService.updateUser(userUpdateRequestDTO), HttpStatus.OK);
     }
 
     @Operation(summary = "Validar si un username se encuentra en uso")

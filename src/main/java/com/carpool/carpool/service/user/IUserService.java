@@ -19,7 +19,7 @@ public interface IUserService {
      * @param {@link UserUpdateRequestDTO} request con los datos del usuario a guardar
      * @return {@link Response<Void>} devolviendo el mensaje si el usuario fue creado
      */
-    Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO, String email);
+    Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO);
 
     /**
      * Metodo para validar si un username ingresado por una persona se encuentra disponible o no.

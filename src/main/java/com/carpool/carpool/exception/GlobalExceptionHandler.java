@@ -3,7 +3,6 @@ package com.carpool.carpool.exception;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.utils.ResponseUtils;
 import jakarta.validation.ConstraintViolationException;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

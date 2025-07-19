@@ -1,4 +1,4 @@
-package com.carpool.carpool.service.auth.blacklist;
+ package com.carpool.carpool.service.auth.blacklist;
 
 import com.carpool.carpool.dto.security.logout.LogoutRequestDTO;
 import com.carpool.carpool.response.Response;

@@ -13,7 +13,6 @@ import com.carpool.carpool.security.filter.JwtAuthenticationFilter;
 import com.carpool.carpool.security.model.CustomUserDetails;
 import com.carpool.carpool.security.utils.JwtUtils;
 import com.carpool.carpool.security.utils.UserUtils;
-import com.carpool.carpool.service.user.UserImplementation;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
@@ -25,7 +24,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -36,7 +34,7 @@ import static com.carpool.carpool.service.user.UserImplementation.ROLE_USER;
 
 @Service
 @RequiredArgsConstructor
-public class AuthImplementationGoogle implements IAuthGoogleService {
+public class AuthGoogleImplementation implements IAuthGoogleService {
 
     private static final String NAME = "name";
 
@@ -46,11 +44,6 @@ public class AuthImplementationGoogle implements IAuthGoogleService {
     @Value("${google.client-id}")
     private String googleClientId;
 
-    /**
-     * Realiza el login con Google: si el usuario existe y está activo, se autentica, si no existe, se registra parcialmente con estado {@code PENDING_PROFILE}.
-     * @param idTokenString Token id proporcionado por Google.
-     * @return Objeto {@link Response} que contiene el {@link GoogleAuthResponse} en caso de que el usuario se encuentre con estado {@code ACTIVE}.
-     */
     @Override
     public Response<GoogleAuthResponse> authenticate(String idTokenString){
         GoogleIdToken idToken = verifyIdToken(idTokenString);

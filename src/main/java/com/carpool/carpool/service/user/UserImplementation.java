@@ -21,6 +21,7 @@ import com.carpool.carpool.response.Response;
 import com.carpool.carpool.utils.ResponseUtils;
 
 import jakarta.transaction.Transactional;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @RequiredArgsConstructor
 @Service
@@ -63,9 +64,9 @@ public class UserImplementation implements IUserService {
 
     @Override
     @Transactional
-    public Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO, String email) {
+    public Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO) {
 
-        User user = getUserByEmail(email);
+        User user = getUserByEmail(userUpdateRequestDTO.getEmail());
         passwordsMatch(userUpdateRequestDTO.getPassword(), userUpdateRequestDTO.getConfirmPassword());
         existsByUsername(userUpdateRequestDTO.getUsername());
         existsByDni(userUpdateRequestDTO.getDni());
