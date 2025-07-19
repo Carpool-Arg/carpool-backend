@@ -4,12 +4,10 @@ import java.util.Arrays;
 
 import com.carpool.carpool.security.filter.RecaptchaFilter;
 import com.carpool.carpool.security.handler.JwtAuthenticationEntryPoint;
-import com.carpool.carpool.security.utils.JwtUtils;
 import com.carpool.carpool.service.auth.blacklist.IAuthBlacklistService;
 import com.carpool.carpool.service.auth.recaptcha.IAuthRecaptchaService;
 import com.carpool.carpool.service.user.account.IUserAccountService;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,26 +32,14 @@ import com.carpool.carpool.security.filter.JwtAuthenticationFilter;
 import com.carpool.carpool.security.filter.JwtValidationFilter;
 
 @Configuration
+@RequiredArgsConstructor
 @EnableMethodSecurity(prePostEnabled=true)
 public class SpringSecurityConfig {
-
-    @Autowired
-    private AuthenticationConfiguration authenticationConfiguration;
-
-    @Autowired
-    private IAuthBlacklistService authBlacklistService;
-
-    @Autowired
-    private IAuthRecaptchaService authRecaptchaService;
-
-    @Autowired
-    private JwtUtils  jwtUtils;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private IUserAccountService userAccountService;
+    private final AuthenticationConfiguration authenticationConfiguration;
+    private final IAuthBlacklistService authBlacklistService;
+    private final IAuthRecaptchaService authRecaptchaService;
+    private final UserRepository userRepository;
+    private final IUserAccountService userAccountService;
 
     @Bean
     AuthenticationManager authenticationManager() throws Exception {
@@ -68,17 +54,17 @@ public class SpringSecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) throws Exception{
         return http.authorizeHttpRequests((authz)-> authz
-        .requestMatchers(HttpMethod.POST,"/users").permitAll()
-        .requestMatchers(HttpMethod.GET, "/users/validate-username").permitAll()
-        .requestMatchers(HttpMethod.GET, "/users/validate-email").permitAll()
-        .requestMatchers(HttpMethod.GET, "/users/validate-dni").permitAll()
+        .requestMatchers(HttpMethod.POST, "/users/complete-registration").authenticated()
+        .requestMatchers("/users/**").permitAll()
+        .requestMatchers(HttpMethod.POST, "/auth-google/**").permitAll()
+        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
         .requestMatchers(HttpMethod.POST, "/drivers/become_driver").authenticated()
         .anyRequest().authenticated())
         .exceptionHandling(config -> config
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         )
         .addFilterBefore(new RecaptchaFilter(authRecaptchaService), UsernamePasswordAuthenticationFilter.class)
-        .addFilter(new JwtAuthenticationFilter(authenticationManager(), jwtUtils,userRepository, userAccountService))
+        .addFilter(new JwtAuthenticationFilter(authenticationManager(),userRepository, userAccountService))
         .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService, userRepository))
         .csrf(config-> config.disable())
         .cors(cors-> cors.configurationSource(corsConfigurationSource()))

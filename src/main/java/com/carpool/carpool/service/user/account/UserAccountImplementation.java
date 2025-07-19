@@ -2,10 +2,10 @@ package com.carpool.carpool.service.user.account;
 
 import java.util.Date;
 
+import com.carpool.carpool.enums.user.UserStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.carpool.carpool.enums.UserStatus;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.user.account.UserAccountRepository;

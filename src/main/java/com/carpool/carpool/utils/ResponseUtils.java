@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import com.carpool.carpool.response.Response;
-import com.carpool.carpool.response.ResponseStateEnum;
+import com.carpool.carpool.enums.response.ResponseStateEnum;
 import com.carpool.carpool.security.utils.SimpleGrantedAuthorityJsonCreator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

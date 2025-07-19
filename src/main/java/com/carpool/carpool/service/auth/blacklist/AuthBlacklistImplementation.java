@@ -2,9 +2,8 @@ package com.carpool.carpool.service.auth.blacklist;
 
 import com.carpool.carpool.dto.security.logout.LogoutRequestDTO;
 import com.carpool.carpool.response.Response;
-import com.carpool.carpool.response.ResponseStateEnum;
+import com.carpool.carpool.enums.response.ResponseStateEnum;
 import com.carpool.carpool.security.utils.JwtUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -24,9 +23,6 @@ public class AuthBlacklistImplementation implements IAuthBlacklistService{
     //Prefijo que se utiliza en las claves de Redis para los tokens en blacklist.
     private final String TOKEN_BLACKLIST_PREFIX = "blacklisted:";
 
-    @Autowired
-    private JwtUtils jwtUtils;
-
     public AuthBlacklistImplementation(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
@@ -45,7 +41,7 @@ public class AuthBlacklistImplementation implements IAuthBlacklistService{
             String jwtToken = token.replace("Bearer ", "");
 
             //Calcular el tiempo de expiracion del access token
-            long expirationTime = jwtUtils.getAccessTokenExpiration(jwtToken);
+            long expirationTime = JwtUtils.getAccessTokenExpiration(jwtToken);
 
             //Cargar el token en redis, con el prefijo especificado  y el valor true (sirve para saber que la clave existe)
             redisTemplate.opsForValue().set(TOKEN_BLACKLIST_PREFIX + jwtToken, "true", expirationTime, TimeUnit.SECONDS);
@@ -60,7 +56,7 @@ public class AuthBlacklistImplementation implements IAuthBlacklistService{
             }
 
             //Calcular el tiempo de expiracion del refresh token
-            long refreshTokenExpiration = jwtUtils.getRefreshTokenExpiration(refreshToken);
+            long refreshTokenExpiration = JwtUtils.getRefreshTokenExpiration(refreshToken);
 
             //Cargar el token en redis, con el prefijo especificado  y el valor true (sirve para saber que la clave existe)
             redisTemplate.opsForValue().set(TOKEN_BLACKLIST_PREFIX + refreshToken, "true", refreshTokenExpiration, TimeUnit.SECONDS);

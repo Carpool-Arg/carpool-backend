@@ -11,6 +11,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import com.carpool.carpool.enums.user.UserStatus;
+import com.carpool.carpool.security.utils.JwtUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -23,13 +25,11 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
-import com.carpool.carpool.enums.UserStatus;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.repository.user.UserRepository;
-import com.carpool.carpool.dto.security.login.loginRequestDTO;
+import com.carpool.carpool.dto.security.login.LoginRequestDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.model.CustomUserDetails;
-import com.carpool.carpool.security.utils.JwtUtils;
 import com.carpool.carpool.service.user.account.IUserAccountService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.core.exc.StreamReadException;
@@ -50,13 +50,11 @@ import jakarta.servlet.http.HttpServletResponse;
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter{
 
     public final static String AUTHORITIES = "authorities";
-    private final static String USERNAME = "username";
+    public final static String USERNAME = "username";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-    private AuthenticationManager authenticationManager;
-
-    private final JwtUtils jwtUtils;
+    private final AuthenticationManager authenticationManager;
 
     private final UserRepository userRepository;
 
@@ -64,10 +62,8 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     private String currentUsername;
 
-    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, JwtUtils jwtUtils, UserRepository userRepository,
-    IUserAccountService userAccountService) {
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, UserRepository userRepository,  IUserAccountService userAccountService) {
         this.authenticationManager = authenticationManager;
-        this.jwtUtils = jwtUtils;
         this.userRepository = userRepository;
         this.userAccountService = userAccountService;
     }
@@ -87,10 +83,10 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException {
 
-        loginRequestDTO userLogin = null;
+        LoginRequestDTO userLogin = null;
 
         try {
-            userLogin = new ObjectMapper().readValue(request.getInputStream(), loginRequestDTO.class);
+            userLogin = new ObjectMapper().readValue(request.getInputStream(), LoginRequestDTO.class);
             this.currentUsername= userLogin.getUsername();
         } catch (StreamReadException e) {
         } catch (IOException e) {
@@ -126,12 +122,12 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
 
         // Extraer el nombre de usuario del usuario autenticado
-        String username = user.getUsername();
+        String username = authenticatedUser.getUsername();
 
         // Obtener los roles/authorities del usuario para incluirlos en el token
         Collection<? extends GrantedAuthority> authorities = authenticatedUser.getAuthorities();
 
-        LOGGER.info("AUTENTICACION EXITOSA DEL USUARIO: {}", username);
+        LOGGER.info("Autenticación exitosa del usuario: {}", username);
 
         // Construir los claims para el JWT, agregando roles y username
         Claims claims = Jwts.claims()
@@ -140,10 +136,10 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         .build();
 
         // Generar el access token con duración de 1 día y los claims
-        String accessToken = jwtUtils.generateAccessToken(username, claims);
+        String accessToken = JwtUtils.generateAccessToken(username, claims);
 
         // Generar el refresh token con duración de 7 días (604800000 ms) y los mismos claims
-        String refreshToken = jwtUtils.generateRefreshToken(username, claims);
+        String refreshToken = JwtUtils.generateRefreshToken(username, claims);
 
         // Agregar el access token en el header Authorization de la respuesta HTTP
         response.addHeader(HEADER_AUTHORIZATION, PREFIX_TOKEN + accessToken);
@@ -262,8 +258,10 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         }
 
         ResponseEntity<Response<Void>> responseBody = new ResponseEntity<>(
-            ResponseUtils.buildErrorResponse(messages),
-            HttpStatus.UNAUTHORIZED);
+            ResponseUtils.buildErrorResponse(List.of( "Error en la autenticación")),
+            HttpStatus.UNAUTHORIZED
+        );
+
         ResponseUtils.writeResponse(response, responseBody, CONTENT_TYPE);
     }
 }

@@ -1,4 +1,4 @@
-package com.carpool.carpool.response;
+package com.carpool.carpool.enums.response;
 
 public enum ResponseStateEnum {
     ERROR,
