@@ -8,11 +8,13 @@ package com.carpool.carpool.enums.user;
  *     {@code ACTIVE} Usuario con registro completo y validación del correo electrónico.
  *     {@code SUSPENDED} Usuario suspendido.
  *     {@code DELETED} Usuario eliminado.
+ *     {@code LOCKED Usuario bloqueado permanentemente por multiples inicios de sesion fallidos}
  * </p>
  */
 public enum UserStatus {
     PENDING_VERIFICATION,
     PENDING_PROFILE,
     ACTIVE,
-    SUSPENDED
+    SUSPENDED,
+    LOCKED
 }

@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import com.carpool.carpool.enums.user.UserStatus;
 import com.carpool.carpool.security.utils.JwtUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +25,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
-import com.carpool.carpool.enums.UserStatus;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.dto.security.login.LoginRequestDTO;
@@ -54,10 +54,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-    private AuthenticationManager authenticationManager;
-
-    public JwtAuthenticationFilter(AuthenticationManager authenticationManager) {
-    private final JwtUtils jwtUtils;
+    private final AuthenticationManager authenticationManager;
 
     private final UserRepository userRepository;
 

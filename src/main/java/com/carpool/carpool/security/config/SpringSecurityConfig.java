@@ -5,8 +5,9 @@ import java.util.Arrays;
 import com.carpool.carpool.security.filter.RecaptchaFilter;
 import com.carpool.carpool.security.handler.JwtAuthenticationEntryPoint;
 import com.carpool.carpool.service.auth.blacklist.IAuthBlacklistService;
+import com.carpool.carpool.service.auth.recaptcha.IAuthRecaptchaService;
 import com.carpool.carpool.service.user.account.IUserAccountService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,13 +35,11 @@ import com.carpool.carpool.security.filter.JwtValidationFilter;
 @RequiredArgsConstructor
 @EnableMethodSecurity(prePostEnabled=true)
 public class SpringSecurityConfig {
-
     private final AuthenticationConfiguration authenticationConfiguration;
     private final IAuthBlacklistService authBlacklistService;
+    private final IAuthRecaptchaService authRecaptchaService;
     private final UserRepository userRepository;
-
-    @Autowired
-    private IUserAccountService userAccountService;
+    private final IUserAccountService userAccountService;
 
     @Bean
     AuthenticationManager authenticationManager() throws Exception {
@@ -64,7 +63,6 @@ public class SpringSecurityConfig {
         .exceptionHandling(config -> config
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         )
-        .addFilter(new JwtAuthenticationFilter(authenticationManager()))
         .addFilterBefore(new RecaptchaFilter(authRecaptchaService), UsernamePasswordAuthenticationFilter.class)
         .addFilter(new JwtAuthenticationFilter(authenticationManager(),userRepository, userAccountService))
         .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService, userRepository))
