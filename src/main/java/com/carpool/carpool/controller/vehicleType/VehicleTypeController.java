@@ -2,7 +2,6 @@ package com.carpool.carpool.controller.vehicleType;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,14 +16,16 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @Tag(name = "Tipos de Vehículo", description = "Operaciones relacionadas con los tipos de vehículo")
 @RequestMapping("/vehicle-types")
+@RequiredArgsConstructor
 public class VehicleTypeController {
     
-    @Autowired
-    private IVehicleTypeService vehicleTypeService;
+    
+    private final IVehicleTypeService vehicleTypeService;
 
    @Operation(
         summary = "Obtener todos los tipos de vehículo",

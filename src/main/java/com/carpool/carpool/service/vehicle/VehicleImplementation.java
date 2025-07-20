@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -25,23 +24,18 @@ import com.carpool.carpool.repository.vehicleType.VehicleTypeRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.utils.ResponseUtils;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class VehicleImplementation implements IVehicleService {
 
-    @Autowired
-    private VehicleRepository vehicleRepository;
-
-    @Autowired
-    private VehicleMapper vehicleMapper;
-
-    @Autowired
-    private DriverRepository driverRepository;
-
-    @Autowired
-    private VehicleTypeRepository vehicleTypeRepository;
-
-    @Autowired
-    private UserRepository userRepository;
+    
+    private final VehicleRepository vehicleRepository;
+    private final VehicleMapper vehicleMapper;
+    private final DriverRepository driverRepository;
+    private final VehicleTypeRepository vehicleTypeRepository;
+    private final UserRepository userRepository;
 
     /**
      * Metodo utilizado para almacenar un vehiculo en la base de datos.

@@ -2,8 +2,6 @@ package com.carpool.carpool.service.vehicleType;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,14 +12,15 @@ import com.carpool.carpool.repository.vehicleType.VehicleTypeRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.utils.ResponseUtils;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class VehicleTypeImplementation implements IVehicleTypeService {
 
-    @Autowired
-    private VehicleTypeRepository vehicleTypeRepository;
-
-    @Autowired
-    private VehicleTypeMapper vehicleTypeMapper;
+    
+    private final VehicleTypeRepository vehicleTypeRepository;
+    private final VehicleTypeMapper vehicleTypeMapper;
 
 
     /**

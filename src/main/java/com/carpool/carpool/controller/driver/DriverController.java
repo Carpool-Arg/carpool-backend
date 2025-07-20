@@ -1,6 +1,5 @@
 package com.carpool.carpool.controller.driver;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,14 +15,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @Tag(name = "Conductores", description = "Operaciones relacionadas con el conductor")
 @RequestMapping("/drivers")
+@RequiredArgsConstructor
 public class DriverController {
 
-    @Autowired
-    private IDriverService driverService;
+    
+    private final IDriverService driverService;
 
     @Operation(
         summary = "Registrar un nuevo conductor",

@@ -1,7 +1,6 @@
 package com.carpool.carpool.controller.vehicle;
 
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,14 +25,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @Tag(name = "Vehiculos", description = "Operaciones relacionadas con el vehiculo")
 @RequestMapping("/vehicles")
+@RequiredArgsConstructor
 public class VehicleController {
     
-    @Autowired
-    private IVehicleService vehicleService;
+    
+    private final IVehicleService vehicleService;
     
 
     @Operation(

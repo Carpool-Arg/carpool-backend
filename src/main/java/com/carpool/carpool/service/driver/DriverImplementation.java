@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,24 +30,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import lombok.RequiredArgsConstructor;
 
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class DriverImplementation implements IDriverService {
 
-    @Autowired
-    private DriverRepository driverRepository;
-
-    @Autowired
-    private DriverMapper driverMapper;
-
-    @Autowired
-    private UserRepository userRepository;
+    
+    private final DriverRepository driverRepository;
+    private final DriverMapper driverMapper;
+    private final UserRepository userRepository;
 
     //Para asignar roles a los choferes, se inyecta el RoleRepository
-    @Autowired
-    private RoleRepository roleRepository; 
+    private final RoleRepository roleRepository; 
 
     private static final String ROLE_DRIVER = "ROLE_DRIVER";
     private static final String EXIST_DRIVER_PROFILE = "Ya existe un perfil de chofer para este usuario.";
@@ -58,8 +54,8 @@ public class DriverImplementation implements IDriverService {
     public final static String AUTHORITIES_CLAIM = "authorities";
     private final static String USERNAME_CLAIM = "username";
 
-    @Autowired
-    private JwtUtils jwtUtils;
+    
+    private final JwtUtils jwtUtils;
 
     /**
      * Metodo utilizado para guardar un nuevo perfil de chofer.
