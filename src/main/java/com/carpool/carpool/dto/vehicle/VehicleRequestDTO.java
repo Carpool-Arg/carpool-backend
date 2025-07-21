@@ -1,5 +1,7 @@
 package com.carpool.carpool.dto.vehicle;
 
+import com.carpool.carpool.validators.yearNotInFuture.YearNotInFuture;
+
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -30,6 +32,7 @@ public class VehicleRequestDTO {
 
     @NotNull(message = "El año del vehiculo no puede estar en blanco.")
     @Min(value = 1900, message = "El año debe ser posterior a 1900.")
+    @YearNotInFuture
     private Integer year;
 
     @NotBlank(message = "El color del vehiculo no puede estar en blanco.")

@@ -1,9 +1,9 @@
-package com.carpool.carpool.mappers.vehicleType;
+package com.carpool.carpool.mappers.vehicle.type;
 
 import org.springframework.stereotype.Component;
 
-import com.carpool.carpool.dto.vehicleType.VehicleTypeResponseDTO;
-import com.carpool.carpool.model.vehicleType.VehicleType;
+import com.carpool.carpool.dto.vehicle.type.VehicleTypeResponseDTO;
+import com.carpool.carpool.model.vehicle.type.VehicleType;
 
 @Component
 public class VehicleTypeMapper {

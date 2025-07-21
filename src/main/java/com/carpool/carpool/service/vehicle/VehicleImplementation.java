@@ -16,11 +16,11 @@ import com.carpool.carpool.mappers.vehicle.VehicleMapper;
 import com.carpool.carpool.model.driver.Driver;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.model.vehicle.Vehicle;
-import com.carpool.carpool.model.vehicleType.VehicleType;
+import com.carpool.carpool.model.vehicle.type.VehicleType;
 import com.carpool.carpool.repository.driver.DriverRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.vehicle.VehicleRepository;
-import com.carpool.carpool.repository.vehicleType.VehicleTypeRepository;
+import com.carpool.carpool.repository.vehicle.type.VehicleTypeRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.utils.ResponseUtils;
 

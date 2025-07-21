@@ -10,7 +10,7 @@ import com.carpool.carpool.dto.vehicle.VehicleResponseDTO;
 import com.carpool.carpool.dto.vehicle.VehicleUpdateRequestDTO;
 import com.carpool.carpool.model.driver.Driver;
 import com.carpool.carpool.model.vehicle.Vehicle;
-import com.carpool.carpool.model.vehicleType.VehicleType;
+import com.carpool.carpool.model.vehicle.type.VehicleType;
 
 @Component
 public class VehicleMapper {

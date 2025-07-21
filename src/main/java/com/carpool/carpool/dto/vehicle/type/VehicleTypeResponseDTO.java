@@ -1,4 +1,4 @@
-package com.carpool.carpool.dto.vehicleType;
+package com.carpool.carpool.dto.vehicle.type;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

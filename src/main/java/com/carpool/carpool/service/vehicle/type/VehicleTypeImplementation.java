@@ -1,14 +1,14 @@
-package com.carpool.carpool.service.vehicleType;
+package com.carpool.carpool.service.vehicle.type;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.carpool.carpool.dto.vehicleType.VehicleTypeResponseDTO;
-import com.carpool.carpool.mappers.vehicleType.VehicleTypeMapper;
-import com.carpool.carpool.model.vehicleType.VehicleType;
-import com.carpool.carpool.repository.vehicleType.VehicleTypeRepository;
+import com.carpool.carpool.dto.vehicle.type.VehicleTypeResponseDTO;
+import com.carpool.carpool.mappers.vehicle.type.VehicleTypeMapper;
+import com.carpool.carpool.model.vehicle.type.VehicleType;
+import com.carpool.carpool.repository.vehicle.type.VehicleTypeRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.utils.ResponseUtils;
 

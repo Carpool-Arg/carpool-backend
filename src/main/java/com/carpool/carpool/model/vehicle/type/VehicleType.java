@@ -1,4 +1,4 @@
-package com.carpool.carpool.model.vehicleType;
+package com.carpool.carpool.model.vehicle.type;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

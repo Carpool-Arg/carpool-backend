@@ -3,7 +3,8 @@ package com.carpool.carpool.model.vehicle;
 import java.time.LocalDateTime;
 
 import com.carpool.carpool.model.driver.Driver;
-import com.carpool.carpool.model.vehicleType.VehicleType;
+import com.carpool.carpool.model.vehicle.type.VehicleType;
+import com.carpool.carpool.validators.yearNotInFuture.YearNotInFuture;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -60,6 +61,7 @@ public class Vehicle {
 
     @NotNull(message = "El año del vehiculo no puede estar en blanco.")
     @Min(value = 1900, message = "El año debe ser posterior a 1900.") 
+    @YearNotInFuture
     private Integer year;
 
     @NotNull(message = "La cantidad de asientos disponibles no puede estar en blanco.")
