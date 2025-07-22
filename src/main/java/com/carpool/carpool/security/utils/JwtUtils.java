@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts;
 import org.springframework.stereotype.Component;
 import java.util.Date;
 
+
 import static com.carpool.carpool.security.config.TokenJwtConfig.*;
 
 
@@ -14,6 +15,9 @@ import static com.carpool.carpool.security.config.TokenJwtConfig.*;
  */
 @Component
 public class JwtUtils {
+
+    private JwtUtils() {
+    }
 
     /* -------------------------------------------------------------------------- */
     /*                   Metodos para el manejo de refresh token                  */
@@ -26,7 +30,7 @@ public class JwtUtils {
      * @param claims los claims que se desean reutilizar (pueden venir de otro token)
      * @return el token JWT generado y firmado
     */
-    public String generateRefreshToken(String username, Claims claims){
+    public static String generateRefreshToken(String username, Claims claims){
         return Jwts.builder()
                 .subject(username)
                 .claims(claims)
@@ -42,7 +46,7 @@ public class JwtUtils {
      * @param token el token JWT en formato String
      * @return long tiempo restante en segundos antes de que expire el token;
      */
-    public long getRefreshTokenExpiration(String token) {
+    public static long getRefreshTokenExpiration(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(SECRET_KEY_REFRESH)
                 .build()
@@ -61,7 +65,7 @@ public class JwtUtils {
      * @param token el token JWT
      * @return el valor del campo "subject" (username)
      */
-    public String extractUsernameRefreshToken(String token){
+    public static String extractUsernameRefreshToken(String token){
         final Claims claims = Jwts.parser()
             .verifyWith(SECRET_KEY_REFRESH)
             .build()
@@ -87,7 +91,7 @@ public class JwtUtils {
      * @param claims los claims que se desean reutilizar (pueden venir de otro token)
      * @return el token JWT generado y firmado
     */
-    public String generateAccessToken(String username, Claims claims){
+    public static String generateAccessToken(String username, Claims claims){
         return Jwts.builder()
                 .subject(username)
                 .claims(claims)
@@ -103,7 +107,7 @@ public class JwtUtils {
      * @param token el token JWT en formato String
      * @return long tiempo restante en segundos antes de que expire el token;
      */
-    public long getAccessTokenExpiration(String token) {
+    public static long getAccessTokenExpiration(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(SECRET_KEY_ACCESS)
                 .build()
@@ -125,7 +129,7 @@ public class JwtUtils {
      * @param token el access token JWT en formato String (sin el prefijo "Bearer ")
      * @return true si el token es válido (firma correcta y no expirado); false en cualquier otro caso
      */
-    public boolean isValidAccessToken(String token) {
+    public static boolean isValidAccessToken(String token) {
         try {
             // Intenta parsear y verificar la firma del token con la clave del access token
             Claims claims = Jwts.parser()

@@ -24,12 +24,14 @@ public class CustomUserDetails implements UserDetails {
     private final String username;
     private final String password;
     private final boolean enabled;
+    private final User user;
     private final List<GrantedAuthority> authorities;
 
     public CustomUserDetails(User user) {
         this.username = user.getUsername();
         this.password = user.getPassword();
         this.enabled = user.isEnabled();
+        this.user = user;
         this.authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority(role.getName()))
                 .collect(Collectors.toList());
@@ -62,7 +64,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return user.isAccountNonLockedOrSuspended();
     }
 
     @Override

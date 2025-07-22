@@ -4,8 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
+import com.carpool.carpool.enums.user.UserStatus;
 import com.carpool.carpool.exception.ConflictException;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.carpool.carpool.exception.ResourceNotFoundException;
+import com.carpool.carpool.exception.UnauthorizedException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -20,30 +24,23 @@ import com.carpool.carpool.utils.ResponseUtils;
 
 import jakarta.transaction.Transactional;
 
+@RequiredArgsConstructor
 @Service
 public class UserImplementation implements IUserService {
 
-    @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
-    private UserMapper userMapper;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final RoleRepository roleRepository;
+    private final UserMapper userMapper;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     private static final String EXIST_USER = "Ya existe un usuario con el ";
-    private static final String ROLE_USER = "ROLE_USER";
+    private static final String TITLE = "Carpool";
+    private static final String ACTIVE_ACCOUNT = "ACTIVÁ TU CUENTA";
+    private static final String ACTIVE_ACCOUNT_DESCRIPTION = "Haz clic en el botón de abajo para confirmar tu correo electrónico y finalizar la configuración de tu cuenta. Este enlace es válido durante 48 horas.";
+    private static final String CONFIRM = "Confirmar";
 
-    /**
-     * Metodo utilizado para almacenar un usuario en la base de datos. Se realizan controles para 
-     * lanzar las excepciones correspondientes
-     * @param userRequestDTO request con los datos del usuario a guardar 
-     * @return Response<Void> devolviendo el mensaje si el usuario fue creado
-     */
+    public static final String ROLE_USER = "ROLE_USER";
+
     @Override
     @Transactional
     public Response<Void> saveUser(UserRequestDTO userRequestDTO) {
@@ -66,29 +63,43 @@ public class UserImplementation implements IUserService {
         return ResponseUtils.buildOKResponse(List.of("Usuario creado") , null);
     }
 
-    /**
-     * Metodo para validar si un username ingresado por una persona se encuentra disponible o no.
-     * @param username el nombre de usuario ingresado por la persona.
-     */
+    @Override
+    @Transactional
+    public Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO) {
+
+        User user = getUserByEmail(userUpdateRequestDTO.getEmail());
+
+        if(!user.getStatus().equals(UserStatus.PENDING_PROFILE)) throw new UnauthorizedException("El usuario no tiene un registro pendiente para completar.");
+
+        passwordsMatch(userUpdateRequestDTO.getPassword(), userUpdateRequestDTO.getConfirmPassword());
+        existsByUsername(userUpdateRequestDTO.getUsername());
+        existsByDni(userUpdateRequestDTO.getDni());
+
+        Optional<Role> optionalRoleUser = roleRepository.findByName(ROLE_USER);
+        List<Role> roles = new ArrayList<>();
+        optionalRoleUser.ifPresent(roles::add);
+        user = userMapper.convertUserUpdateRequestDTOToUser(
+                user,
+                userUpdateRequestDTO,
+                passwordEncoder.encode(userUpdateRequestDTO.getPassword()),
+                roles);
+        userRepository.save(user);
+
+        return ResponseUtils.buildOKResponse(List.of("Usuario con registro parcial creado") , null);
+    }
+
+    @Override
     public Response<Void> validateUsername(String username){
         existsByUsername(username);
         return ResponseUtils.buildOKResponse(List.of("Nombre de usuario disponible") , null);
     }
 
-    /**
-     * Método para validar si un email ingresado por una persona se encuentra disponible o no.
-     * @param email el email ingresado por la persona.
-     */
     @Override
     public Response<Void> validateEmail(String email) {
         existsByEmail(email);
         return ResponseUtils.buildOKResponse(List.of("Email disponible") , null);
     }
 
-    /**
-     * Metodo para validar si un dni ingresado por una persona se encuentra disponible o no.
-     * @param dni el dni ingresado por la persona.
-     */
     @Override
     public Response<Void> validateDni(String dni) {
         existsByDni(dni);
@@ -120,12 +131,22 @@ public class UserImplementation implements IUserService {
     }
 
     /**
+     * Meotodo para comprobar que exista un usuario en la base de datos
+     * con el correo electronico recibido de {@link UserUpdateRequestDTO}
+     * @param email el email del usuario
+     * @throws {@link ResourceNotFoundException} si no hay un usuario con el email
+     */
+    private User getUserByEmail(String email){
+        return userRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontró el correo: " + email));
+    }
+
+    /**
      * Meotodo para comprobar que no exista otro usuario en la base de datos 
      * con el mismo nombre de usuario que el ingresado
      * @param username el nombre de usuario ingresado
      * @throws ConflictException si hay un usuario con este nombre de usuario
      */
-
     private void existsByUsername(String username){
         userRepository.findByUsernameAndDeletedAtIsNull(username).ifPresent(user -> {
             throw new ConflictException(EXIST_USER.concat("nombre de usuario ingresado."));
@@ -143,5 +164,4 @@ public class UserImplementation implements IUserService {
             throw new ConflictException(EXIST_USER.concat("DNI ingresado."));
         });
     }
-
 }

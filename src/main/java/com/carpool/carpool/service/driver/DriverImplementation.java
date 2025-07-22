@@ -38,13 +38,13 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class DriverImplementation implements IDriverService {
 
-    
+
     private final DriverRepository driverRepository;
     private final DriverMapper driverMapper;
     private final UserRepository userRepository;
 
     //Para asignar roles a los choferes, se inyecta el RoleRepository
-    private final RoleRepository roleRepository; 
+    private final RoleRepository roleRepository;
 
     private static final String ROLE_DRIVER = "ROLE_DRIVER";
     private static final String EXIST_DRIVER_PROFILE = "Ya existe un perfil de chofer para este usuario.";
@@ -54,14 +54,14 @@ public class DriverImplementation implements IDriverService {
     public final static String AUTHORITIES_CLAIM = "authorities";
     private final static String USERNAME_CLAIM = "username";
 
-    
+
     private final JwtUtils jwtUtils;
 
     /**
      * Metodo utilizado para guardar un nuevo perfil de chofer.
      * Este metodo verifica si el usuario tiene al menos 18 años de edad,
      * verifica si ya existe un perfil de chofer para el usuario,
-     * @param driverRequestDTO 
+     * @param driverRequestDTO
      * @return Response<TokenResponseDTO> respuesta con el token de acceso y refresh token
      * @throws ConflictException si el usuario no se encuentra o ya existe un perfil de cho
      */
@@ -85,7 +85,7 @@ public class DriverImplementation implements IDriverService {
         driverRepository.save(driver);
 
         /*
-         * Llamos al metodo provadi para actualizar el SecurityContextHolder. 
+         * Llamos al metodo provadi para actualizar el SecurityContextHolder.
          * Esto es necesario para que el usuario tenga acceso inmediato a los nuevos roles
          * asignados (en este caso, el rol de "DRIVER") sin necesidad de que el usuario
          * vuelva a iniciar sesión.
@@ -116,9 +116,9 @@ public class DriverImplementation implements IDriverService {
             .add(AUTHORITIES_CLAIM, authoritiesJson)
             .add(USERNAME_CLAIM, updatedUserDetails.getUsername())
             .build();
-        
 
-        
+
+
         /*
          * Generamos el Access Token utilizando los métodos de JwtUtils.
          * Esto incluye la firma del token y la adición de los claims necesarios.
@@ -192,7 +192,7 @@ public class DriverImplementation implements IDriverService {
      */
     private void assignDriverRoleToUser(User user) {
         // Usamos la constante ROLE_DRIVER definida arriba
-        Role driverRole = roleRepository.findByName(ROLE_DRIVER) 
+        Role driverRole = roleRepository.findByName(ROLE_DRIVER)
              .orElseThrow( () -> new ConflictException("Rol '" + ROLE_DRIVER + "' no encontrado.")); 
         
         List<Role> userRoles = new ArrayList<>(user.getRoles());

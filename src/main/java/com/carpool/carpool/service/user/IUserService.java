@@ -1,6 +1,7 @@
 package com.carpool.carpool.service.user;
 
 import com.carpool.carpool.dto.user.UserRequestDTO;
+import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
 import com.carpool.carpool.response.Response;
 
 public interface IUserService {
@@ -11,6 +12,14 @@ public interface IUserService {
      * @return Response<Void> devolviendo el mensaje si el usuario fue creado
      */
     Response<Void> saveUser(UserRequestDTO userRequestDTO);
+
+    /**
+     * Metodo utilizado para actualizar un usuario con registro parcial en la base de datos. Se realizan controles para
+     * lanzar las excepciones correspondientes
+     * @param {@link UserUpdateRequestDTO} request con los datos del usuario a guardar
+     * @return {@link Response<Void>} devolviendo el mensaje si el usuario fue creado
+     */
+    Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO);
 
     /**
      * Metodo para validar si un username ingresado por una persona se encuentra disponible o no.
