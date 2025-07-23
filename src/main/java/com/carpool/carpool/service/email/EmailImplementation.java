@@ -37,10 +37,7 @@ public class EmailImplementation implements IEmailService{
 
                 String body = buildTemplate(title, message, optionalMessage, buttonUrl, buttonText, messageFooter);
                 helper.setFrom(emailCarpool);
-
-                //TODO: cambiar
-
-                helper.setTo("anil.agustin06@gmail.com");
+                helper.setTo(to);
                 helper.setSubject(subject);
                 helper.setText(body, true);
 
@@ -79,7 +76,7 @@ public class EmailImplementation implements IEmailService{
         context.setVariable("title", title);
         context.setVariable("message", message);
         context.setVariable("optionalMessage", optionalMessage);
-        context.setVariable("buttonUrl", "google.com");
+        context.setVariable("buttonUrl", buttonUrl);
         context.setVariable("buttonText", buttonText);
         context.setVariable("messageFooter", messageFooter);
         return templateEngine.process("email-template", context);

@@ -79,7 +79,7 @@ public class GlobalExceptionHandler {
      * @return {@link ResponseEntity} que contiene {@link Response} con data {@link Void}
      */
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<Response<Void>> handleNotFound(IllegalArgumentException ex) {
+    public ResponseEntity<Response<Void>> handleNotFound(ResourceNotFoundException ex) {
         return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(ex.getMessage())), HttpStatus.NOT_FOUND);
     }
 

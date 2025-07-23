@@ -1,5 +1,6 @@
 package com.carpool.carpool.service.user;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +17,7 @@ import com.carpool.carpool.repository.user.token.UserTokenRepository;
 import com.carpool.carpool.service.email.IEmailService;
 import com.carpool.carpool.utils.TokenUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -50,6 +52,9 @@ public class UserImplementation implements IUserService {
     private static final String MESSAGE_FOOTER = "Si no solicitaste esta activación, podés ignorar este correo. Recuerda que el mismo es válido durante <strong>48 horas</strong>.";
 
     public static final String ROLE_USER = "ROLE_USER";
+
+    @Value("${redirect.validate.email}")
+    private String urlValidateEmail;
 
     @Override
     @Transactional
@@ -115,13 +120,14 @@ public class UserImplementation implements IUserService {
             throw new ConflictException("El token es inválido");
         }
 
-        User user = userRepository.findById(tokenValidate.getId())
+        User user = userRepository.findById(tokenValidate.getUser().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         user.setAccountStatus(UserStateEnum.ACTIVE);
-        userRepository.save(user);
-
         tokenValidate.setState(TokenStateEnum.USED);
+        tokenValidate.setUsedAt(LocalDateTime.now());
+
+        userRepository.save(user);
         userTokenRepository.save(tokenValidate);
 
         return ResponseUtils.buildOKResponse(List.of("Usuario activado con éxito") , null);
@@ -211,7 +217,7 @@ public class UserImplementation implements IUserService {
     private void saveRequestActivationAccount(User user){
         UserToken userToken = buildUserToken(user);
         userTokenRepository.save(userToken);
-        emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL, TITLE.replace("{name}", user.getName()), MESSAGE_EMAIL, null,null, CONFIRM, MESSAGE_FOOTER);
+        emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL, TITLE.replace("{name}", user.getName()), MESSAGE_EMAIL, null,urlValidateEmail.replace("value", userToken.getToken()), CONFIRM, MESSAGE_FOOTER);
     }
 
     /**
