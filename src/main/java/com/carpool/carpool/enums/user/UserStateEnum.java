@@ -11,7 +11,7 @@ package com.carpool.carpool.enums.user;
  *     {@code LOCKED Usuario bloqueado permanentemente por multiples inicios de sesion fallidos}
  * </p>
  */
-public enum UserStatus {
+public enum UserStateEnum {
     PENDING_VERIFICATION,
     PENDING_PROFILE,
     ACTIVE,

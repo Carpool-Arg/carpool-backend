@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import com.carpool.carpool.enums.user.UserStatus;
+import com.carpool.carpool.enums.user.UserStateEnum;
 import com.carpool.carpool.security.utils.JwtUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -188,14 +188,14 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             //Verificamos que la cuenta no este bloqueada, si esta bloqueda permanetemente enviamos un mensaje indicando la situacion
             //Si la cuenta no esta bloqueada y han pasado mas de 4 horas desde el utimo intento de inicio de sesion del usuario,
             //seteamos la cantidad de intentos fallidos en 0.
-            if(user.getAccountStatus() == UserStatus.LOCKED){
+            if(user.getAccountStatus() == UserStateEnum.LOCKED){
                 messages.add("Su cuenta se encuentra bloqueada permanentemente.");
             }else if(userAccountService.resetTimeExpired(user)){
                 user.setFailedAttempts(0);
             }
 
             //Si la cuenta esta activa realizamos las comprobaciones para saber cuantos intentos fallidos lleva el usuario
-            if(user.getAccountStatus() == UserStatus.ACTIVE){
+            if(user.getAccountStatus() == UserStateEnum.ACTIVE){
 
                 //Incrementamos la cantidad de intentos fallidos del usuario
                 userAccountService.increaseFailedAttempts(user);
@@ -236,7 +236,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
              * Esta desuspension no reinicia la cantidad de intentos, solo la pasa a estado activa
              * Si la cuenta aun esta suspendida enviamos un mensaje
              */
-            }else if(user.getAccountStatus() == UserStatus.SUSPENDED){
+            }else if(user.getAccountStatus() == UserStateEnum.SUSPENDED){
                 if(userAccountService.lockTimeExpired(user)){
                     userAccountService.unSuspendAccount(user);
                     messages.add("La cuenta se encuentra desbloqueada. Por favor, intente ingresar nuevamente");

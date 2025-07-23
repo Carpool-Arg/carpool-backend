@@ -7,7 +7,7 @@ import com.carpool.carpool.response.Response;
 public interface IUserService {
     /**
      * Metodo utilizado para almacenar un usuario en la base de datos. Se realizan controles para
-     * lanzar las excepciones correspondientes
+     * lanzar las excepciones correspondientes. Tambien crea un registro para activar la cuenta del usuario.
      * @param userRequestDTO request con los datos del usuario a guardar
      * @return Response<Void> devolviendo el mensaje si el usuario fue creado
      */
@@ -15,11 +15,19 @@ public interface IUserService {
 
     /**
      * Metodo utilizado para actualizar un usuario con registro parcial en la base de datos. Se realizan controles para
-     * lanzar las excepciones correspondientes
+     * lanzar las excepciones correspondientes. Tambien crea un registro para activar la cuenta del usuario.
      * @param {@link UserUpdateRequestDTO} request con los datos del usuario a guardar
      * @return {@link Response<Void>} devolviendo el mensaje si el usuario fue creado
      */
     Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO);
+
+    /**
+     * Metodo encargado de validar si el token se encuentra en la base de datos y si cumple condiciones para proceder a la
+     * activacion de la cuenta del usuario y tambien a la caducación del token
+     * @param token del tipo {@link String}
+     * @return
+     */
+    Response<Void> activateAccount(String token);
 
     /**
      * Metodo para validar si un username ingresado por una persona se encuentra disponible o no.

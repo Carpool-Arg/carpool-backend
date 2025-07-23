@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
-import com.carpool.carpool.enums.user.UserStatus;
+import com.carpool.carpool.enums.user.UserStateEnum;
 import com.carpool.carpool.model.role.Role;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -66,7 +66,7 @@ public class User implements Serializable {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UserStatus status;
+    private UserStateEnum status;
 
     @JsonIgnoreProperties({"users", "handler", "hibernateLazyInitializer"})
     @ManyToMany
@@ -92,7 +92,7 @@ public class User implements Serializable {
 
     @Column(name="account_status")
     @Enumerated(EnumType.STRING)
-    private UserStatus accountStatus;
+    private UserStateEnum accountStatus;
 
     @Column(name="failed_attempts")
     private int failedAttempts;
@@ -112,7 +112,7 @@ public class User implements Serializable {
     protected void onCreate() {
         this.created_at = LocalDateTime.now();
         this.failedAttempts = 0;
-        this.accountStatus = UserStatus.ACTIVE;
+        this.accountStatus = UserStateEnum.ACTIVE;
     }
 
     /*
@@ -130,6 +130,6 @@ public class User implements Serializable {
     }
 
     public boolean isAccountNonLockedOrSuspended(){
-        return accountStatus==UserStatus.ACTIVE;
+        return accountStatus== UserStateEnum.ACTIVE;
     }
 }

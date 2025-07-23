@@ -40,6 +40,7 @@ public class UserController {
             @RequestBody UserRequestDTO userRequestDTO) {
         return new ResponseEntity<>(userService.saveUser(userRequestDTO), HttpStatus.CREATED);
     }
+
     @Operation(summary = "Completado del registro parcial de un usuario")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Usuario creado con exito"),
@@ -51,6 +52,17 @@ public class UserController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Request para completar el registro parcial de un usuario", required = true)
             @Valid @RequestBody UserUpdateRequestDTO userUpdateRequestDTO) {
         return new ResponseEntity<>(userService.updateUser(userUpdateRequestDTO), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Activar la cuenta de un usuario")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuario activado"),
+            @ApiResponse(responseCode = "404", description = "Recurso no encontrado"),
+            @ApiResponse(responseCode = "409", description = "Erorres relacionados al token", content = @Content)
+    })
+    @PostMapping("/activate-account")
+    public ResponseEntity<Response<Void>> activateAccount(@RequestParam String token) {
+        return new ResponseEntity<>(userService.activateAccount(token), HttpStatus.OK);
     }
 
     @Operation(summary = "Validar si un username se encuentra en uso")
