@@ -55,10 +55,13 @@ public class SpringSecurityConfig {
     SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) throws Exception{
         return http.authorizeHttpRequests((authz)-> authz
         .requestMatchers(HttpMethod.POST, "/users/complete-registration").authenticated()
-        .requestMatchers("/users/**").permitAll()
+        .requestMatchers("/users", "/users/**").permitAll()
         .requestMatchers(HttpMethod.POST, "/auth-google/**").permitAll()
         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
         .requestMatchers(HttpMethod.POST, "/drivers/become_driver").authenticated()
+        .requestMatchers(HttpMethod.POST, "/drivers").authenticated()
+        .requestMatchers(HttpMethod.GET, "/vehicle-types").hasAnyRole("DRIVER", "ADMIN")
+        .requestMatchers("/vehicles", "/vehicles/**").hasRole("DRIVER")
         .anyRequest().authenticated())
         .exceptionHandling(config -> config
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)

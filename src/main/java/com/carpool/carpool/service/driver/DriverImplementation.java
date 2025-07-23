@@ -6,13 +6,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.carpool.carpool.dto.driver.DriverRequestDTO;
+import com.carpool.carpool.dto.security.token.TokenResponseDTO;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.mappers.driver.DriverMapper;
 import com.carpool.carpool.model.driver.Driver;
@@ -23,70 +23,123 @@ import com.carpool.carpool.repository.role.RoleRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.model.CustomUserDetails;
+import com.carpool.carpool.security.utils.JwtUtils;
 import com.carpool.carpool.utils.ResponseUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import lombok.RequiredArgsConstructor;
 
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class DriverImplementation implements IDriverService {
 
-    @Autowired
-    private DriverRepository driverRepository;
 
-    @Autowired
-    private DriverMapper driverMapper;
-
-    @Autowired
-    private UserRepository userRepository;
+    private final DriverRepository driverRepository;
+    private final DriverMapper driverMapper;
+    private final UserRepository userRepository;
 
     //Para asignar roles a los choferes, se inyecta el RoleRepository
-    @Autowired
-    private RoleRepository roleRepository; 
+    private final RoleRepository roleRepository;
 
     private static final String ROLE_DRIVER = "ROLE_DRIVER";
-
     private static final String EXIST_DRIVER_PROFILE = "Ya existe un perfil de chofer para este usuario.";
-
     private static final int MIN_DRIVER_AGE = 18;
 
+    // Constantes para los claims
+    public final static String AUTHORITIES_CLAIM = "authorities";
+    private final static String USERNAME_CLAIM = "username";
+
+
+    private final JwtUtils jwtUtils;
+
     /**
-     * Metodo utilizado para almacenar un chofer en la base de datos. Se realizan controles para
-     * lanzar las excepciones correspondientes.
-     * @param driverRequestDTO request con los datos del chofer a guardar
-     * @return Response<Void> devolviendo el mensaje si el chofer fue creado
-     * @throws ConflictException si el usuario no fue encontrado
+     * Metodo utilizado para guardar un nuevo perfil de chofer.
+     * Este metodo verifica si el usuario tiene al menos 18 años de edad,
+     * verifica si ya existe un perfil de chofer para el usuario,
+     * @param driverRequestDTO
+     * @return Response<TokenResponseDTO> respuesta con el token de acceso y refresh token
+     * @throws ConflictException si el usuario no se encuentra o ya existe un perfil de cho
      */
     @Override
     @Transactional
-    public Response<Void> saveDriver(DriverRequestDTO driverRequestDTO) {
+    public Response<TokenResponseDTO> saveDriver(DriverRequestDTO driverRequestDTO) {
         checkDriverAge(driverRequestDTO.getBirthDate());
 
-        checkIfDriverProfileExists(); 
+        checkIfDriverProfileExists();
 
-        //Obtener el usuario autenticado. 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
         String username = authentication.getName();
 
-        //Buscar el usuario por su nombre de usuario.
         User user = userRepository.findByUsernameAndDeletedAtIsNull(username)
-                .orElseThrow( () -> new ConflictException("Usuario no encontrado.")); 
+                .orElseThrow(() -> new ConflictException("Usuario no encontrado."));
 
         Driver driver = driverMapper.convertDriverRequestDTOToDriver(driverRequestDTO, user);
 
-        //Asignar el rol de chofer, si aun no lo posee
         assignDriverRoleToUser(user);
-
         normalizedDriverFields(driver);
-
         driverRepository.save(driver);
 
-        // Actualizamos el contexto de seguridad con los nuevos roles asignados
-        updateSecurityContext(user); 
+        /*
+         * Llamos al metodo provadi para actualizar el SecurityContextHolder.
+         * Esto es necesario para que el usuario tenga acceso inmediato a los nuevos roles
+         * asignados (en este caso, el rol de "DRIVER") sin necesidad de que el usuario
+         * vuelva a iniciar sesión.
+         */
+        updateSecurityContext(user);
 
-        return ResponseUtils.buildOKResponse(List.of("El perfil de chofer ha sido creado correctamente."), null);
+        /*
+         * Se crea una nueva instancia de CustomUserDetails con el usuario actualizado.
+         * Esto es necesario para que el token JWT contenga los roles actualizados del usuario.
+         * Esto es importante porque el usuario puede haber cambiado de roles después de iniciar sesión
+         */
+        CustomUserDetails updatedUserDetails = new CustomUserDetails(user);
+
+        String authoritiesJson;
+        try {
+            authoritiesJson = new ObjectMapper().writeValueAsString(updatedUserDetails.getAuthorities());
+        } catch (JsonProcessingException e) {
+            throw new ConflictException("Error al serializar autoridades para JWT: " + e.getMessage());
+        }
+
+        /*
+         * Creamos los claims del token JWT.
+         * Esto incluye las autoridades del usuario y el nombre de usuario.
+         * Esto es necesario para que el token contenga la información necesaria
+         * para la autorización y autenticación del usuario.
+         */
+        Claims claims = Jwts.claims()
+            .add(AUTHORITIES_CLAIM, authoritiesJson)
+            .add(USERNAME_CLAIM, updatedUserDetails.getUsername())
+            .build();
+
+
+
+        /*
+         * Generamos el Access Token utilizando los métodos de JwtUtils.
+         * Esto incluye la firma del token y la adición de los claims necesarios.
+         */
+        String accessToken = jwtUtils.generateAccessToken(updatedUserDetails.getUsername(), claims);
+
+        /*
+         * Generamos el Refresh Token utilizando los mismos claims.
+         * Esto es necesario para que el usuario pueda obtener un nuevo Access Token
+         */
+        String refreshToken = jwtUtils.generateRefreshToken(updatedUserDetails.getUsername(), claims);
+
+        /*
+         * Creamos una instancia de TokenResponseDTO con los tokens generados.
+         */
+        TokenResponseDTO tokens = new TokenResponseDTO(accessToken, refreshToken);
+
+        return ResponseUtils.buildOKResponse(List.of("El perfil de chofer ha sido creado correctamente."), tokens);
     }
- 
+
+
     /**
      * Metodo utilizado para verificar la edad del chofer.
      * Se lanza una excepcion si la fecha de nacimiento es en el futuro o si el chofer es menor de edad.
@@ -139,7 +192,7 @@ public class DriverImplementation implements IDriverService {
      */
     private void assignDriverRoleToUser(User user) {
         // Usamos la constante ROLE_DRIVER definida arriba
-        Role driverRole = roleRepository.findByName(ROLE_DRIVER) // <-- ¡Aquí se usa la constante!
+        Role driverRole = roleRepository.findByName(ROLE_DRIVER)
              .orElseThrow( () -> new ConflictException("Rol '" + ROLE_DRIVER + "' no encontrado.")); 
         
         List<Role> userRoles = new ArrayList<>(user.getRoles());
