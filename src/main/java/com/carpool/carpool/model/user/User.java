@@ -62,6 +62,7 @@ public class User implements Serializable {
     @Size(min = 7, max = 25, message = "El número de teléfono debe tener entre 7 y 50 caracteres.")
     @Pattern(regexp = "^[0-9\\-+\\s]*$", message = "El número de teléfono debe contener únicamente números, guiones, signos + y espacios.")
     @Column(unique = true)
+    //TODO: Arreglar el manejo de errores 
     private String phone;
 
     @Enumerated(EnumType.STRING)
@@ -90,9 +91,6 @@ public class User implements Serializable {
     @Column(name = "deleted_by")
     private Long deleted_by;
 
-    @Column(name="account_status")
-    @Enumerated(EnumType.STRING)
-    private UserStateEnum accountStatus;
 
     @Column(name="failed_attempts")
     private int failedAttempts;
@@ -112,7 +110,6 @@ public class User implements Serializable {
     protected void onCreate() {
         this.created_at = LocalDateTime.now();
         this.failedAttempts = 0;
-        this.accountStatus = UserStateEnum.ACTIVE;
     }
 
     /*
@@ -129,7 +126,7 @@ public class User implements Serializable {
         return deletedAt == null;
     }
 
-    public boolean isAccountNonLockedOrSuspended(){
-        return accountStatus== UserStateEnum.ACTIVE;
+    public boolean isAccountActive(){
+        return status == UserStateEnum.ACTIVE;
     }
 }

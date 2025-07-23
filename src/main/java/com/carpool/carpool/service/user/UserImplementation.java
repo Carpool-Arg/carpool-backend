@@ -123,7 +123,7 @@ public class UserImplementation implements IUserService {
         User user = userRepository.findById(tokenValidate.getUser().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        user.setAccountStatus(UserStateEnum.ACTIVE);
+        user.setStatus(UserStateEnum.ACTIVE);
         tokenValidate.setState(TokenStateEnum.USED);
         tokenValidate.setUsedAt(LocalDateTime.now());
 

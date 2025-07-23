@@ -55,7 +55,7 @@ public class UserAccountImplementation implements IUserAccountService{
     @Override
     @Transactional
     public void suspendAccount(User user) {
-        user.setAccountStatus(UserStateEnum.SUSPENDED);
+        user.setStatus(UserStateEnum.SUSPENDED);
         user.setLockTime(new Date());
         userRepository.save(user);
     }
@@ -68,7 +68,7 @@ public class UserAccountImplementation implements IUserAccountService{
     @Override
     @Transactional
     public void unSuspendAccount(User user){
-        user.setAccountStatus(UserStateEnum.ACTIVE);
+        user.setStatus(UserStateEnum.ACTIVE);
         user.setLockTime(null);
         userRepository.save(user);
     }
@@ -80,7 +80,7 @@ public class UserAccountImplementation implements IUserAccountService{
     @Override
     @Transactional
     public void lockAccount(User user) {
-        user.setAccountStatus(UserStateEnum.LOCKED);
+        user.setStatus(UserStateEnum.LOCKED);
         user.setLockTime(new Date());
         userRepository.save(user);
     }
@@ -93,7 +93,7 @@ public class UserAccountImplementation implements IUserAccountService{
     @Override
     @Transactional
     public void unlockAccount(User user) {
-        user.setAccountStatus(UserStateEnum.ACTIVE);
+        user.setStatus(UserStateEnum.ACTIVE);
         user.setLockTime(null);
         user.setFailedAttempts(0);
         userRepository.save(user);
@@ -109,7 +109,7 @@ public class UserAccountImplementation implements IUserAccountService{
         long lockTimeInMillis = user.getLockTime().getTime();
         long currentTimeInMillis = System.currentTimeMillis();
 
-        if(user.getAccountStatus() == UserStateEnum.LOCKED){
+        if(user.getStatus() == UserStateEnum.LOCKED){
             return false;
         }else if(lockTimeInMillis + LOCK_DURATION < currentTimeInMillis){
             return true;
@@ -130,5 +130,5 @@ public class UserAccountImplementation implements IUserAccountService{
         return user.getLastFailedLoginTime() != null && (currentTimeInMillis - user.getLastFailedLoginTime().getTime() >= FOUR_HOURS);
     }
 
-    //TODO: active account
+    
 }
