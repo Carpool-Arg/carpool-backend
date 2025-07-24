@@ -176,92 +176,109 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         // no como parametros
         String username = this.currentUsername;
         this.currentUsername = null;
+        
 
         //Buscamos si el usuario existe en la base de datos
         Optional<User> optionalUser = userRepository.findByUsernameAndDeletedAtIsNull(username);
         List<String> messages = new ArrayList<>();
-        //Si el usuario existe realizamos toda la logica
-        if(optionalUser.isPresent()){
+        //Si el usuario existe realizamos toda la logica, sino devolvemos solo un mensaje
+        if (optionalUser.isEmpty()){
+            messages.add("Nombre de usuario o contraseña incorrecta.");
+        }else{
             User user = optionalUser.get();
-
 
             //Verificamos que la cuenta no este bloqueada, si esta bloqueda permanetemente enviamos un mensaje indicando la situacion
             //Si la cuenta no esta bloqueada y han pasado mas de 4 horas desde el utimo intento de inicio de sesion del usuario,
             //seteamos la cantidad de intentos fallidos en 0.
-            if(user.getAccountStatus() == UserStateEnum.LOCKED){
-                messages.add("Su cuenta se encuentra bloqueada permanentemente.");
-            }else if(userAccountService.resetTimeExpired(user)){
-                user.setFailedAttempts(0);
+            
+            switch (user.getStatus()) {
+                case LOCKED:
+                    messages.add("Su cuenta se encuentra bloqueada permanentemente.");
+                    break;
+                case ACTIVE:
+                    if(userAccountService.resetTimeExpired(user)){
+                        user.setFailedAttempts(0);
+                    }
+                    messages.add(handleActiveAccount(user));
+                    break;
+                case SUSPENDED:
+                    if(userAccountService.resetTimeExpired(user)){
+                        user.setFailedAttempts(0);
+                    }
+                    messages.add(handleSuspendedAccount(user));
+                    break;
+                case PENDING_PROFILE:
+                    messages.add(UserStateEnum.PENDING_PROFILE.toString());
+                    messages.add("Deber completar el registro para tener acceso a la aplicación.");
+                    break;
+                case PENDING_VERIFICATION:
+                    messages.add(UserStateEnum.PENDING_VERIFICATION.toString());
+                    messages.add("Debe activar su cuenta para tener acceso a la aplicación.");
+                    break;
+                default:
+                    messages.add("Nombre de usuario o contraseña incorrecta");
+                    break;
             }
-
-            //Si la cuenta esta activa realizamos las comprobaciones para saber cuantos intentos fallidos lleva el usuario
-            if(user.getAccountStatus() == UserStateEnum.ACTIVE){
-
-                //Incrementamos la cantidad de intentos fallidos del usuario
-                userAccountService.increaseFailedAttempts(user);
-
-                //Esto se hace debido a que el userAccountService acutaliza el objeto en la base de datos, pero
-                //esta actualizacion no se ve reflejada en el objeto que se tiene guardado en memoria, por lo que hay que hacerlo
-                //manualmente
-                user.setFailedAttempts(user.getFailedAttempts() + 1);
-
-                //Segun la cantidad de intentos fallidos que tenga el usuario hacemos las acciones correspondientes
-                /*
-                 * Con 4 intentos avisamos que en el siguiente se va a suspender la cuenta por 15 minutos
-                 * Con 5 avisamos que la cuenta ha sido suspendida y cambiamos el estado de la cuenta
-                 * Lo mismo para 9 y 10 pero con 10 bloqueamos la cuenta
-                 */
-                switch (user.getFailedAttempts()) {
-                    case 4:
-                        messages.add("Ingreso fallido. Si ingresa mal su contraseña nuevamente su cuenta sera suspendida por 15 minutos.");
-                        break;
-                    case 5:
-                        userAccountService.suspendAccount(user);
-                        messages.add("Ha ingresado incorrectamente su contraseña 5 veces. Su cuenta se encuentra suspendida por los proximos 15 minutos.");
-                        break;
-                    case 9:
-                        messages.add("Ingreso fallido. Si ingresa mal su contraseña nuevamente su cuenta sera bloqueada permanentemente!!");
-                        break;
-                    case 10:
-                        userAccountService.lockAccount(user);
-                        messages.add("Ha ingresado incorrectamente su contraseña 10 veces. Su cuenta se encuentra bloqueada permanentemente.");
-                        break;
-                    default:
-                        messages.add("Nombre de usuario o contraseña incorrecta.");
-                        break;
-                }
-            /*
-             * Si la cuenta del usuario esta suspendida verificamos si el tiempo de suspension de 15 ha pasado
-             * Si ya paso indicamos al usuario que puede volver a intentar acceder a la cuenta y la desuspendemos
-             * Esta desuspension no reinicia la cantidad de intentos, solo la pasa a estado activa
-             * Si la cuenta aun esta suspendida enviamos un mensaje
-             */
-            }else if(user.getAccountStatus() == UserStateEnum.SUSPENDED){
-                if(userAccountService.lockTimeExpired(user)){
-                    userAccountService.unSuspendAccount(user);
-                    messages.add("La cuenta se encuentra desbloqueada. Por favor, intente ingresar nuevamente");
-                }else{
-                    messages.add("Su cuenta se encuentra suspendida por repetidos intentos de inicio de sesión. Vuelva a intentarlo mas tarde");
-                }
-            }
-
-            /*
-             * Seteamos la fecha actual como ultimo intento de inicio fallido y guardamos el usuario en la base de datos
-             */
-            user.setLastFailedLoginTime(new Date());
-            userRepository.save(user);
-        /*
-         * Si el usuario no existe solo indicamos que hubo un error de autenticacion
-         */
-        }else{
-            messages.add("Nombre de usuario o contraseña incorrecta");
+            
         }
-
         ResponseEntity<Response<Void>> responseBody = new ResponseEntity<>(
-            ResponseUtils.buildErrorResponse(List.of( "Error en la autenticación")),
+            ResponseUtils.buildErrorResponse(messages),
             HttpStatus.UNAUTHORIZED
         );
 
         ResponseUtils.writeResponse(response, responseBody, CONTENT_TYPE);
+
     }
+
+
+    private String handleActiveAccount(User user){
+        //Incrementamos la cantidad de intentos fallidos del usuario
+        userAccountService.increaseFailedAttempts(user);
+
+        //Esto se hace debido a que el userAccountService acutaliza el objeto en la base de datos, pero
+        //esta actualizacion no se ve reflejada en el objeto que se tiene guardado en memoria, por lo que hay que hacerlo
+        //manualmente
+        user.setFailedAttempts(user.getFailedAttempts() + 1);
+
+        /*
+        * Seteamos la fecha actual como ultimo intento de inicio fallido y guardamos el usuario en la base de datos
+        */
+        user.setLastFailedLoginTime(new Date());
+        userRepository.save(user);
+
+        //Segun la cantidad de intentos fallidos que tenga el usuario hacemos las acciones correspondientes
+        /*
+            * Con 4 intentos avisamos que en el siguiente se va a suspender la cuenta por 15 minutos
+            * Con 5 avisamos que la cuenta ha sido suspendida y cambiamos el estado de la cuenta
+            * Lo mismo para 9 y 10 pero con 10 bloqueamos la cuenta
+            */
+        switch (user.getFailedAttempts()) {
+            case 4:
+                return "Ingreso fallido. Si ingresa mal su contraseña nuevamente su cuenta sera suspendida por 15 minutos.";
+            case 5:
+                userAccountService.suspendAccount(user);
+                return "Ha ingresado incorrectamente su contraseña 5 veces. Su cuenta se encuentra suspendida por los proximos 15 minutos.";
+            case 9:
+                return "Ingreso fallido. Si ingresa mal su contraseña nuevamente su cuenta sera bloqueada permanentemente!!";
+            case 10:
+                userAccountService.lockAccount(user);
+                return "Ha ingresado incorrectamente su contraseña 10 veces. Su cuenta se encuentra bloqueada permanentemente.";
+            default:
+                return "Nombre de usuario o contraseña incorrecta.";
+
+        }
+    } 
+
+    private String handleSuspendedAccount(User user){
+        if(userAccountService.lockTimeExpired(user)){
+            userAccountService.unSuspendAccount(user);
+            return "La cuenta se encuentra desbloqueada. Por favor, intente ingresar nuevamente";
+        }else{
+            user.setLastFailedLoginTime(new Date());
+            userRepository.save(user);
+            return "Su cuenta se encuentra suspendida por repetidos intentos de inicio de sesión. Vuelva a intentarlo mas tarde";
+        }
+    }
+
+
 }
