@@ -67,7 +67,7 @@ public class UserController {
 
     @Operation(summary = "Reenvio de correo para activar la cuenta")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Usuario activado", content = @Content)
+            @ApiResponse(responseCode = "200", description = "Correo electrónico enviado", content = @Content)
     })
     @PostMapping("/resend-activation")
     public ResponseEntity<Response<Void>> resendActivateAccount(@RequestParam String email) {
