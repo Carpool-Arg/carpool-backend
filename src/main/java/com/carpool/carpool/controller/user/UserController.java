@@ -65,6 +65,15 @@ public class UserController {
         return new ResponseEntity<>(userService.activateAccount(token), HttpStatus.OK);
     }
 
+    @Operation(summary = "Reenvio de correo para activar la cuenta")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuario activado", content = @Content)
+    })
+    @PostMapping("/resend-activation")
+    public ResponseEntity<Response<Void>> resendActivateAccount(@RequestParam String email) {
+        return new ResponseEntity<>(userService.resendActivateAccount(email), HttpStatus.OK);
+    }
+
     @Operation(summary = "Validar si un username se encuentra en uso")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Username disponible"),

@@ -30,6 +30,13 @@ public interface IUserService {
     Response<Void> activateAccount(String token);
 
     /**
+     * Metodo encargado de enviar nuevamente un correo electrónico para que el usuario pueda activar su cuenta. En caso de que el usuario no exista en la
+     * base de datos se retornará igualmente un estado 200, ya que no deseamos brindar información privada de nuestros usuarios.
+     * @param email del tipo {@link String}
+     */
+    Response<Void> resendActivateAccount(String email);
+
+    /**
      * Metodo para validar si un username ingresado por una persona se encuentra disponible o no.
      * @param username el nombre de usuario ingresado por la persona.
      */

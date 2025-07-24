@@ -57,6 +57,7 @@ public class SpringSecurityConfig {
         .requestMatchers(HttpMethod.POST, "/users/complete-registration").authenticated()
         .requestMatchers("/users", "/users/**").permitAll()
         .requestMatchers(HttpMethod.POST, "/users/activate-account").permitAll()
+        .requestMatchers(HttpMethod.POST, "/users/resend-activation").permitAll()
         .requestMatchers(HttpMethod.POST, "/auth-google/**").permitAll()
         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
         .requestMatchers(HttpMethod.POST, "/drivers/become_driver").authenticated()

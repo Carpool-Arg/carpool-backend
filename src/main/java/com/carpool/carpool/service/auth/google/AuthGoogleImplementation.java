@@ -62,7 +62,6 @@ public class AuthGoogleImplementation implements IAuthGoogleService {
         }
 
         GoogleAuthResponse response = buildResponseGoogle(user, token, refreshToken);
-        //TODO: enviar mensaje en caso de que tenga estado pendiente de verificacion (donde puede solicitar reenvio de email) o suspendido (se ponga en contacto con el soporte)
         return ResponseUtils.buildOKResponse(List.of("Operación exitosa") , response);
     }
 

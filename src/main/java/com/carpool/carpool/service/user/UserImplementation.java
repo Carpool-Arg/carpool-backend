@@ -134,6 +134,15 @@ public class UserImplementation implements IUserService {
     }
 
     @Override
+    public Response<Void> resendActivateAccount(String email) {
+        Optional<User> user = userRepository.findByEmailAndDeletedAtIsNull(email);
+        if(user.isPresent() && user.get().getAccountStatus() == UserStateEnum.PENDING_VERIFICATION){
+            saveRequestActivationAccount(user.get());
+        }
+        return ResponseUtils.buildOKResponse(List.of("Notificación enviada con éxito") , null);
+    }
+
+    @Override
     public Response<Void> validateUsername(String username){
         existsByUsername(username);
         return ResponseUtils.buildOKResponse(List.of("Nombre de usuario disponible") , null);
