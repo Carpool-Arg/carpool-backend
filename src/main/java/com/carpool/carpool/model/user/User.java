@@ -61,7 +61,6 @@ public class User implements Serializable {
 
     @Size(min = 7, max = 25, message = "El número de teléfono debe tener entre 7 y 50 caracteres.")
     @Pattern(regexp = "^[0-9\\-+\\s]*$", message = "El número de teléfono debe contener únicamente números, guiones, signos + y espacios.")
-    @Column(unique = true)
     private String phone;
 
     @Enumerated(EnumType.STRING)

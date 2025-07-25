@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class VehicleRequestDTO {
     @NotBlank(message = "La patente no puede estar en blanco.")
-    @Size(min = 6, max = 10, message = "La patente debe tener entre 6 y 10 caracteres.")
+    @Size(min = 6, max = 7, message = "La patente debe tener entre 6 y 7 caracteres.")
     private String domain; 
 
     @NotBlank(message = "La marca del vehiculo no puede estar en blanco.")

@@ -157,7 +157,7 @@ public class DriverImplementation implements IDriverService {
         int age = Period.between(birthDate, currentDate).getYears();
 
         if (age < MIN_DRIVER_AGE) { 
-            throw new ConflictException("El chofer debe tener al menos " + MIN_DRIVER_AGE + " años de edad.");
+            throw new ConflictException("El usuario debe tener al menos " + MIN_DRIVER_AGE + " años de edad.");
         }
     }
 
