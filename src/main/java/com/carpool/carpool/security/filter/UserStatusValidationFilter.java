@@ -1,6 +1,6 @@
 package com.carpool.carpool.security.filter;
 
-import com.carpool.carpool.enums.user.UserStatus;
+import com.carpool.carpool.enums.user.UserStateEnum;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
@@ -62,7 +62,7 @@ public class UserStatusValidationFilter extends OncePerRequestFilter {
 
             if (optionalUser.isPresent()) {
                 User user = optionalUser.get();
-                if (user.getStatus() != UserStatus.ACTIVE) {
+                if (user.getStatus() != UserStateEnum.ACTIVE) {
                     response.setStatus(HttpStatus.FORBIDDEN.value());
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 

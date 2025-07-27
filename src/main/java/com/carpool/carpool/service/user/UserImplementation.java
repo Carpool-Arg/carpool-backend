@@ -1,15 +1,23 @@
 package com.carpool.carpool.service.user;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
-import com.carpool.carpool.enums.user.UserStatus;
+import com.carpool.carpool.enums.token.TokenStateEnum;
+import com.carpool.carpool.enums.token.TokenTypeEnum;
+import com.carpool.carpool.enums.user.UserStateEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.exception.UnauthorizedException;
+import com.carpool.carpool.model.user.UserToken;
+import com.carpool.carpool.repository.user.token.UserTokenRepository;
+import com.carpool.carpool.service.email.IEmailService;
+import com.carpool.carpool.utils.TokenUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -32,14 +40,21 @@ public class UserImplementation implements IUserService {
     private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final IEmailService emailImplementation;
+    private final UserTokenRepository userTokenRepository;
 
     private static final String EXIST_USER = "Ya existe un usuario con el ";
-    private static final String TITLE = "Carpool";
-    private static final String ACTIVE_ACCOUNT = "ACTIVÁ TU CUENTA";
-    private static final String ACTIVE_ACCOUNT_DESCRIPTION = "Haz clic en el botón de abajo para confirmar tu correo electrónico y finalizar la configuración de tu cuenta. Este enlace es válido durante 48 horas.";
-    private static final String CONFIRM = "Confirmar";
+
+    private static final String SUBJECT_EMAIL = "Activación de cuenta";
+    private static final String TITLE = "¡Casi listo, {name}!\uD83D\uDE4C";
+    private static final String MESSAGE_EMAIL = "Haz clic en el botón de abajo para activar tu cuenta:";
+    private static final String CONFIRM = "Activar cuenta";
+    private static final String MESSAGE_FOOTER = "Si no solicitaste esta activación, podés ignorar este correo. Recuerda que el mismo es válido durante <strong>48 horas</strong>.";
 
     public static final String ROLE_USER = "ROLE_USER";
+
+    @Value("${redirect.validate.email}")
+    private String urlValidateEmail;
 
     @Override
     @Transactional
@@ -56,10 +71,12 @@ public class UserImplementation implements IUserService {
         optionalRoleUser.ifPresent(roles::add);
 
         User user = userMapper.convertUserRequestDTOToUser(
-            userRequestDTO, 
-            passwordEncoder.encode(userRequestDTO.getPassword()), 
+            userRequestDTO,
+            passwordEncoder.encode(userRequestDTO.getPassword()),
             roles);
         userRepository.save(user);
+
+        saveRequestActivationAccount(user);
 
         return ResponseUtils.buildOKResponse(List.of("Usuario creado") , null);
     }
@@ -70,7 +87,7 @@ public class UserImplementation implements IUserService {
 
         User user = getUserByEmail(userUpdateRequestDTO.getEmail());
 
-        if(!user.getStatus().equals(UserStatus.PENDING_PROFILE)) throw new UnauthorizedException("El usuario no tiene un registro pendiente para completar.");
+        if(!user.getStatus().equals(UserStateEnum.PENDING_PROFILE)) throw new UnauthorizedException("El usuario no tiene un registro pendiente para completar.");
 
         passwordsMatch(userUpdateRequestDTO.getPassword(), userUpdateRequestDTO.getConfirmPassword());
         existsByUsername(userUpdateRequestDTO.getUsername());
@@ -86,7 +103,44 @@ public class UserImplementation implements IUserService {
                 roles);
         userRepository.save(user);
 
+        saveRequestActivationAccount(user);
+
         return ResponseUtils.buildOKResponse(List.of("Usuario con registro parcial creado") , null);
+    }
+
+    @Override
+    @Transactional
+    public Response<Void> activateAccount(String token){
+        UserToken tokenValidate = userTokenRepository.findByToken(token).
+                orElseThrow(() -> new ResourceNotFoundException("Token no encontrado"));
+
+        if(!tokenValidate.getState().equals(TokenStateEnum.PENDING) || !tokenValidate.getType().equals(TokenTypeEnum.ACTIVATION)){
+            throw new ConflictException("El token ya expiró");
+        }
+        if(!tokenValidate.getToken().equals(token)){
+            throw new ConflictException("El token es inválido");
+        }
+
+        User user = userRepository.findById(tokenValidate.getUser().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        user.setStatus(UserStateEnum.ACTIVE);
+        tokenValidate.setState(TokenStateEnum.USED);
+        tokenValidate.setUsedAt(LocalDateTime.now());
+
+        userRepository.save(user);
+        userTokenRepository.save(tokenValidate);
+
+        return ResponseUtils.buildOKResponse(List.of("Usuario activado con éxito") , null);
+    }
+
+    @Override
+    public Response<Void> resendActivateAccount(String email) {
+        Optional<User> user = userRepository.findByEmailAndDeletedAtIsNull(email);
+        if(user.isPresent() && user.get().getStatus() == UserStateEnum.PENDING_VERIFICATION){
+            saveRequestActivationAccount(user.get());
+        }
+        return ResponseUtils.buildOKResponse(List.of("Notificación enviada con éxito") , null);
     }
 
     @Override
@@ -177,5 +231,29 @@ public class UserImplementation implements IUserService {
         userRepository.findByPhoneAndDeletedAtIsNull(phone).ifPresent(user -> {
             throw new ConflictException(EXIST_USER.concat("número de teléfono ingresado."));
         } );
+    }
+
+    /**
+     * Metodo que se encarga de almacenar una solicitud para activar la cuenta del usuario en la base de datos.
+     * @param user Objeto del tipo {@link User}
+     */
+    private void saveRequestActivationAccount(User user){
+        UserToken userToken = buildUserToken(user);
+        userTokenRepository.save(userToken);
+        emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL, TITLE.replace("{name}", user.getName()), MESSAGE_EMAIL, null,urlValidateEmail.replace("value", userToken.getToken()), CONFIRM, MESSAGE_FOOTER);
+    }
+
+    /**
+     * Metodo encargado de crear un objeto {@link UserToken}
+     * @return Objeto {@link UserToken}
+     */
+    private UserToken buildUserToken(User user){
+        String token = TokenUtils.generateToken(userTokenRepository);
+        return UserToken.builder()
+                .token(token)
+                .type(TokenTypeEnum.ACTIVATION)
+                .state(TokenStateEnum.PENDING)
+                .user(user)
+                .build();
     }
 }

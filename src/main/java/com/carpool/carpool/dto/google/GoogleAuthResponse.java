@@ -1,6 +1,6 @@
 package com.carpool.carpool.dto.google;
 
-import com.carpool.carpool.enums.user.UserStatus;
+import com.carpool.carpool.enums.user.UserStateEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -23,7 +23,7 @@ public class GoogleAuthResponse {
     private String name;
 
     @Schema(example = "ACTIVE")
-    private UserStatus status;
+    private UserStateEnum status;
 
     @Schema(example = "false")
     private boolean needsAction;

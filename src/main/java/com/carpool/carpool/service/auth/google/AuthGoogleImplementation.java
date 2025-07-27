@@ -1,7 +1,7 @@
 package com.carpool.carpool.service.auth.google;
 
 import com.carpool.carpool.dto.google.GoogleAuthResponse;
-import com.carpool.carpool.enums.user.UserStatus;
+import com.carpool.carpool.enums.user.UserStateEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.UnauthorizedException;
 import com.carpool.carpool.model.role.Role;
@@ -54,7 +54,7 @@ public class AuthGoogleImplementation implements IAuthGoogleService {
 
         String token = "";
         String refreshToken = "";
-        if(user.getStatus().equals(UserStatus.ACTIVE) || user.getStatus().equals(UserStatus.PENDING_PROFILE)){
+        if(user.getStatus().equals(UserStateEnum.ACTIVE) || user.getStatus().equals(UserStateEnum.PENDING_PROFILE)){
             CustomUserDetails userDetail = new CustomUserDetails(user);
             Claims claims = getAuthorities(userDetail);
             token = JwtUtils.generateAccessToken(user.getUsername(), claims);
@@ -62,7 +62,6 @@ public class AuthGoogleImplementation implements IAuthGoogleService {
         }
 
         GoogleAuthResponse response = buildResponseGoogle(user, token, refreshToken);
-        //TODO: enviar mensaje en caso de que tenga estado pendiente de verificacion (donde puede solicitar reenvio de email) o suspendido (se ponga en contacto con el soporte)
         return ResponseUtils.buildOKResponse(List.of("Operación exitosa") , response);
     }
 
@@ -79,7 +78,7 @@ public class AuthGoogleImplementation implements IAuthGoogleService {
                 .email(user.getEmail())
                 .name(user.getName())
                 .status(user.getStatus())
-                .needsAction(user.getStatus() != UserStatus.ACTIVE)
+                .needsAction(user.getStatus() != UserStateEnum.ACTIVE)
                 .build();
     }
 
@@ -137,7 +136,7 @@ public class AuthGoogleImplementation implements IAuthGoogleService {
 
             newUser.setUsername(username);
             newUser.setRoles(roles);
-            newUser.setStatus(UserStatus.PENDING_PROFILE);
+            newUser.setStatus(UserStateEnum.PENDING_PROFILE);
             return userRepository.save(newUser);
         });
     }

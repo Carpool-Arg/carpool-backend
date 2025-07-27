@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
-import com.carpool.carpool.enums.user.UserStatus;
+import com.carpool.carpool.enums.user.UserStateEnum;
 import com.carpool.carpool.model.role.Role;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -61,11 +61,12 @@ public class User implements Serializable {
 
     @Size(min = 7, max = 25, message = "El número de teléfono debe tener entre 7 y 50 caracteres.")
     @Pattern(regexp = "^[0-9\\-+\\s]*$", message = "El número de teléfono debe contener únicamente números, guiones, signos + y espacios.")
+    @Column(unique = true)
     private String phone;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UserStatus status;
+    private UserStateEnum status;
 
     @JsonIgnoreProperties({"users", "handler", "hibernateLazyInitializer"})
     @ManyToMany
@@ -89,9 +90,6 @@ public class User implements Serializable {
     @Column(name = "deleted_by")
     private Long deleted_by;
 
-    @Column(name="account_status")
-    @Enumerated(EnumType.STRING)
-    private UserStatus accountStatus;
 
     @Column(name="failed_attempts")
     private int failedAttempts;
@@ -111,7 +109,6 @@ public class User implements Serializable {
     protected void onCreate() {
         this.created_at = LocalDateTime.now();
         this.failedAttempts = 0;
-        this.accountStatus = UserStatus.ACTIVE;
     }
 
     /*
@@ -128,7 +125,7 @@ public class User implements Serializable {
         return deletedAt == null;
     }
 
-    public boolean isAccountNonLockedOrSuspended(){
-        return accountStatus==UserStatus.ACTIVE;
+    public boolean isAccountActive(){
+        return status == UserStateEnum.ACTIVE;
     }
 }
