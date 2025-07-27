@@ -74,6 +74,15 @@ public class UserController {
         return new ResponseEntity<>(userService.resendActivateAccount(email), HttpStatus.OK);
     }
 
+    @Operation(summary = "Reenvio de correo para activar la cuenta")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Correo electrónico enviado", content = @Content)
+    })
+    @PostMapping("/send-blockAccount")
+    public ResponseEntity<Response<Void>> sendEmailBlockAccount(@RequestParam String email) {
+        return new ResponseEntity<>(userService.sendEmailBlockAccount(email), HttpStatus.OK);
+    }
+
     @Operation(summary = "Validar si un username se encuentra en uso")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Username disponible"),
