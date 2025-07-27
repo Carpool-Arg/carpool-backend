@@ -70,6 +70,7 @@ public class UserImplementation implements IUserService {
         existsByUsername(userRequestDTO.getUsername());
         existsByEmail(userRequestDTO.getEmail());
         existsByDni(userRequestDTO.getDni());
+        validateUniquePhone(userRequestDTO.getPhone());
 
         Optional<Role> optionalRoleUser = roleRepository.findByName(ROLE_USER);
         List<Role> roles = new ArrayList<>();
@@ -232,6 +233,19 @@ public class UserImplementation implements IUserService {
         userRepository.findByDniAndDeletedAtIsNull(dni).ifPresent(user -> {
             throw new ConflictException(EXIST_USER.concat("DNI ingresado."));
         });
+    }
+
+    /**
+     * Metodo para comprobar que no exista otro usuario en la base de datos
+     * con el mismo número de teléfono que el ingresado
+     * @param phone el número de teléfono ingresado por el usuario
+     * @throws ConflictException si hay un usuario registrado con este número de teléfono
+     */
+
+    private void validateUniquePhone(String phone){
+        userRepository.findByPhoneAndDeletedAtIsNull(phone).ifPresent(user -> {
+            throw new ConflictException(EXIST_USER.concat("número de teléfono ingresado."));
+        } );
     }
 
     /**

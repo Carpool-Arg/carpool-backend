@@ -31,7 +31,6 @@ public class VehicleType {
     @NotBlank(message = "El nombre no puede quedar en blanco.")
     @Size(min = 1, message = "El nombre debe tener al menos un caracter")
     @Pattern(regexp = "^[a-zA-Z ]+$", message = "El nombre debe contener sólo letras y espacios.")
-    @Column(unique = true)
     private String name; 
 
     @NotBlank(message = "La descripción no puede quedar en blanco.")
