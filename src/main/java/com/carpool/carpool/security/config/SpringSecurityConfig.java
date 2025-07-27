@@ -6,6 +6,7 @@ import com.carpool.carpool.security.filter.RecaptchaFilter;
 import com.carpool.carpool.security.handler.JwtAuthenticationEntryPoint;
 import com.carpool.carpool.service.auth.blacklist.IAuthBlacklistService;
 import com.carpool.carpool.service.auth.recaptcha.IAuthRecaptchaService;
+import com.carpool.carpool.service.email.IEmailService;
 import com.carpool.carpool.service.user.account.IUserAccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -40,6 +41,7 @@ public class SpringSecurityConfig {
     private final IAuthRecaptchaService authRecaptchaService;
     private final UserRepository userRepository;
     private final IUserAccountService userAccountService;
+    private final IEmailService emailImplementation;
 
     @Bean
     AuthenticationManager authenticationManager() throws Exception {
@@ -56,8 +58,6 @@ public class SpringSecurityConfig {
         return http.authorizeHttpRequests((authz)-> authz
         .requestMatchers(HttpMethod.POST, "/users/complete-registration").authenticated()
         .requestMatchers("/users", "/users/**").permitAll()
-        .requestMatchers(HttpMethod.POST, "/users/activate-account").permitAll()
-        .requestMatchers(HttpMethod.POST, "/users/resend-activation").permitAll()
         .requestMatchers(HttpMethod.POST, "/auth-google/**").permitAll()
         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
         .requestMatchers(HttpMethod.POST, "/drivers/become_driver").authenticated()
@@ -69,7 +69,7 @@ public class SpringSecurityConfig {
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         )
         .addFilterBefore(new RecaptchaFilter(authRecaptchaService), UsernamePasswordAuthenticationFilter.class)
-        .addFilter(new JwtAuthenticationFilter(authenticationManager(),userRepository, userAccountService))
+        .addFilter(new JwtAuthenticationFilter(authenticationManager(),userRepository, userAccountService, emailImplementation))
         .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService, userRepository))
         .csrf(config-> config.disable())
         .cors(cors-> cors.configurationSource(corsConfigurationSource()))

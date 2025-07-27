@@ -37,13 +37,6 @@ public interface IUserService {
     Response<Void> resendActivateAccount(String email);
 
     /**
-     * Metodo encargado de enviar un correo electrónico informándole al usuario que su cuenta ha sido bloqueada. En caso de que el usuario no exista en la
-     * base de datos se retornará igualmente un estado 200, ya que no deseamos brindar información privada de nuestros usuarios.
-     * @param email del tipo {@link String}
-     */
-    Response<Void> sendEmailBlockAccount(String email);
-
-    /**
      * Metodo para validar si un username ingresado por una persona se encuentra disponible o no.
      * @param username el nombre de usuario ingresado por la persona.
      */

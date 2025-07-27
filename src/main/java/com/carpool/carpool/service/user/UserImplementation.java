@@ -51,12 +51,6 @@ public class UserImplementation implements IUserService {
     private static final String CONFIRM = "Activar cuenta";
     private static final String MESSAGE_FOOTER = "Si no solicitaste esta activación, podés ignorar este correo. Recuerda que el mismo es válido durante <strong>48 horas</strong>.";
 
-    private static final String SUBJECT_EMAIL_LOCKED = "Bloqueo de cuenta";
-    private static final String TITLE_LOCKED = "Tu cuenta ha sido bloqueada, {name}";
-    private static final String MESSAGE_EMAIL_LOCKED = "Por cuestiones de seguridad, hemos bloquado el acceso a tu cuenta. Haz clic en el botón de abajo para desbloquearla y crear una nueva contraseña:";
-    private static final String UNLOCKED = "Desbloquear cuenta";
-    private static final String MESSAGE_FOOTER_LOCKED = "El enlace para desbloquear su cuenta es válido durante <strong>48 horas</strong>.";
-
     public static final String ROLE_USER = "ROLE_USER";
 
     @Value("${redirect.validate.email}")
@@ -145,15 +139,6 @@ public class UserImplementation implements IUserService {
         Optional<User> user = userRepository.findByEmailAndDeletedAtIsNull(email);
         if(user.isPresent() && user.get().getStatus() == UserStateEnum.PENDING_VERIFICATION){
             saveRequestActivationAccount(user.get());
-        }
-        return ResponseUtils.buildOKResponse(List.of("Notificación enviada con éxito") , null);
-    }
-
-    @Override
-    public Response<Void> sendEmailBlockAccount(String email) {
-        Optional<User> user = userRepository.findByEmailAndDeletedAtIsNull(email);
-        if(user.isPresent() && user.get().getStatus() == UserStateEnum.LOCKED){
-            saveRequestBlockedAccount(user.get());
         }
         return ResponseUtils.buildOKResponse(List.of("Notificación enviada con éxito") , null);
     }
@@ -256,16 +241,6 @@ public class UserImplementation implements IUserService {
         UserToken userToken = buildUserToken(user);
         userTokenRepository.save(userToken);
         emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL, TITLE.replace("{name}", user.getName()), MESSAGE_EMAIL, null,urlValidateEmail.replace("value", userToken.getToken()), CONFIRM, MESSAGE_FOOTER);
-    }
-
-    /**
-     * Metodo que se encarga de almacenar una solicitud para activar la cuenta del usuario en la base de datos.
-     * @param user Objeto del tipo {@link User}
-     */
-    private void saveRequestBlockedAccount(User user){
-        //UserToken userToken = buildUserToken(user);
-        //userTokenRepository.save(userToken);
-        emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL_LOCKED, TITLE_LOCKED.replace("{name}", user.getName()), MESSAGE_EMAIL_LOCKED, null, "http://localhost:3000/unlocked", UNLOCKED, MESSAGE_FOOTER_LOCKED);
     }
 
     /**

@@ -13,6 +13,8 @@ import java.util.Optional;
 
 import com.carpool.carpool.enums.user.UserStateEnum;
 import com.carpool.carpool.security.utils.JwtUtils;
+import com.carpool.carpool.service.email.IEmailService;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -52,20 +54,26 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     public final static String AUTHORITIES = "authorities";
     public final static String USERNAME = "username";
 
+    private static final String SUBJECT_EMAIL_LOCKED = "Bloqueo de cuenta";
+    private static final String TITLE_LOCKED = "Tu cuenta ha sido bloqueada, {name}";
+    private static final String MESSAGE_EMAIL_LOCKED = "Por cuestiones de seguridad, hemos bloquado el acceso a tu cuenta. Haz clic en el botón de abajo para desbloquearla y crear una nueva contraseña:";
+    private static final String UNLOCKED = "Desbloquear cuenta";
+    private static final String MESSAGE_FOOTER_LOCKED = "El enlace para desbloquear su cuenta es válido durante <strong>48 horas</strong>.";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final AuthenticationManager authenticationManager;
-
     private final UserRepository userRepository;
-
     private final IUserAccountService userAccountService;
+    private final IEmailService emailImplementation;
 
     private String currentUsername;
 
-    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, UserRepository userRepository,  IUserAccountService userAccountService) {
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, UserRepository userRepository,  IUserAccountService userAccountService, IEmailService emailImplementation) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.userAccountService = userAccountService;
+        this.emailImplementation = emailImplementation;
     }
 
     /**
@@ -259,8 +267,9 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 userAccountService.suspendAccount(user);
                 return "Ha ingresado incorrectamente su contraseña 5 veces. Su cuenta se encuentra suspendida por los proximos 15 minutos.";
             case 9:
-                return "Ingreso fallido. Si ingresa mal su contraseña nuevamente su cuenta sera bloqueada permanentemente!!";
+                return "Ingreso fallido. Si ingresa mal su contraseña nuevamente su cuenta sera bloqueada permanentemente!";
             case 10:
+                emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL_LOCKED, TITLE_LOCKED.replace("{name}", user.getName()), MESSAGE_EMAIL_LOCKED, null, "http://localhost:3000/unlocked", UNLOCKED, MESSAGE_FOOTER_LOCKED);
                 userAccountService.lockAccount(user);
                 return "Ha ingresado incorrectamente su contraseña 10 veces. Su cuenta se encuentra bloqueada permanentemente.";
             default:

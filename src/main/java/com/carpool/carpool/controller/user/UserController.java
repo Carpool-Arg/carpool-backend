@@ -1,5 +1,7 @@
 package com.carpool.carpool.controller.user;
 
+import com.carpool.carpool.dto.user.TokenRequestDTO;
+import com.carpool.carpool.dto.user.UserActivationRequestDTO;
 import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -61,8 +63,8 @@ public class UserController {
             @ApiResponse(responseCode = "409", description = "Erorres relacionados al token", content = @Content)
     })
     @PostMapping("/activate-account")
-    public ResponseEntity<Response<Void>> activateAccount(@RequestParam String token) {
-        return new ResponseEntity<>(userService.activateAccount(token), HttpStatus.OK);
+    public ResponseEntity<Response<Void>> activateAccount(@RequestBody TokenRequestDTO tokenRequestDTO) {
+        return new ResponseEntity<>(userService.activateAccount(tokenRequestDTO.getToken()), HttpStatus.OK);
     }
 
     @Operation(summary = "Reenvio de correo para activar la cuenta")
@@ -70,17 +72,8 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Correo electrónico enviado", content = @Content)
     })
     @PostMapping("/resend-activation")
-    public ResponseEntity<Response<Void>> resendActivateAccount(@RequestParam String email) {
-        return new ResponseEntity<>(userService.resendActivateAccount(email), HttpStatus.OK);
-    }
-
-    @Operation(summary = "Reenvio de correo para activar la cuenta")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Correo electrónico enviado", content = @Content)
-    })
-    @PostMapping("/send-blockAccount")
-    public ResponseEntity<Response<Void>> sendEmailBlockAccount(@RequestParam String email) {
-        return new ResponseEntity<>(userService.sendEmailBlockAccount(email), HttpStatus.OK);
+    public ResponseEntity<Response<Void>> resendActivateAccount(@RequestBody UserActivationRequestDTO userActivationRequestDTO) {
+        return new ResponseEntity<>(userService.resendActivateAccount(userActivationRequestDTO.getEmail()), HttpStatus.OK);
     }
 
     @Operation(summary = "Validar si un username se encuentra en uso")
