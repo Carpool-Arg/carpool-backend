@@ -57,6 +57,14 @@ public class UserToken {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        this.expiresAt = this.createdAt.plusHours(48);
+        if (this.type == TokenTypeEnum.PASSWORD_CHANGE) {
+            this.expiresAt = this.createdAt.plusMinutes(30);
+        }else if(this.type == TokenTypeEnum.ACTIVATION || this.type == TokenTypeEnum.EMAIL_CHANGE){
+            this.expiresAt = this.createdAt.plusHours(48);
+        }
+    }
+
+    public boolean isExpired(){
+        return LocalDateTime.now().isAfter(this.expiresAt);
     }
 }
