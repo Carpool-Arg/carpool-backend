@@ -13,7 +13,7 @@ public class EmailMessageUtils {
 
     //CHANGE PASSWORD   
     public static final String SUBJECT_EMAIL_CHANGE_PASSWORD = "Recuperación de contraseña";
-    public static final String TITLE_CHANGE_PASSWORD = "¿{name}, olvidaste tu contraseña? 🔒";
+    public static final String TITLE_CHANGE_PASSWORD = "{name}, ¿Olvidaste tu contraseña? 🔒";
     public static final String MESSAGE_EMAIL_CHANGE_PASSWORD = "Haz clic en el botón de abajo para restablecer tu contraseña:";
     public static final String CONFIRM_CHANGE_PASSWORD = "Restablecer contraseña";
     public static final String MESSAGE_FOOTER_CHANGE_PASSWORD = "Si no solicitaste este cambio, podés ignorar este correo. Recuerda que el mismo es válido durante <strong>30 minutos</strong>.";

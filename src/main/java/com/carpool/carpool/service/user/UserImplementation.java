@@ -124,11 +124,16 @@ public class UserImplementation implements IUserService {
         UserToken tokenValidate = userTokenRepository.findByToken(token).
                 orElseThrow(() -> new ResourceNotFoundException("Token no encontrado"));
 
-        if(!tokenValidate.getState().equals(TokenStateEnum.PENDING) || !tokenValidate.getType().equals(TokenTypeEnum.ACTIVATION)){
-            throw new ConflictException("El token ya expiró");
-        }
-        if(!tokenValidate.getToken().equals(token)){
-            throw new ConflictException("El token es inválido");
+        if (!validateUserToken(tokenValidate,TokenTypeEnum.ACTIVATION)) throw new ConflictException("Token inválido");
+
+        /*
+         * En esta parte se verifica que el token no este expirado, si es asi se le 
+         * setea el estado correspondiente y se lanza una excepcion
+         */
+        if (tokenValidate.isExpired()){
+            tokenValidate.setState(TokenStateEnum.EXPIRED);
+            userTokenRepository.save(tokenValidate);
+            throw new ConflictException("Token Expirado");
         }
 
         User user = userRepository.findById(tokenValidate.getUser().getId())
@@ -248,7 +253,7 @@ public class UserImplementation implements IUserService {
      * @param user Objeto del tipo {@link User}
      */
     private void saveRequestActivationAccount(User user){
-        UserToken userToken = buildUserToken(user);
+        UserToken userToken = buildUserToken(user, TokenTypeEnum.ACTIVATION);
         userTokenRepository.save(userToken);
         emailImplementation.sendEmail(
             user.getEmail(), 
@@ -264,11 +269,11 @@ public class UserImplementation implements IUserService {
      * Metodo encargado de crear un objeto {@link UserToken}
      * @return Objeto {@link UserToken}
      */
-    private UserToken buildUserToken(User user){
+    private UserToken buildUserToken(User user, TokenTypeEnum type){
         String token = TokenUtils.generateToken(userTokenRepository);
         return UserToken.builder()
                 .token(token)
-                .type(TokenTypeEnum.ACTIVATION)
+                .type(type)
                 .state(TokenStateEnum.PENDING)
                 .user(user)
                 .build();
@@ -289,15 +294,10 @@ public class UserImplementation implements IUserService {
     @Transactional
     public Response<Void> sendPasswordChangeEmail(EmailRequestDTO emailRequestDTO) {
         Optional<User> optionalUser = userRepository.findByEmailAndDeletedAtIsNull(emailRequestDTO.getEmail());
-        
-        if(!optionalUser.isPresent()) returnSendedEmailResponse();
-        
+        if(!optionalUser.isPresent()) return returnSendedEmailResponse();
         User user = optionalUser.get();
-
-        if(!validateUserStatus(user)) returnSendedEmailResponse();
-
+        if(!validateUserStatus(user)) return returnSendedEmailResponse();
         saveChangePasswordToken(user);
-
         return ResponseUtils.buildOKResponse(SENDED_EMAIL_MESSAGE, null);
     }
 
@@ -313,14 +313,15 @@ public class UserImplementation implements IUserService {
         UserToken userToken = userTokenRepository.findByToken(token).
         orElseThrow(()->new ResourceNotFoundException("Token no encontrado"));
 
-        if (!validateChangePasswordToken(userToken, token)) throw new ConflictException("Token inválido");
+        if (!validateUserToken(userToken,TokenTypeEnum.PASSWORD_CHANGE)) throw new ConflictException("Token inválido");
 
-        /**
+        /*
          * En esta parte se verifica que el token no este expirado, si es asi se le 
          * setea el estado correspondiente y se lanza una excepcion
          */
         if (userToken.isExpired()){
             userToken.setState(TokenStateEnum.EXPIRED);
+            userTokenRepository.save(userToken);
             throw new ConflictException("Token Expirado");
         }
 
@@ -330,17 +331,13 @@ public class UserImplementation implements IUserService {
         userToken.setState(TokenStateEnum.USED);
         userToken.setUsedAt(LocalDateTime.now());
         
-
         String userPassword = changePasswordRequestDTO.getPassword();
         String userConfirmPassword = changePasswordRequestDTO.getConfirmPassword();
-
         passwordsMatch(userPassword, userConfirmPassword);
-
         user.setPassword(passwordEncoder.encode(userPassword));
-        
+
         userRepository.save(user);
         userTokenRepository.save(userToken);
-
         return ResponseUtils.buildOKResponse(List.of("Contraseña actualizada."), null);
     }
 
@@ -353,11 +350,9 @@ public class UserImplementation implements IUserService {
      * @param token El token que el usuario pasa como parametro
      * @return {@code true} si el token es valido, {@code false} si no
      */
-    private boolean validateChangePasswordToken(UserToken userToken, String token){
+    private boolean validateUserToken(UserToken userToken, TokenTypeEnum type){
         return ( userToken.getState().equals(TokenStateEnum.PENDING) &&
-        userToken.getType().equals(TokenTypeEnum.PASSWORD_CHANGE) &&
-        //TODO: ver esto, para mi no tiene sentido. Va a dar siempre que si, sino hubiera saltado la excepcion del metodo de arriba 
-        userToken.getToken().equals(token));
+        userToken.getType().equals(type));
     }
 
 
@@ -375,7 +370,7 @@ public class UserImplementation implements IUserService {
      * @param user Usuario que solicita el cambio de contraseña
      */
     private void saveChangePasswordToken(User user){
-        UserToken userToken = buildChangePasswordUserToken(user);
+        UserToken userToken = buildUserToken(user, TokenTypeEnum.PASSWORD_CHANGE);
         userTokenRepository.save(userToken);
         emailImplementation.sendEmail(
             user.getEmail(), 
@@ -397,18 +392,5 @@ public class UserImplementation implements IUserService {
         return ResponseUtils.buildOKResponse(SENDED_EMAIL_MESSAGE, null);
     }
 
-    /**
-     * Metodo para generar el token para el cambio de contraseña
-     * @param user usuario que solicita el cambio
-     * @return un objeto {@link UserToken} con el estado {@link TokenTypeEnum.PENDING} y el tipo {@link TokenTypeEnum.PASSWORD_CHANGE}
-     */
-    private UserToken buildChangePasswordUserToken(User user){
-        String token = TokenUtils.generateToken(userTokenRepository);
-        return UserToken.builder()
-            .token(token)
-            .type(TokenTypeEnum.PASSWORD_CHANGE)
-            .state(TokenStateEnum.PENDING)
-            .user(user)
-            .build();
-    }
+
 }
