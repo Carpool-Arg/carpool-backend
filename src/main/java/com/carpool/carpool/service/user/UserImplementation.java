@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.carpool.carpool.dto.user.ChangePasswordRequestDTO;
 import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
 import com.carpool.carpool.enums.token.TokenStateEnum;
 import com.carpool.carpool.enums.token.TokenTypeEnum;
@@ -32,6 +33,8 @@ import com.carpool.carpool.utils.ResponseUtils;
 
 import jakarta.transaction.Transactional;
 
+import static com.carpool.carpool.utils.EmailMessageUtils.*;
+
 @RequiredArgsConstructor
 @Service
 public class UserImplementation implements IUserService {
@@ -44,12 +47,6 @@ public class UserImplementation implements IUserService {
     private final UserTokenRepository userTokenRepository;
 
     private static final String EXIST_USER = "Ya existe un usuario con el ";
-
-    private static final String SUBJECT_EMAIL = "Activación de cuenta";
-    private static final String TITLE = "¡Casi listo, {name}!\uD83D\uDE4C";
-    private static final String MESSAGE_EMAIL = "Haz clic en el botón de abajo para activar tu cuenta:";
-    private static final String CONFIRM = "Activar cuenta";
-    private static final String MESSAGE_FOOTER = "Si no solicitaste esta activación, podés ignorar este correo. Recuerda que el mismo es válido durante <strong>48 horas</strong>.";
 
     public static final String ROLE_USER = "ROLE_USER";
 
@@ -114,7 +111,7 @@ public class UserImplementation implements IUserService {
         UserToken tokenValidate = userTokenRepository.findByToken(token).
                 orElseThrow(() -> new ResourceNotFoundException("Token no encontrado"));
 
-        if(!tokenValidate.getState().equals(TokenStateEnum.PENDING) || !tokenValidate.getType().equals(TokenTypeEnum.ACTIVATION)){
+        if(!tokenValidate.getState().equals(TokenStateEnum.PENDING) && !tokenValidate.getType().equals(TokenTypeEnum.ACTIVATION)){
             throw new ConflictException("El token ya expiró");
         }
         if(!tokenValidate.getToken().equals(token)){
@@ -124,12 +121,54 @@ public class UserImplementation implements IUserService {
         User user = userRepository.findById(tokenValidate.getUser().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
+        if(!UserStateEnum.PENDING_VERIFICATION.equals(user.getStatus())){
+            throw new ConflictException("La cuenta no puede ser activada en su estado actual");
+        }
+
         user.setStatus(UserStateEnum.ACTIVE);
         tokenValidate.setState(TokenStateEnum.USED);
         tokenValidate.setUsedAt(LocalDateTime.now());
 
-        userRepository.save(user);
         userTokenRepository.save(tokenValidate);
+        userRepository.save(user);
+
+        emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL_WELCOME, TITLE_WELCOME.replace("{name}", user.getName()), MESSAGE_EMAIL_WELCOME, null,null, null, MESSAGE_FOOTER_WELCOME);
+
+        return ResponseUtils.buildOKResponse(List.of("Usuario activado con éxito") , null);
+    }
+
+    @Override
+    @Transactional
+    public Response<Void> unlockAccount(ChangePasswordRequestDTO changePasswordRequestDTO) {
+
+        passwordsMatch(changePasswordRequestDTO.getPassword(), changePasswordRequestDTO.getConfirmPassword());
+
+        UserToken tokenValidate = userTokenRepository.findByToken(changePasswordRequestDTO.getToken()).
+                orElseThrow(() -> new ResourceNotFoundException("Token no encontrado"));
+
+        if (!validateUserToken(tokenValidate, TokenTypeEnum.ACTIVATION)) throw new ConflictException("Token inválido");
+
+        if (tokenValidate.isExpired()){
+            tokenValidate.setState(TokenStateEnum.EXPIRED);
+            userTokenRepository.save(tokenValidate);
+            throw new ConflictException("Token Expirado");
+        }
+
+        User user = userRepository.findById(tokenValidate.getUser().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        if(!UserStateEnum.LOCKED.equals(user.getStatus())){
+            throw new ConflictException("Su cuenta no se encuentra bloqueada");
+        }
+
+        user.setPassword(passwordEncoder.encode(changePasswordRequestDTO.getPassword()));
+        user.setStatus(UserStateEnum.ACTIVE);
+
+        tokenValidate.setState(TokenStateEnum.USED);
+        tokenValidate.setUsedAt(LocalDateTime.now());
+
+        userTokenRepository.save(tokenValidate);
+        userRepository.save(user);
 
         return ResponseUtils.buildOKResponse(List.of("Usuario activado con éxito") , null);
     }
@@ -238,22 +277,19 @@ public class UserImplementation implements IUserService {
      * @param user Objeto del tipo {@link User}
      */
     private void saveRequestActivationAccount(User user){
-        UserToken userToken = buildUserToken(user);
+        UserToken userToken = TokenUtils.buildUserToken(user, TokenTypeEnum.ACTIVATION, userTokenRepository);
         userTokenRepository.save(userToken);
-        emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL, TITLE.replace("{name}", user.getName()), MESSAGE_EMAIL, null,urlValidateEmail.replace("value", userToken.getToken()), CONFIRM, MESSAGE_FOOTER);
+        emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL_ACTIVE, TITLE_ACTIVE.replace("{name}", user.getName()), MESSAGE_EMAIL_ACTIVE, null,urlValidateEmail.replace("value", userToken.getToken()), ACTIVE, MESSAGE_FOOTER_ACTIVE);
     }
 
     /**
-     * Metodo encargado de crear un objeto {@link UserToken}
-     * @return Objeto {@link UserToken}
+     * Metodo para validar el token de cambio de contraseña
+     * Se valida el estado, el tipo y si coincide con el token que pasa el usuario como parametro
+     * @param userToken El token de la base de datos del tipo {@link String}
+     * @param type Tipo del token del tipo {@link TokenTypeEnum}
+     * @return{ @code true} si el token es valido, {@code false} si no
      */
-    private UserToken buildUserToken(User user){
-        String token = TokenUtils.generateToken(userTokenRepository);
-        return UserToken.builder()
-                .token(token)
-                .type(TokenTypeEnum.ACTIVATION)
-                .state(TokenStateEnum.PENDING)
-                .user(user)
-                .build();
-    }
+    private boolean validateUserToken(UserToken userToken, TokenTypeEnum type){
+        return (userToken.getState().equals(TokenStateEnum.PENDING) &&
+                userToken.getType().equals(type));}
 }

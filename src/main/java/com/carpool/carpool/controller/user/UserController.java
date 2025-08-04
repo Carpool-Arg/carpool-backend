@@ -1,14 +1,11 @@
 package com.carpool.carpool.controller.user;
 
-import com.carpool.carpool.dto.user.TokenRequestDTO;
-import com.carpool.carpool.dto.user.UserActivationRequestDTO;
-import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
+import com.carpool.carpool.dto.user.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.carpool.carpool.dto.user.UserRequestDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.user.IUserService;
 
@@ -72,8 +69,17 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Correo electrónico enviado", content = @Content)
     })
     @PostMapping("/resend-activation")
-    public ResponseEntity<Response<Void>> resendActivateAccount(@RequestBody UserActivationRequestDTO userActivationRequestDTO) {
-        return new ResponseEntity<>(userService.resendActivateAccount(userActivationRequestDTO.getEmail()), HttpStatus.OK);
+    public ResponseEntity<Response<Void>> resendActivateAccount(@RequestBody EmailRequestDTO emailRequestDTO) {
+        return new ResponseEntity<>(userService.resendActivateAccount(emailRequestDTO.getEmail()), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Reenvio de correo para desbloquear la cuenta")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Correo electrónico enviado", content = @Content)
+    })
+    @PostMapping("/unlock-account")
+    public ResponseEntity<Response<Void>> unlockAccount(@RequestBody ChangePasswordRequestDTO changePasswordRequestDTO) {
+        return new ResponseEntity<>(userService.unlockAccount(changePasswordRequestDTO), HttpStatus.OK);
     }
 
     @Operation(summary = "Validar si un username se encuentra en uso")

@@ -2,6 +2,7 @@ package com.carpool.carpool.security.config;
 
 import java.util.Arrays;
 
+import com.carpool.carpool.repository.user.token.UserTokenRepository;
 import com.carpool.carpool.security.filter.RecaptchaFilter;
 import com.carpool.carpool.security.handler.JwtAuthenticationEntryPoint;
 import com.carpool.carpool.service.auth.blacklist.IAuthBlacklistService;
@@ -9,6 +10,7 @@ import com.carpool.carpool.service.auth.recaptcha.IAuthRecaptchaService;
 import com.carpool.carpool.service.email.IEmailService;
 import com.carpool.carpool.service.user.account.IUserAccountService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,6 +44,10 @@ public class SpringSecurityConfig {
     private final UserRepository userRepository;
     private final IUserAccountService userAccountService;
     private final IEmailService emailImplementation;
+    private final UserTokenRepository userTokenRepository;
+
+    @Value("${spring.mail.username}")
+    private String supportEmail;
 
     @Bean
     AuthenticationManager authenticationManager() throws Exception {
@@ -69,7 +75,7 @@ public class SpringSecurityConfig {
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         )
         .addFilterBefore(new RecaptchaFilter(authRecaptchaService), UsernamePasswordAuthenticationFilter.class)
-        .addFilter(new JwtAuthenticationFilter(authenticationManager(),userRepository, userAccountService, emailImplementation))
+        .addFilter(new JwtAuthenticationFilter(authenticationManager(),userRepository, userAccountService, emailImplementation, supportEmail, userTokenRepository))
         .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService, userRepository))
         .csrf(config-> config.disable())
         .cors(cors-> cors.configurationSource(corsConfigurationSource()))

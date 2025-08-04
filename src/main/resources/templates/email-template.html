@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="UTF-8">
-  <title th:text="${title}"></title>
+  <title th:utext="${title}"></title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     @media only screen and (max-width: 600px) {
@@ -30,13 +30,13 @@
               <img src="https://i.imgur.com/EzBjalg.png" alt="Carpool" width="48" height="48" style="display:block;margin-bottom:20px;">
 
               <!-- Título -->
-              <h2 style="font-size:22px;margin:0 0 10px 0;color:#111;" th:text="${title}"></h2>
+              <h2 style="font-size:22px;margin:0 0 10px 0;color:#111;" th:utext="${title}"></h2>
 
               <!-- Mensaje -->
-              <p style="font-size:15px;line-height:1.6;color:#333;margin-bottom:30px;" th:text="${message}"></p>
+              <p style="font-size:15px;line-height:1.6;color:#333;margin-bottom:30px;" th:utext="${message}"></p>
 
               <!-- Mensaje opcional -->
-              <p style="font-size:15px;line-height:1.6;color:#333;margin-bottom:30px;" th:text="${optionalMessage}"></p>
+              <p style="font-size:15px;line-height:1.6;color:#333;margin-bottom:30px;" th:utext="${optionalMessage}"></p>
 
               <!-- Botón -->
               <div th:if="${buttonUrl != null}" style="margin-bottom:30px;">
