@@ -40,8 +40,8 @@ public class UserRequestDTO {
     private String password;
 
     @NotBlank(message = "La contraseña no puede quedar en blanco.")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$", message = "La contraseña debe contener al menos una letra minúscula, una letra mayúscula y un número.")
     @Schema(example = "pJUan22")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$", message = "La contraseña debe contener al menos una letra minúscula, una letra mayúscula y un número.")
     private String confirmPassword;
 
     @NotBlank(message = "El número del DNI no puede quedar en blanco.")
