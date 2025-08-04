@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import com.carpool.carpool.dto.vehicle.VehicleOnlyResponseDTO;
 import com.carpool.carpool.dto.vehicle.VehicleRequestDTO;
 import com.carpool.carpool.dto.vehicle.VehicleResponseDTO;
 import com.carpool.carpool.dto.vehicle.VehicleUpdateRequestDTO;
@@ -64,5 +65,17 @@ public class VehicleMapper {
         return vehicles.stream()
                 .map(this::convertVehicleToVehicleResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    public VehicleOnlyResponseDTO convertVehicleToVehicleOnlyResponseDTO(Vehicle vehicle) {
+        return VehicleOnlyResponseDTO.builder()
+            .id(vehicle.getId())
+            .brand(vehicle.getBrand())
+            .model(vehicle.getModel())
+            .year(vehicle.getYear())
+            .color(vehicle.getColor())
+            .availableSeats(vehicle.getAvailableSeats())
+            .luggageCapacity(vehicle.getLuggageCapacity())
+            .build();
     }
 }
