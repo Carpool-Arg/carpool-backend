@@ -58,7 +58,8 @@ public class UserImplementation implements IUserService {
 
     public static final String ROLE_USER = "ROLE_USER";
 
-    private static final List<String> SENDED_EMAIL_MESSAGE = List.of("Correo enviado exitosamente.");
+    //Mensaje generico para el envío de correo electronico para solicitar el cambio de contraseña
+    private static final List<String> SENDED_PASSWORD_CHANGE_EMAIL_MESSAGE = List.of("Correo enviado exitosamente.");
 
     @Value("${redirect.validate.email}")
     private String urlValidateEmail;
@@ -267,6 +268,7 @@ public class UserImplementation implements IUserService {
 
     /**
      * Metodo encargado de crear un objeto {@link UserToken}
+     * @param type el tipo del objeto {@link UserToken} que vamos a crear
      * @return Objeto {@link UserToken}
      */
     private UserToken buildUserToken(User user, TokenTypeEnum type){
@@ -294,11 +296,11 @@ public class UserImplementation implements IUserService {
     @Transactional
     public Response<Void> sendPasswordChangeEmail(EmailRequestDTO emailRequestDTO) {
         Optional<User> optionalUser = userRepository.findByEmailAndDeletedAtIsNull(emailRequestDTO.getEmail());
-        if(!optionalUser.isPresent()) return returnSendedEmailResponse();
+        if(!optionalUser.isPresent()) return sendEmailResponse();
         User user = optionalUser.get();
-        if(!validateUserStatus(user)) return returnSendedEmailResponse();
+        if(!validateUserStatus(user)) return sendEmailResponse();
         saveChangePasswordToken(user);
-        return ResponseUtils.buildOKResponse(SENDED_EMAIL_MESSAGE, null);
+        return ResponseUtils.buildOKResponse(SENDED_PASSWORD_CHANGE_EMAIL_MESSAGE, null);
     }
 
     /**
@@ -388,8 +390,8 @@ public class UserImplementation implements IUserService {
      * @return una respuesta con un mensaje generico para indicar que el correo electronico fue enviado con éxito
      * (aunque no haya sido asi)
      */
-    private Response<Void> returnSendedEmailResponse(){
-        return ResponseUtils.buildOKResponse(SENDED_EMAIL_MESSAGE, null);
+    private Response<Void> sendEmailResponse(){
+        return ResponseUtils.buildOKResponse(SENDED_PASSWORD_CHANGE_EMAIL_MESSAGE, null);
     }
 
 

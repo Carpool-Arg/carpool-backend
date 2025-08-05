@@ -1,4 +1,4 @@
-package com.carpool.carpool.controller.passwordChange;
+package com.carpool.carpool.controller.user.passwordChange;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -34,7 +35,7 @@ public class PasswordChangeController {
         description = "Realizar la solicitud para el cambio de contraseña pasando el correo electronico para validar al usuario"
     )
     @ApiResponses(value={
-        @ApiResponse(responseCode = "201", description = "Correo enviado con éxito.")
+        @ApiResponse(responseCode = "200", description = "Correo enviado existosamente.")
     })
     @PostMapping("/send-email")
     public ResponseEntity<Response<Void>> sendEmailPasswordRecovery(
@@ -53,7 +54,8 @@ public class PasswordChangeController {
     )
     @ApiResponses(value={
         @ApiResponse(responseCode = "200", description = "Contraseña actualizada."),
-        @ApiResponse(responseCode = "404", description = "Bad request")
+        @ApiResponse(responseCode = "400", description = "Error de validación",
+            content = @Content(mediaType = "application/json"))
     })
     @PostMapping
     public ResponseEntity<Response<Void>> changePassword(
