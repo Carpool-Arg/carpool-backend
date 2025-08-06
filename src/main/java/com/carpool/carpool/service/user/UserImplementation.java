@@ -111,11 +111,14 @@ public class UserImplementation implements IUserService {
         UserToken tokenValidate = userTokenRepository.findByToken(token).
                 orElseThrow(() -> new ResourceNotFoundException("Token no encontrado"));
 
-        if(!tokenValidate.getState().equals(TokenStateEnum.PENDING) && !tokenValidate.getType().equals(TokenTypeEnum.ACTIVATION)){
-            throw new ConflictException("El token ya expiró");
-        }
-        if(!tokenValidate.getToken().equals(token)){
+        if(!TokenTypeEnum.ACTIVATION.equals(tokenValidate.getType()) || !TokenStateEnum.PENDING.equals(tokenValidate.getState())){
             throw new ConflictException("El token es inválido");
+        }
+
+        if (tokenValidate.isExpired()){
+            tokenValidate.setState(TokenStateEnum.EXPIRED);
+            userTokenRepository.save(tokenValidate);
+            throw new ConflictException("Token Expirado");
         }
 
         User user = userRepository.findById(tokenValidate.getUser().getId())
