@@ -1,7 +1,6 @@
 package com.carpool.carpool.service.user;
 
 import com.carpool.carpool.dto.user.UserRequestDTO;
-import com.carpool.carpool.dto.user.ChangePasswordRequestDTO;
 import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
 import com.carpool.carpool.response.Response;
 
@@ -21,22 +20,6 @@ public interface IUserService {
      * @return {@link Response<Void>} devolviendo el mensaje si el usuario fue creado
      */
     Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO);
-
-    /**
-     * Metodo encargado de validar si el token se encuentra en la base de datos y si cumple condiciones para proceder a la
-     * activacion de la cuenta del usuario y tambien a la caducación del token
-     * @param token del tipo {@link String}
-     * @return {@link Response<Void>} devolviendo el mensaje si se activo la cuenta del usuario
-     */
-    Response<Void> activateAccount(String token);
-
-    /**
-     * Metodo encargado de validar si el token se encuentra en la base de datos y si cumple condiciones para proceder al desbloqueo
-     * de la cuenta del usuario y tambien a la caducación del token
-     * @param changePasswordRequestDTO Request dell tipo {@link ChangePasswordRequestDTO}
-     * @return {@link Response<Void>} devolviendo el mensaje si se desbloqueo la cuenta del usuario
-     */
-    Response<Void> unlockAccount(ChangePasswordRequestDTO changePasswordRequestDTO);
 
     /**
      * Metodo encargado de enviar nuevamente un correo electrónico para que el usuario pueda activar su cuenta. En caso de que el usuario no exista en la

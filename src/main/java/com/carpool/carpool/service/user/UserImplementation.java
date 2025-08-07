@@ -1,13 +1,10 @@
 package com.carpool.carpool.service.user;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.carpool.carpool.dto.user.ChangePasswordRequestDTO;
 import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
-import com.carpool.carpool.enums.token.TokenStateEnum;
 import com.carpool.carpool.enums.token.TokenTypeEnum;
 import com.carpool.carpool.enums.user.UserStateEnum;
 import com.carpool.carpool.exception.ConflictException;
@@ -16,6 +13,7 @@ import com.carpool.carpool.exception.UnauthorizedException;
 import com.carpool.carpool.model.user.UserToken;
 import com.carpool.carpool.repository.user.token.UserTokenRepository;
 import com.carpool.carpool.service.email.IEmailService;
+import com.carpool.carpool.utils.PasswordUtils;
 import com.carpool.carpool.utils.TokenUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -57,7 +55,7 @@ public class UserImplementation implements IUserService {
     @Transactional
     public Response<Void> saveUser(UserRequestDTO userRequestDTO) {
 
-        passwordsMatch(userRequestDTO.getPassword(), userRequestDTO.getConfirmPassword());
+        PasswordUtils.passwordsMatch(userRequestDTO.getPassword(), userRequestDTO.getConfirmPassword());
         existsByUsername(userRequestDTO.getUsername());
         existsByEmail(userRequestDTO.getEmail());
         existsByDni(userRequestDTO.getDni());
@@ -86,7 +84,7 @@ public class UserImplementation implements IUserService {
 
         if(!user.getStatus().equals(UserStateEnum.PENDING_PROFILE)) throw new UnauthorizedException("El usuario no tiene un registro pendiente para completar.");
 
-        passwordsMatch(userUpdateRequestDTO.getPassword(), userUpdateRequestDTO.getConfirmPassword());
+        PasswordUtils.passwordsMatch(userUpdateRequestDTO.getPassword(), userUpdateRequestDTO.getConfirmPassword());
         existsByUsername(userUpdateRequestDTO.getUsername());
         existsByDni(userUpdateRequestDTO.getDni());
 
@@ -103,77 +101,6 @@ public class UserImplementation implements IUserService {
         saveRequestActivationAccount(user);
 
         return ResponseUtils.buildOKResponse(List.of("Usuario con registro parcial creado") , null);
-    }
-
-    @Override
-    @Transactional
-    public Response<Void> activateAccount(String token){
-        UserToken tokenValidate = userTokenRepository.findByToken(token).
-                orElseThrow(() -> new ResourceNotFoundException("Token no encontrado"));
-
-        if(!TokenTypeEnum.ACTIVATION.equals(tokenValidate.getType()) || !TokenStateEnum.PENDING.equals(tokenValidate.getState())){
-            throw new ConflictException("El token es inválido");
-        }
-
-        if (tokenValidate.isExpired()){
-            tokenValidate.setState(TokenStateEnum.EXPIRED);
-            userTokenRepository.save(tokenValidate);
-            throw new ConflictException("Token Expirado");
-        }
-
-        User user = userRepository.findById(tokenValidate.getUser().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-
-        if(!UserStateEnum.PENDING_VERIFICATION.equals(user.getStatus())){
-            throw new ConflictException("La cuenta no puede ser activada en su estado actual");
-        }
-
-        user.setStatus(UserStateEnum.ACTIVE);
-        tokenValidate.setState(TokenStateEnum.USED);
-        tokenValidate.setUsedAt(LocalDateTime.now());
-
-        userTokenRepository.save(tokenValidate);
-        userRepository.save(user);
-
-        emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL_WELCOME, TITLE_WELCOME.replace("{name}", user.getName()), MESSAGE_EMAIL_WELCOME, null,null, null, MESSAGE_FOOTER_WELCOME);
-
-        return ResponseUtils.buildOKResponse(List.of("Usuario activado con éxito") , null);
-    }
-
-    @Override
-    @Transactional
-    public Response<Void> unlockAccount(ChangePasswordRequestDTO changePasswordRequestDTO) {
-
-        passwordsMatch(changePasswordRequestDTO.getPassword(), changePasswordRequestDTO.getConfirmPassword());
-
-        UserToken tokenValidate = userTokenRepository.findByToken(changePasswordRequestDTO.getToken()).
-                orElseThrow(() -> new ResourceNotFoundException("Token no encontrado"));
-
-        if (!validateUserToken(tokenValidate, TokenTypeEnum.ACTIVATION)) throw new ConflictException("Token inválido");
-
-        if (tokenValidate.isExpired()){
-            tokenValidate.setState(TokenStateEnum.EXPIRED);
-            userTokenRepository.save(tokenValidate);
-            throw new ConflictException("Token Expirado");
-        }
-
-        User user = userRepository.findById(tokenValidate.getUser().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-
-        if(!UserStateEnum.LOCKED.equals(user.getStatus())){
-            throw new ConflictException("Su cuenta no se encuentra bloqueada");
-        }
-
-        user.setPassword(passwordEncoder.encode(changePasswordRequestDTO.getPassword()));
-        user.setStatus(UserStateEnum.ACTIVE);
-
-        tokenValidate.setState(TokenStateEnum.USED);
-        tokenValidate.setUsedAt(LocalDateTime.now());
-
-        userTokenRepository.save(tokenValidate);
-        userRepository.save(user);
-
-        return ResponseUtils.buildOKResponse(List.of("Usuario activado con éxito") , null);
     }
 
     @Override
@@ -203,18 +130,6 @@ public class UserImplementation implements IUserService {
         return ResponseUtils.buildOKResponse(List.of("DNI disponible") , null);
     }
 
-    /**
-     * Metodo para comprobar que las contraseña y la confirmacion de la misma coinciden
-     * @param userPassword la contraseña del usuario
-     * @param userConfirmPassword la confirmacion de la contraseña del usuario
-     * @throws ConflictException si no coinciden
-     */
-    private void passwordsMatch(String userPassword, String userConfirmPassword){
-        if(!userPassword.equals(userConfirmPassword)){
-            throw new ConflictException("Las contraseñas ingresadas no coinciden");
-        }
-    }
-    
     /**
      * Metodo para comprobar no exista otro usuario en la base de datos
      * con el mismo email que el ingresado 
@@ -285,14 +200,4 @@ public class UserImplementation implements IUserService {
         emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL_ACTIVE, TITLE_ACTIVE.replace("{name}", user.getName()), MESSAGE_EMAIL_ACTIVE, null,urlValidateEmail.replace("value", userToken.getToken()), ACTIVE, MESSAGE_FOOTER_ACTIVE);
     }
 
-    /**
-     * Metodo para validar el token de cambio de contraseña
-     * Se valida el estado, el tipo y si coincide con el token que pasa el usuario como parametro
-     * @param userToken El token de la base de datos del tipo {@link String}
-     * @param type Tipo del token del tipo {@link TokenTypeEnum}
-     * @return{ @code true} si el token es valido, {@code false} si no
-     */
-    private boolean validateUserToken(UserToken userToken, TokenTypeEnum type){
-        return (userToken.getState().equals(TokenStateEnum.PENDING) &&
-                userToken.getType().equals(type));}
 }

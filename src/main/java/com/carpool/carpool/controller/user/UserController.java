@@ -1,6 +1,7 @@
 package com.carpool.carpool.controller.user;
 
 import com.carpool.carpool.dto.user.*;
+import com.carpool.carpool.service.user.account.IUserAccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ import jakarta.validation.Valid;
 public class UserController {
 
     private final IUserService userService;
+    private final IUserAccountService userAccountService;
 
     @Operation(
             summary = "Registrar un nuevo usuario"
@@ -61,7 +63,7 @@ public class UserController {
     })
     @PostMapping("/activate-account")
     public ResponseEntity<Response<Void>> activateAccount(@RequestBody TokenRequestDTO tokenRequestDTO) {
-        return new ResponseEntity<>(userService.activateAccount(tokenRequestDTO.getToken()), HttpStatus.OK);
+        return new ResponseEntity<>(userAccountService.activateAccount(tokenRequestDTO.getToken()), HttpStatus.OK);
     }
 
     @Operation(summary = "Reenvio de correo para activar la cuenta")
@@ -79,7 +81,7 @@ public class UserController {
     })
     @PostMapping("/unlock-account")
     public ResponseEntity<Response<Void>> unlockAccount(@RequestBody ChangePasswordRequestDTO changePasswordRequestDTO) {
-        return new ResponseEntity<>(userService.unlockAccount(changePasswordRequestDTO), HttpStatus.OK);
+        return new ResponseEntity<>(userAccountService.unlockAccount(changePasswordRequestDTO), HttpStatus.OK);
     }
 
     @Operation(summary = "Validar si un username se encuentra en uso")
