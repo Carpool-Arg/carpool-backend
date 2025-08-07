@@ -42,7 +42,6 @@ public class SpringSecurityConfig {
     private final IAuthBlacklistService authBlacklistService;
     private final IAuthRecaptchaService authRecaptchaService;
     private final UserRepository userRepository;
-    private final IUserAccountService userAccountService;
     private final IEmailService emailImplementation;
     private final UserTokenRepository userTokenRepository;
 
@@ -60,7 +59,7 @@ public class SpringSecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) throws Exception{
+    SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint, IUserAccountService userAccountService) throws Exception{
         return http.authorizeHttpRequests((authz)-> authz
         .requestMatchers(HttpMethod.POST, "/users/complete-registration").authenticated()
         .requestMatchers("/users", "/users/**").permitAll()
