@@ -2,6 +2,7 @@ package com.carpool.carpool.dto.driver;
 
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
@@ -28,10 +29,12 @@ public class DriverRequestDTO {
 
     @NotNull(message = "La fecha de vencimiento del Carnet es obligatoria.")
     @FutureOrPresent(message = "La fecha de vencimiento del carnet debe ser una fecha futura o presente.")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private LocalDate licenseExpirationDate;
 
     @NotNull(message = "La fecha de nacimiento es obligatoria.")
     @Past(message = "La fecha de nacimiento debe ser una fecha pasada.")
+     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private LocalDate birthDate;
 
     @NotBlank(message = "El domicilio no puede estar en blanco.")

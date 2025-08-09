@@ -24,7 +24,6 @@ public class VehicleMapper {
             .year(vehicleRequestDTO.getYear())
             .color(vehicleRequestDTO.getColor())
             .availableSeats(vehicleRequestDTO.getAvailableSeats())
-            .luggageCapacity(vehicleRequestDTO.getLuggageCapacity())
             .driver(driver)
             .vehicleType(vehicleType)
             .build();
@@ -36,7 +35,6 @@ public class VehicleMapper {
         existingVehicle.setYear(vehicleUpdateRequestDTO.getYear());
         existingVehicle.setColor(vehicleUpdateRequestDTO.getColor());
         existingVehicle.setAvailableSeats(vehicleUpdateRequestDTO.getAvailableSeats());
-        existingVehicle.setLuggageCapacity(vehicleUpdateRequestDTO.getLuggageCapacity());
         return existingVehicle;
     }
 
@@ -49,7 +47,6 @@ public class VehicleMapper {
             .year(vehicle.getYear())
             .color(vehicle.getColor())
             .availableSeats(vehicle.getAvailableSeats())
-            .luggageCapacity(vehicle.getLuggageCapacity())
             .vehicleTypeId(vehicle.getVehicleType().getId())
             .vehicleTypeName(vehicle.getVehicleType().getName())
             .driverId(vehicle.getDriver().getId())
@@ -75,7 +72,6 @@ public class VehicleMapper {
             .year(vehicle.getYear())
             .color(vehicle.getColor())
             .availableSeats(vehicle.getAvailableSeats())
-            .luggageCapacity(vehicle.getLuggageCapacity())
             .build();
     }
 }
