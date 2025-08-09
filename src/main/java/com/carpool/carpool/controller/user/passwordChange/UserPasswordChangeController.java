@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 @Tag(name="Solicitud para recuperación de contraseña", description = "Opreacion para recuperar la contraseña en caso de olvidarla")
 @RequestMapping("/password-change")
 @RequiredArgsConstructor
-public class PasswordChangeController {
+public class UserPasswordChangeController {
 
     private final IUserService userService;
 
