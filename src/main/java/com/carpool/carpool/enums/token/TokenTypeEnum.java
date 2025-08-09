@@ -5,9 +5,11 @@ package com.carpool.carpool.enums.token;
  * <p>
  *     {@code ACTIVATION} Token para activar una cuenta.
  *     {@code EMAIL_CHANGE} Token para aprobar la solicitud de cambio de correo electronico
+ *     {@code PASSWORD_CHANGE} Token para cambiar la contraseña.
  * </p>
  */
 public enum TokenTypeEnum {
     ACTIVATION,
-    EMAIL_CHANGE
+    EMAIL_CHANGE,
+    PASSWORD_CHANGE
 }
