@@ -20,7 +20,6 @@ public class VehicleResponseDTO {
     private Integer year;
     private String color;
     private Integer availableSeats;
-    private Float luggageCapacity;
     private Long vehicleTypeId; 
     private String vehicleTypeName; 
     private Long driverId; 

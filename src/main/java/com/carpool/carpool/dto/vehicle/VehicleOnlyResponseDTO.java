@@ -19,6 +19,5 @@ public class VehicleOnlyResponseDTO {
     private Integer year;
     private String color;
     private Integer availableSeats;
-    private double luggageCapacity;
     
 }
