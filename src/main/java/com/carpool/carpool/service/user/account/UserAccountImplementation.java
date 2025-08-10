@@ -83,6 +83,8 @@ public class UserAccountImplementation implements IUserAccountService{
 
         user.setPassword(passwordEncoder.encode(changePasswordRequestDTO.getPassword()));
         user.setStatus(UserStateEnum.ACTIVE);
+        user.setFailedAttempts(0);
+        user.setLastFailedLoginTime(null);
 
         tokenValidate.setState(TokenStateEnum.USED);
         tokenValidate.setUsedAt(LocalDateTime.now());
