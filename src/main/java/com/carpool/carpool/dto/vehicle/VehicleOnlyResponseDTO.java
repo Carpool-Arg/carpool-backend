@@ -1,7 +1,6 @@
 package com.carpool.carpool.dto.vehicle;
 
 
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,9 +13,11 @@ import lombok.NoArgsConstructor;
 public class VehicleOnlyResponseDTO {
 
     private Long id;
+    private String domain;
     private String brand;
     private String model;
     private Integer year;
+    private Long vehicleType;
     private String color;
     private Integer availableSeats;
     

@@ -67,6 +67,8 @@ public class VehicleMapper {
     public VehicleOnlyResponseDTO convertVehicleToVehicleOnlyResponseDTO(Vehicle vehicle) {
         return VehicleOnlyResponseDTO.builder()
             .id(vehicle.getId())
+            .domain(vehicle.getDomain())
+            .vehicleType(vehicle.getVehicleType() != null ? vehicle.getVehicleType().getId() : null) //Se asegura que vehicleType no sea nulo, y no salte errores
             .brand(vehicle.getBrand())
             .model(vehicle.getModel())
             .year(vehicle.getYear())
