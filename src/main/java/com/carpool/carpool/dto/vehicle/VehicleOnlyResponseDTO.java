@@ -17,7 +17,7 @@ public class VehicleOnlyResponseDTO {
     private String brand;
     private String model;
     private Integer year;
-    private Long vehicleType;
+    private Long vehicleTypeId;
     private String color;
     private Integer availableSeats;
     
