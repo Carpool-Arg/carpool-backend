@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import com.carpool.carpool.dto.user.UserProfileUpdateRequestDTO;
 import com.carpool.carpool.dto.user.UserRequestDTO;
+import com.carpool.carpool.dto.user.UserResponseDTO;
 import com.carpool.carpool.model.role.Role;
 import com.carpool.carpool.model.user.User;
 
@@ -62,5 +63,19 @@ public class UserMapper {
         existingUser.setPassword(encryptedNewPassword);
     }
 
-
+   
+    public UserResponseDTO convertUserToUserResponseDTO(User user) {
+        return UserResponseDTO.builder()
+                .id(user.getId())
+                .profileImage(user.getProfileImage())
+                .name(user.getName())
+                .lastname(user.getLastname())
+                .username(user.getUsername())
+                .gender(user.getGender())
+                .email(user.getEmail())
+                .dni(user.getDni())
+                .phone(user.getPhone())
+                .status(user.getStatus())
+                .build();
+    }
 }

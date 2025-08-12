@@ -7,6 +7,7 @@ import com.carpool.carpool.dto.user.UserEmailChangeRequestDTO;
 import com.carpool.carpool.dto.user.UserPasswordChangeRequestDTO;
 import com.carpool.carpool.dto.user.UserProfileUpdateRequestDTO;
 import com.carpool.carpool.dto.user.UserRequestDTO;
+import com.carpool.carpool.dto.user.UserResponseDTO;
 import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
 import com.carpool.carpool.response.Response;
 
@@ -95,4 +96,11 @@ public interface IUserService {
      * @return Response<Void> indicando el resultado de la operación.
      */
     Response<Void> confirmEmailChange(String token);
+
+    /**
+     * Genera un DTO de respuesta con los datos del usuario.
+     * @param userResponseDTO DTO que contiene los datos del usuario.
+     * @return Response<Void> con los datos del usuario.
+     */
+    Response<UserResponseDTO> getAuthenticatedUser ();
 }

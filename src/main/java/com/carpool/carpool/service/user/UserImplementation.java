@@ -40,6 +40,7 @@ import com.carpool.carpool.dto.user.UserEmailChangeRequestDTO;
 import com.carpool.carpool.dto.user.UserPasswordChangeRequestDTO;
 import com.carpool.carpool.dto.user.UserProfileUpdateRequestDTO;
 import com.carpool.carpool.dto.user.UserRequestDTO;
+import com.carpool.carpool.dto.user.UserResponseDTO;
 import com.carpool.carpool.mappers.user.UserMapper;
 import com.carpool.carpool.model.role.Role;
 import com.carpool.carpool.model.user.User;
@@ -183,9 +184,20 @@ public class UserImplementation implements IUserService {
         return ResponseUtils.buildOKResponse(List.of("Usuario activado con éxito") , null);
     }
 
+    /**
+     * Metodo para traer todos los datos del usuario autenticado.
+     * @return Response<UserResponseDTO> con los datos del usuario autenticado.
+     */
+    @Override
+    public Response<UserResponseDTO> getAuthenticatedUser() {
+        User loggedUser = getAuthenticatedActiveUser();
+
+        UserResponseDTO userResponseDTO = userMapper.convertUserToUserResponseDTO(loggedUser);
+        return ResponseUtils.buildOKResponse(List.of("Usuario autenticado"), userResponseDTO);
+    }
+
    
     @Override
-    @Transactional
     public Response<TokenResponseDTO> updateUserProfile(UserProfileUpdateRequestDTO userProfileUpdateRequestDTO, MultipartFile profileImage) {
         
         User loggedUser = getAuthenticatedActiveUser();
@@ -703,6 +715,8 @@ public class UserImplementation implements IUserService {
             userTokenRepository.saveAll(activeTokens);
         }
     }
+
+    
 
    
 }

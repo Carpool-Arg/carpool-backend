@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.carpool.carpool.dto.user.UserRequestDTO;
+import com.carpool.carpool.dto.user.UserResponseDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.user.IUserService;
 import com.carpool.carpool.utils.ResponseUtils;
@@ -136,6 +137,16 @@ public class UserController {
                                     .map(Enum::name)
                                     .collect(Collectors.toList());
         return new ResponseEntity<>(ResponseUtils.buildOKResponse(List.of("Lista de géneros"), genders), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Obtener el usuario autenticado")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Usuario autenticado recuperado con éxito"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
+    @GetMapping()
+    public ResponseEntity<Response<UserResponseDTO>> getAuthenticatedUser() {
+        return new ResponseEntity<>(userService.getAuthenticatedUser(), HttpStatus.OK);
     }
 
     @Operation(summary = "Actualizar datos del perfil del usuario")
