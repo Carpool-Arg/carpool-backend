@@ -8,6 +8,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
+
 import java.net.URI;
 
 @Configuration
@@ -16,10 +17,10 @@ public class R2Config {
     @Value("${cloudflare.r2.endpoint}")
     private String urlR2;
 
-    @Value("${cloudflare.r2.access-key")
+    @Value("${cloudflare.r2.access-key}")
     private String R2AccessKey;
 
-    @Value("${cloudflare.r2.secret-key")
+    @Value("${cloudflare.r2.secret-key}")
     private String R2SecretKey;
 
     /**
@@ -33,10 +34,7 @@ public class R2Config {
                 .endpointOverride(URI.create(urlR2))
                 .credentialsProvider(
                         StaticCredentialsProvider.create(
-                                AwsBasicCredentials.create(
-                                        System.getenv(R2AccessKey),
-                                        System.getenv(R2SecretKey)
-                                )
+                                AwsBasicCredentials.create(R2AccessKey, R2SecretKey)
                         )
                 )
                 .region(Region.of("auto"))

@@ -1,12 +1,15 @@
 package com.carpool.carpool.model.media;
 
+import com.carpool.carpool.model.user.User;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Data
 @Entity
+@RequiredArgsConstructor
 @Table(name = "media_asset")
 public class Media {
 
@@ -17,7 +20,7 @@ public class Media {
 
     @ManyToOne
     @JoinColumn(name = "owner", referencedColumnName = "id")
-    private Long owner;
+    private User owner;
 
     @Column(name = "bucket", nullable = false)
     private String bucket;
