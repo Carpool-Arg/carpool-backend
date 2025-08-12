@@ -81,4 +81,43 @@ public class AuthBlacklistImplementation implements IAuthBlacklistService{
             throw new RedisConnectionFailureException(e.getMessage());
         }
     }
+
+
+    /**
+     * Agrega un token de acceso a la blacklist sin considerar el refresh token.
+     * Este método se utiliza cuando se actualiza el perfil del usuario o se cambia la contraseña.
+     * @param token token JWT limpio (sin el prefijo "Bearer ")
+     * @return response respuesta con mensaje y estado de la operación
+     */
+    @Override
+    public Response<Void> blacklistAccessTokenOnly(String token) {
+        try {
+            String jwtToken = token.replace("Bearer ", "");
+            long expirationTime = JwtUtils.getAccessTokenExpiration(jwtToken);
+            redisTemplate.opsForValue().set(TOKEN_BLACKLIST_PREFIX + jwtToken, "true", expirationTime, TimeUnit.SECONDS);
+            return new Response<>(List.of("Token de acceso invalidado correctamente"), ResponseStateEnum.OK);
+        } catch (RedisConnectionFailureException e) {
+            throw new RedisConnectionFailureException(e.getMessage());
+        }
+    }
+
+    /**
+     * Agrega únicamente un refresh token a la blacklist.
+     * @param refreshToken refresh token JWT a invalidar
+     * @return response respuesta con mensaje y estado de la operación
+     */
+    @Override
+    public Response<Void> blacklistRefreshToken(String refreshToken) {
+        try {
+            String cleanToken = refreshToken.startsWith("Bearer ") ? 
+                               refreshToken.replace("Bearer ", "") : refreshToken;
+            
+            long expirationTime = JwtUtils.getRefreshTokenExpiration(cleanToken);
+            redisTemplate.opsForValue().set(TOKEN_BLACKLIST_PREFIX + cleanToken, "true", expirationTime, TimeUnit.SECONDS);
+            
+            return new Response<>(List.of("Token de actualización invalidado correctamente"), ResponseStateEnum.OK);
+        } catch (RedisConnectionFailureException e) {
+            throw new RedisConnectionFailureException(e.getMessage());
+        }
+    }
 }

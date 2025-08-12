@@ -1,5 +1,10 @@
 package com.carpool.carpool.service.user;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,13 +19,26 @@ import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.exception.UnauthorizedException;
 import com.carpool.carpool.model.user.UserToken;
 import com.carpool.carpool.repository.user.token.UserTokenRepository;
+import com.carpool.carpool.service.auth.blacklist.IAuthBlacklistService;
 import com.carpool.carpool.service.email.IEmailService;
 import com.carpool.carpool.utils.TokenUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.carpool.carpool.dto.security.token.TokenResponseDTO;
+import com.carpool.carpool.dto.user.UserEmailChangeRequestDTO;
+import com.carpool.carpool.dto.user.UserPasswordChangeRequestDTO;
+import com.carpool.carpool.dto.user.UserProfileUpdateRequestDTO;
 import com.carpool.carpool.dto.user.UserRequestDTO;
 import com.carpool.carpool.mappers.user.UserMapper;
 import com.carpool.carpool.model.role.Role;
@@ -28,8 +46,11 @@ import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.repository.role.RoleRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
+import com.carpool.carpool.security.model.CustomUserDetails;
+import com.carpool.carpool.security.utils.JwtUtils;
 import com.carpool.carpool.utils.ResponseUtils;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 
 @RequiredArgsConstructor
@@ -53,8 +74,30 @@ public class UserImplementation implements IUserService {
 
     public static final String ROLE_USER = "ROLE_USER";
 
+    // Constante para los claims
+    public final static String AUTHORITIES_CLAIM = "authorities";
+
+    private final IAuthBlacklistService authBlacklistService;
+
+    private final HttpServletRequest  request;
+
+   
     @Value("${redirect.validate.email}")
     private String urlValidateEmail;
+
+    
+    @Value("${file.upload-dir}")
+    private String uploadDir;
+
+    
+    @Value("${file.default-profile-image}")
+    private String defaultProfileImage;
+
+    
+    @Value("${file.static-images-path}")
+    private String staticImagesPath;
+
+    
 
     @Override
     @Transactional
@@ -74,6 +117,8 @@ public class UserImplementation implements IUserService {
             userRequestDTO,
             passwordEncoder.encode(userRequestDTO.getPassword()),
             roles);
+
+        user.setProfileImage(generateUniqueDefaultProfileImage(user));
         userRepository.save(user);
 
         saveRequestActivationAccount(user);
@@ -101,6 +146,10 @@ public class UserImplementation implements IUserService {
                 userUpdateRequestDTO,
                 passwordEncoder.encode(userUpdateRequestDTO.getPassword()),
                 roles);
+        
+        if (user.getProfileImage() == null || user.getProfileImage().isEmpty()) {
+            user.setProfileImage(generateUniqueDefaultProfileImage(user));
+        }
         userRepository.save(user);
 
         saveRequestActivationAccount(user);
@@ -133,6 +182,171 @@ public class UserImplementation implements IUserService {
 
         return ResponseUtils.buildOKResponse(List.of("Usuario activado con éxito") , null);
     }
+
+   
+    @Override
+    @Transactional
+    public Response<TokenResponseDTO> updateUserProfile(UserProfileUpdateRequestDTO userProfileUpdateRequestDTO, MultipartFile profileImage) {
+        
+        User loggedUser = getAuthenticatedActiveUser();
+        String oldImageUrl = loggedUser.getProfileImage(); // Imagen actual del usuario
+        String newImageUrl = oldImageUrl;
+
+        // Try para manejar excepciones al acceder a la imagen del perfil
+        try {
+
+            String newPhone = userProfileUpdateRequestDTO.getPhone();
+            if (newPhone != null && !newPhone.trim().isEmpty() && !newPhone.equals(loggedUser.getPhone())) {
+                validateUniquePhone(newPhone);
+            }
+            
+            if (userProfileUpdateRequestDTO.getGender() == null) {
+                throw new ConflictException("El género no puede quedar en blanco.");
+            }
+
+
+            // Control de la imagen de perfil
+            if (userProfileUpdateRequestDTO.isRemoveProfileImage()) {
+
+                if (isDefaultProfileImage(oldImageUrl)) {
+                    throw new ConflictException("No se puede eliminar la imagen de perfil por defecto.");
+                }
+
+                deleteProfileImage(oldImageUrl); // Elimina la imagen actual del sistema de archivos
+                newImageUrl = getDefaultProfileImagePath(); // Asigna la imagen por defecto
+
+            } else if (profileImage != null && !profileImage.isEmpty()) {
+
+                if (!isValidImageType(profileImage.getContentType())) {
+                    throw new ConflictException("El tipo de archivo de la imagen no es válido. Los tipos permitidos son JPEG, PNG y JPG.");
+                }
+
+                if (profileImage.getSize() > 5 * 1024 * 1024) { 
+                    throw new ConflictException("El tamaño de la imagen no puede ser mayor a 5 MB.");
+                }
+
+                if (oldImageUrl != null && !isDefaultProfileImage(oldImageUrl)) {
+                    deleteProfileImage(oldImageUrl);
+                }
+                newImageUrl = saveProfileImage(profileImage, loggedUser);
+            }
+
+            userMapper.updateUserProfileFromDTO(loggedUser, userProfileUpdateRequestDTO, newImageUrl);
+            loggedUser.setGender(userProfileUpdateRequestDTO.getGender());
+            userRepository.save(loggedUser);
+
+            TokenResponseDTO tokenResponseDTO = invalidateAllUserTokensAndGenerateNew(loggedUser);
+            return ResponseUtils.buildOKResponse(List.of("Perfil actualizado correctamente."), tokenResponseDTO);
+
+        } catch (Exception e) {
+
+            // Si ocurre un error, volvemos a la imagen anterior
+            if (newImageUrl != null && !newImageUrl.equals(oldImageUrl) && !isDefaultProfileImage(newImageUrl)) {
+                deleteProfileImage(newImageUrl);
+            }
+            throw new ConflictException("Error al actualizar el perfil: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    public Response<TokenResponseDTO> updateUserEmail(UserEmailChangeRequestDTO userEmailChangeRequestDTO) {
+        
+        User loggedUser = getAuthenticatedActiveUser();
+
+        if (loggedUser.getEmail().equals(userEmailChangeRequestDTO.getNewEmail())) {
+            throw new ConflictException("El nuevo email no puede ser el mismo que el actual.");
+        }
+
+        if (userRepository.findByEmailAndDeletedAtIsNull(userEmailChangeRequestDTO.getNewEmail()).isPresent()) {
+            throw new ConflictException("Ya existe un usuario con el nuevo email ingresado.");
+        }
+
+        invalidateUserTokensByType(loggedUser, TokenTypeEnum.EMAIL_CHANGE);
+
+        userMapper.updateEmailFromDTO(loggedUser, userEmailChangeRequestDTO.getNewEmail());
+        userRepository.save(loggedUser);
+
+        UserToken loggeduserToken = buildUserToken(loggedUser, TokenTypeEnum.EMAIL_CHANGE);
+        userTokenRepository.save(loggeduserToken);
+
+        String confirmLink = urlValidateEmail.replace("value", loggeduserToken.getToken());
+
+        // Enviamos el email de confirmación al nuevo correo
+        emailImplementation.sendEmail(
+                userEmailChangeRequestDTO.getNewEmail(),
+                "Confirmación de cambio de correo",
+                "¡Hola " + loggedUser.getName() + "!",
+                "Hacé clic en el siguiente botón para confirmar tu nuevo correo electrónico:",
+                null,
+                confirmLink,
+                "Confirmar nuevo correo",
+                "Si no solicitaste este cambio, ignorá este mensaje."
+        );
+
+        TokenResponseDTO tokenResponseDTO = invalidateAllUserTokensAndGenerateNew(loggedUser);
+        return ResponseUtils.buildOKResponse(List.of("Email actualizado correctamente. Se requiere confirmación."), tokenResponseDTO);
+    }
+
+    
+    @Override
+    public Response<TokenResponseDTO> updateUserPassword(UserPasswordChangeRequestDTO passwordChangeRequestDTO) {
+        
+        User loggedUser = getAuthenticatedActiveUser();
+
+        if (!passwordEncoder.matches(passwordChangeRequestDTO.getOldPassword(), loggedUser.getPassword())) {
+            throw new ConflictException("La contraseña actual es incorrecta.");
+        }
+
+        if (passwordEncoder.matches(passwordChangeRequestDTO.getNewPassword(), loggedUser.getPassword())) {
+            throw new ConflictException("La nueva contraseña no puede ser igual a la actual.");
+        }
+
+        if (!passwordChangeRequestDTO.getNewPassword().equals(passwordChangeRequestDTO.getConfirmNewPassword())) {
+            throw new ConflictException("La nueva contraseña no coincide con su confirmación.");
+        }
+
+        userMapper.updatePasswordFromDTO(loggedUser, passwordEncoder.encode(passwordChangeRequestDTO.getNewPassword()));
+        userRepository.save(loggedUser);
+
+        
+        TokenResponseDTO tokenResponseDTO = invalidateAllUserTokensAndGenerateNew(loggedUser);
+        return ResponseUtils.buildOKResponse(List.of("Contraseña actualizada correctamente."), tokenResponseDTO);
+    }
+
+    @Override
+    @Transactional
+    public Response<Void> confirmEmailChange(String token) {
+        UserToken tokenValidate = userTokenRepository.findByToken(token)
+                .orElseThrow(() -> new ResourceNotFoundException("Token no encontrado"));
+
+        if (tokenValidate.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new ConflictException("El tiempo para la confirmacón del cambio de correo ha expirado. Por favor, solicita uno nuevo.");
+        }
+        
+        if (!tokenValidate.getState().equals(TokenStateEnum.PENDING) || 
+            !tokenValidate.getType().equals(TokenTypeEnum.EMAIL_CHANGE)) {
+            throw new ConflictException("El token ya expiró o es inválido");
+        }
+
+        User user = userRepository.findById(tokenValidate.getUser().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        if (user.getPendingEmail() == null) {
+            throw new ConflictException("No hay cambio de email pendiente");
+        }
+
+        user.setEmail(user.getPendingEmail());
+        user.setPendingEmail(null);
+        
+        tokenValidate.setState(TokenStateEnum.USED);
+        tokenValidate.setUsedAt(LocalDateTime.now());
+
+        userRepository.save(user);
+        userTokenRepository.save(tokenValidate);
+
+        return ResponseUtils.buildOKResponse(List.of("Email actualizado correctamente"), null);
+    }
+
 
     @Override
     public Response<Void> resendActivateAccount(String email) {
@@ -238,7 +452,7 @@ public class UserImplementation implements IUserService {
      * @param user Objeto del tipo {@link User}
      */
     private void saveRequestActivationAccount(User user){
-        UserToken userToken = buildUserToken(user);
+        UserToken userToken = buildUserToken(user, TokenTypeEnum.ACTIVATION);
         userTokenRepository.save(userToken);
         emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL, TITLE.replace("{name}", user.getName()), MESSAGE_EMAIL, null,urlValidateEmail.replace("value", userToken.getToken()), CONFIRM, MESSAGE_FOOTER);
     }
@@ -247,13 +461,248 @@ public class UserImplementation implements IUserService {
      * Metodo encargado de crear un objeto {@link UserToken}
      * @return Objeto {@link UserToken}
      */
-    private UserToken buildUserToken(User user){
-        String token = TokenUtils.generateToken(userTokenRepository);
-        return UserToken.builder()
-                .token(token)
-                .type(TokenTypeEnum.ACTIVATION)
-                .state(TokenStateEnum.PENDING)
-                .user(user)
-                .build();
+    private UserToken buildUserToken(User user, TokenTypeEnum type){
+    String token = TokenUtils.generateToken(userTokenRepository);
+    return UserToken.builder()
+        .token(token)
+        .type(type) 
+        .state(TokenStateEnum.PENDING)
+        .user(user)
+        .build();
     }
+
+    /**
+     * Metodo para obtener el usuario autenticado actualmente.
+     * @return El usuario autenticado del tipo {@link User}
+     */
+    private  User getAuthenticatedActiveUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        return userRepository.findByUsernameAndDeletedAtIsNull(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+    }
+
+    /**
+     * Metodo que obtiene tanto el access token como el refresh token de la request actual
+     * @return Array con [accessToken, refreshToken]
+     */
+    private String[] getCurrentTokens() {
+        String accessToken = null;
+        String refreshToken = null;
+
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            accessToken = authHeader.substring(7);
+        }
+
+        refreshToken = request.getHeader("X-Refresh-Token");
+
+        if (accessToken == null) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getCredentials() instanceof String) {
+                accessToken = (String) authentication.getCredentials();
+            }
+        }
+
+        return new String[]{accessToken, refreshToken};
+    }
+
+    /**
+     * Metodo para generar nuevos tokens para el usuario autenticado y los invalida en la blacklist.
+     * @param user El usuario para el cual se generarán los nuevos tokens.}
+     * @return Un objeto {@link TokenResponseDTO} que contiene el nuevo access token y refresh token.
+     */
+    @Transactional
+    public TokenResponseDTO invalidateAllUserTokensAndGenerateNew(User user) {
+        try {
+            String[] currentTokens = getCurrentTokens();
+            String currentAccessToken = currentTokens[0];
+            String currentRefreshToken = currentTokens[1];
+
+            if (currentAccessToken != null) {
+                try {
+                    authBlacklistService.blacklistAccessTokenOnly(currentAccessToken);
+                } catch (Exception e) {
+                   throw new ConflictException("Error al invalidar el access token: " + e.getMessage());
+                }
+            }
+
+            if (currentRefreshToken != null) {
+                try {
+                    authBlacklistService.blacklistRefreshToken(currentRefreshToken);
+                } catch (Exception e) {
+                    throw new ConflictException("Error al invalidar el refresh token: " + e.getMessage());
+                }
+            }
+
+        } catch (Exception e) {
+            throw new ConflictException("Error al invalidar los tokens: " + e.getMessage());
+        }
+        
+        return generateTokensForUser(user);
+    }
+
+
+    /**
+     * Genera los tokens JWT para un usuario dado.
+     * Este método crea un objeto {@link CustomUserDetails} a partir del usuario,
+     * serializa sus autoridades a JSON, y genera un token de acceso y uno de actualización.
+     * @param user
+     * @return Un objeto {@link TokenResponseDTO} que contiene el token de acceso y el token de actualización.
+     */
+    public TokenResponseDTO generateTokensForUser(User user) {
+        CustomUserDetails userDetails = new CustomUserDetails(user);
+
+        String authoritiesJson;
+        try {
+            authoritiesJson = new ObjectMapper().writeValueAsString(userDetails.getAuthorities());
+        } catch (JsonProcessingException e) {
+            throw new ConflictException("Error al serializar autoridades para JWT: " + e.getMessage());
+        }
+
+        Claims claims = Jwts.claims()
+                .add("authorities", authoritiesJson)
+                .add("username", userDetails.getUsername())
+                .build();
+
+        String accessToken = JwtUtils.generateAccessToken(userDetails.getUsername(), claims);
+        String refreshToken = JwtUtils.generateRefreshToken(userDetails.getUsername(), claims);
+
+        return new TokenResponseDTO(accessToken, refreshToken);
+    }
+
+    
+    /**
+     * Retorna la ruta de la imagen por defecto
+     * @return String con la ruta de la imagen por defecto
+     */
+    private String getDefaultProfileImagePath() {
+        return staticImagesPath + "/" + defaultProfileImage;
+    }
+
+    /**
+     * Genera una copia de la imagen de perfil por defecto con un nombre único.
+     * La imagen se guarda en el directorio de subidas del sistema.
+     *
+     * @param user El objeto User con el nombre de usuario y el rol.
+     * @return La ruta relativa de la nueva imagen de perfil.
+     */
+    private String generateUniqueDefaultProfileImage(User user) {
+        try {
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            Path defaultImagePath = Paths.get(uploadDir, defaultProfileImage);
+            if (!Files.exists(defaultImagePath)) {
+                throw new ConflictException("La imagen de perfil por defecto no se encuentra en el servidor.");
+            }
+
+            String originalFilename = defaultProfileImage;
+            String fileExtension = "";
+
+            if (originalFilename != null && originalFilename.contains(".")) {
+                fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
+
+            String newFileName = user.getUsername() + fileExtension;
+            
+            Path newImagePath = uploadPath.resolve(newFileName);
+            Files.copy(defaultImagePath, newImagePath);
+            
+            return "/uploads/" + newFileName;
+
+        } catch (IOException e) {
+            throw new ConflictException("Error al generar la imagen de perfil por defecto: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Guarda el archivo de imagen de perfil en una carpeta local, usando el nombre de usuario.
+     * Carga la imagen en el directorio de subidas y genera un nombre único basado en el usuario y el rol.
+     * @param file El archivo de imagen.
+     * @param user El objeto User con el nombre de usuario y el rol.
+     * @return La ruta relativa del archivo guardado.
+     */
+    private String saveProfileImage(MultipartFile file, User user) {
+        try {
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+            
+            String originalFilename = file.getOriginalFilename();
+            String fileExtension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
+            
+            String newFileName = user.getUsername() + fileExtension;
+            
+            Path filePath = uploadPath.resolve(newFileName);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            return "/uploads/" + newFileName;
+        } catch (IOException e) {
+            throw new ConflictException("Error al guardar la nueva imagen de perfil: " + e.getMessage());
+        }
+    }
+
+
+    /**
+     * Elimina un archivo de imagen de perfil del sistema de archivos si existe.
+     * * @param imageUrl La URL o ruta relativa de la imagen a eliminar.
+    */
+    private void deleteProfileImage(String imageUrl) {
+        if (imageUrl != null && !isDefaultProfileImage(imageUrl)) {
+            String fileName = imageUrl.replace("/uploads/", "");
+            Path filePath = Paths.get(uploadDir, fileName);
+            try {
+                Files.deleteIfExists(filePath);
+            } catch (IOException e) {
+                System.err.println("Error al eliminar la imagen de perfil: " + filePath.toString() + ". Mensaje: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Verifica si la imagen actual es la imagen por defecto
+     * @param currentImage Ruta de la imagen actual
+     * @return true si es la imagen por defecto
+    */
+    private boolean isDefaultProfileImage(String currentImage) {
+        if (currentImage == null) return false;
+        return currentImage.equals(getDefaultProfileImagePath()) || 
+               currentImage.endsWith("/" + defaultProfileImage);
+    }
+
+    /**
+     * Valida si el tipo de archivo es una imagen válida
+     */
+    private boolean isValidImageType(String contentType) {
+        return contentType != null && 
+            (contentType.equals("image/jpeg") || 
+                contentType.equals("image/png") || 
+                contentType.equals("image/jpg"));
+    }
+
+    /**
+     * Invalida todos los tokens activos de un tipo específico para un usuario
+     */
+    private void invalidateUserTokensByType(User user, TokenTypeEnum tokenType) {
+        List<UserToken> activeTokens = userTokenRepository.findByUserAndTypeAndState(
+            user, tokenType, TokenStateEnum.PENDING);
+        
+        activeTokens.forEach(token -> {
+            token.setState(TokenStateEnum.EXPIRED);
+            token.setUsedAt(LocalDateTime.now());
+        });
+        
+        if (!activeTokens.isEmpty()) {
+            userTokenRepository.saveAll(activeTokens);
+        }
+    }
+
+   
 }

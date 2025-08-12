@@ -1,16 +1,30 @@
 package com.carpool.carpool.controller.user;
 
+import com.carpool.carpool.dto.security.token.TokenResponseDTO;
 import com.carpool.carpool.dto.user.TokenRequestDTO;
 import com.carpool.carpool.dto.user.UserActivationRequestDTO;
+import com.carpool.carpool.dto.user.UserEmailChangeRequestDTO;
+import com.carpool.carpool.dto.user.UserPasswordChangeRequestDTO;
+import com.carpool.carpool.dto.user.UserProfileUpdateRequestDTO;
 import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
+import com.carpool.carpool.enums.user.UserGenderEnum;
+
 import lombok.RequiredArgsConstructor;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.carpool.carpool.dto.user.UserRequestDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.user.IUserService;
+import com.carpool.carpool.utils.ResponseUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -111,4 +125,64 @@ public class UserController {
     public ResponseEntity<Response<Void>> validateDni(@RequestParam String dni) {
         return new ResponseEntity<>(userService.validateDni(dni), HttpStatus.OK);
     }
+
+    @Operation(summary = "Obtener lista de géneros disponibles")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Lista de géneros recuperada con éxito")
+    })
+    @GetMapping("/genders")
+    public ResponseEntity<Response<List<String>>> getAvailableGenders() {
+        List<String> genders = Arrays.stream(UserGenderEnum.values())
+                                    .map(Enum::name)
+                                    .collect(Collectors.toList());
+        return new ResponseEntity<>(ResponseUtils.buildOKResponse(List.of("Lista de géneros"), genders), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Actualizar datos del perfil del usuario")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Perfil actualizado correctamente"),
+        @ApiResponse(responseCode = "409", description = "Errores de validación"),
+        @ApiResponse(responseCode = "401", description = "No autorizado"),
+    })
+    @PutMapping(value = "/update-profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Response<TokenResponseDTO>> updateProfile(
+                @RequestPart("userProfileUpdateRequestDTO") UserProfileUpdateRequestDTO userProfileUpdateRequestDTO,
+                @RequestPart(value = "file", required = false) MultipartFile file) {
+
+        return new ResponseEntity<>(userService.updateUserProfile(userProfileUpdateRequestDTO, file), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Actualizar la contraseña del usuario autenticado")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Contraseña actualizada correctamente"),
+        @ApiResponse(responseCode = "409", description = "Conflicto de validaciones"),
+        @ApiResponse(responseCode = "401", description = "No autorizado"),
+    })
+    @PutMapping("/update-password")
+    public ResponseEntity<Response<TokenResponseDTO>> updatePassword(@RequestBody @Valid UserPasswordChangeRequestDTO userPasswordChangeRequestDTO) {
+        return new ResponseEntity<>(userService.updateUserPassword(userPasswordChangeRequestDTO), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Actualizar el correo electrónico del usuario autenticado")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Cambio de correo iniciado. Confirmación requerida."),
+        @ApiResponse(responseCode = "409", description = "Conflicto de validaciones"),
+        @ApiResponse(responseCode = "401", description = "No autorizado"),
+    })
+    @PutMapping("/update-email")
+    public ResponseEntity<Response<?>> updateEmail(@RequestBody @Valid UserEmailChangeRequestDTO userEmailChangeRequestDTO) {
+        return new ResponseEntity<>(userService.updateUserEmail(userEmailChangeRequestDTO), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Confirmar el cambio de correo electrónico")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Correo electrónico actualizado exitosamente"),
+        @ApiResponse(responseCode = "404", description = "Token no encontrado"),
+        @ApiResponse(responseCode = "409", description = "Token inválido o expirado", content = @Content)
+    })
+    @PostMapping("/confirm-email-change")
+    public ResponseEntity<Response<Void>> confirmEmailChange(@RequestBody TokenRequestDTO tokenRequestDTO) {
+        return new ResponseEntity<>(userService.confirmEmailChange(tokenRequestDTO.getToken()), HttpStatus.OK);
+    }
+
 }

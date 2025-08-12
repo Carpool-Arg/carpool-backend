@@ -21,4 +21,20 @@ public interface IAuthBlacklistService {
      * @return boolean true si el token está en blacklist, false si no
      */
     boolean isTokenBlacklisted(String token);
+
+    /**
+     * Agrega un token de acceso a la blacklist sin considerar el refresh token.
+     * Este método se utiliza cuando se actualiza el perfil del usuario o se cambia la contraseña 
+     * @param token token JWT limpio (sin el prefijo "Bearer ")
+     * @return response respuesta con mensaje y estado de la operación
+     */
+    Response<Void> blacklistAccessTokenOnly(String token);
+
+    /**
+     * Agrega únicamente un refresh token a la blacklist.
+     *
+     * @param refreshToken refresh token JWT a invalidar
+     * @return response respuesta con mensaje y estado de la operación
+     */
+    Response<Void> blacklistRefreshToken(String refreshToken);
 }
