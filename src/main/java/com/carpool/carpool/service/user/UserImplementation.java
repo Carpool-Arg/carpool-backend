@@ -230,7 +230,7 @@ public class UserImplementation implements IUserService {
             } else if (profileImage != null && !profileImage.isEmpty()) {
 
                 if (!isValidImageType(profileImage.getContentType())) {
-                    throw new ConflictException("El tipo de archivo de la imagen no es válido. Los tipos permitidos son JPEG, PNG y JPG.");
+                    throw new ConflictException("El tipo de archivo de la imagen no es válido. Los tipos permitidos son JPEG, JPG, PNG y WEBP.");
                 }
 
                 if (profileImage.getSize() > 5 * 1024 * 1024) { 
@@ -696,7 +696,8 @@ public class UserImplementation implements IUserService {
         return contentType != null && 
             (contentType.equals("image/jpeg") || 
                 contentType.equals("image/png") || 
-                contentType.equals("image/jpg"));
+                contentType.equals("image/jpg") ||
+                contentType.equals("image/webp"));
     }
 
     /**
