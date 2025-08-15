@@ -21,6 +21,7 @@ import com.carpool.carpool.service.email.IEmailService;
 import com.carpool.carpool.utils.TokenUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -68,6 +69,9 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     private String currentUsername;
     private String supportEmail;
+
+    @Value("${unlock.account.url}")
+    private String urlUnlockAccount;
 
     public JwtAuthenticationFilter(AuthenticationManager authenticationManager, UserRepository userRepository,
                                    IUserAccountService userAccountService, IEmailService emailImplementation,
@@ -272,7 +276,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             case 9:
                 return "Ingreso fallido. Si ingresa mal su contraseña nuevamente su cuenta sera bloqueada permanentemente!";
             case 10:
-                //TODO: ver endpoint al redireccionar cuenta
                 String emailContent = supportEmail + "?subject=Cuenta%20bloqueada&body=Hola%2C%20mi%20cuenta%20fue%20bloqueada...";
                 String message = String.format(MESSAGE_EMAIL_LOCKED, emailContent);
                 saveRequestUnlockAccount(user, message);
@@ -303,6 +306,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private void saveRequestUnlockAccount(User user, String message){
         UserToken userToken = TokenUtils.buildUserToken(user, TokenTypeEnum.ACTIVATION, userTokenRepository);
         userTokenRepository.save(userToken);
-        emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL_LOCKED, TITLE_LOCKED.replace("{name}", user.getName()), message, null, "http://localhost:3000/unlocked", UNLOCKED, MESSAGE_FOOTER_LOCKED);
+        emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL_LOCKED, TITLE_LOCKED.replace("{name}", user.getName()), message, null, urlUnlockAccount, UNLOCKED, MESSAGE_FOOTER_LOCKED);
     }
 }
