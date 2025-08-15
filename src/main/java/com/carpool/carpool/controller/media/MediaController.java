@@ -1,7 +1,5 @@
 package com.carpool.carpool.controller.media;
 
-import com.carpool.carpool.dto.media.*;
-import com.carpool.carpool.model.media.Media;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.media.IMediaService;
 import io.swagger.v3.oas.annotations.Operation;
