@@ -4,35 +4,27 @@ import com.carpool.carpool.model.media.Media;
 import com.carpool.carpool.response.Response;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.Optional;
-
 public interface IMediaService {
-    /**
-     * Metodo encargado de realizar una peticion al R2 para almacenar un archivo y de registrarlo en la base de datos
-     * @param file Archivo del tipo {@link MultipartFile}
-     * @param ownerIdentification Id del usuario propietario del tipo {@link Long}. En nuestro caso, es el DNI.
-     * @return Objeto {@link Media}
+
+    /** TODO: se podria usar el mismo metodo para obtener recursos, habria que pasarle parametros y controlar en el service. Actualmente solo obtiene
+     * foto de perfil, pero el dia de mañana que se desee implementar para reseñas, autos, etc solamente bastaria con validarlo en la implementacion.
+     * Obtiene un archivo especifico, si es que existen
+     * @param idUser Id del usuario del tipo {@link Long}
+     * @return {@link Response} con data de la url del tipo {@link String}
      */
-    Response<Media> uploadAndSaveFile(MultipartFile file, Long ownerIdentification);
+    Response<String> getFileUser(Long idUser);
+
+    /**
+     * Metodo encargado de realizar una peticion al R2 para almacenar un archivo y crear un registro en la base de datos
+     * @param file Archivo del tipo {@link MultipartFile}
+     * @param idUser Id del usuario propietario del tipo {@link Long}.
+     * @return {@link Response} con data {@link Media}
+     */
+    Response<Void> uploadAndSaveFileUser(MultipartFile file, Long idUser);
 
     /**
      * Se encarga de eliminar un archivo tanto en R2 como en la base de datos.
-     * @param mediaId Id de la media del tipo {@link Long}
+     * @param idUser Id del usuario propietario del recurso del tipo {@link Long}
      */
-    Response<Void> deleteFile(Long mediaId);
-
-    /**
-     * Obtiene los archivos, si es que existen, de un usuario
-     * @param ownerIdentification Id del propietario de la foto del tipo {@link Long}
-     * @return {@link List} con objetos {@link Media}
-     */
-    Response<List<Media>> getFilesByOwner(Long ownerIdentification);
-
-    /**
-     * Obtiene un archivo especifico, si es que existen
-     * @param mediaId Id del archivo {@link Long}
-     * @return Objeto del tipo {@link Media}
-     */
-    Response<Media> getFileById(Long mediaId);
+    Response<Void> deleteFileUser(Long idUser);
 }

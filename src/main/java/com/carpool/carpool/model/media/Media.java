@@ -1,5 +1,6 @@
 package com.carpool.carpool.model.media;
 
+import com.carpool.carpool.enums.media.CategoryMediaEnum;
 import com.carpool.carpool.model.user.User;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @RequiredArgsConstructor
-@Table(name = "media_asset")
+@Table(name = "media")
 public class Media {
 
     @Id
@@ -19,11 +20,15 @@ public class Media {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "owner", referencedColumnName = "id")
-    private User owner;
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
 
     @Column(name = "bucket", nullable = false)
     private String bucket;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category", nullable = false)
+    private CategoryMediaEnum category;
 
     @Column(name = "object_key", nullable = false, columnDefinition="text")
     private String objectKey;
