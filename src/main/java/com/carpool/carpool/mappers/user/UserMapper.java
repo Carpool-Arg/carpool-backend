@@ -67,7 +67,6 @@ public class UserMapper {
     public UserResponseDTO convertUserToUserResponseDTO(User user) {
         return UserResponseDTO.builder()
                 .id(user.getId())
-                .profileImage(user.getProfileImage())
                 .name(user.getName())
                 .lastname(user.getLastname())
                 .username(user.getUsername())
