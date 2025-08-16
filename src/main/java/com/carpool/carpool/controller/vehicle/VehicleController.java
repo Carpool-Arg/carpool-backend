@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.carpool.carpool.dto.vehicle.VehicleOnlyResponseDTO;
 import com.carpool.carpool.dto.vehicle.VehicleRequestDTO;
 import com.carpool.carpool.dto.vehicle.VehicleUpdateRequestDTO;
 import com.carpool.carpool.dto.vehicle.VehicleResponseDTO;
@@ -89,9 +90,9 @@ public class VehicleController {
     })
 
     @DeleteMapping("/{id}") 
-    public ResponseEntity<Response<Void>> deleteVehicle(@PathVariable Long id) {
+    public ResponseEntity<Response<Void>> deleteVehicle(@PathVariable Long id){
         Response<Void> serviceResponse = vehicleService.deleteVehicle(id);
-        return new ResponseEntity<>(serviceResponse, HttpStatus.OK); // 200 OK para operación de baja exitosa
+        return new ResponseEntity<>(serviceResponse, HttpStatus.OK); 
     }
 
 
@@ -108,6 +109,21 @@ public class VehicleController {
     public ResponseEntity<Response<List<VehicleResponseDTO>>> getMyVehicles(){
         Response<List<VehicleResponseDTO>> serviceResponse = vehicleService.getVehiclesByAuthenticatedDriver();
         return new ResponseEntity<>(serviceResponse, HttpStatus.OK); 
+    }
+
+    @Operation(
+        summary = "Obtener un vehículo por ID",
+        description = "Obtiene los detalles de un vehículo específico por su ID."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Vehículo obtenido exitosamente"),
+        @ApiResponse(responseCode = "404", description = "Vehículo no encontrado")
+    })
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Response<VehicleOnlyResponseDTO>> getVehicleById(@PathVariable Long id) {
+        Response<VehicleOnlyResponseDTO> serviceResponse = vehicleService.getVehicleById(id);
+        return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
     }
 
 }

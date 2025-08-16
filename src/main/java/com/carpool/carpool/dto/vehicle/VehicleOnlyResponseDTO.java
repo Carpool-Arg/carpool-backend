@@ -1,6 +1,5 @@
 package com.carpool.carpool.dto.vehicle;
 
-import java.time.LocalDateTime;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,18 +10,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class VehicleResponseDTO {
-    
+public class VehicleOnlyResponseDTO {
+
     private Long id;
     private String domain;
     private String brand;
     private String model;
     private Integer year;
+    private Long vehicleTypeId;
     private String color;
     private Integer availableSeats;
-    private Long vehicleTypeId; 
-    private String vehicleTypeName; 
-    private Long driverId; 
-    private LocalDateTime createdAt;
     
 }

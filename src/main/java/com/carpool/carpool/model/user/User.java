@@ -59,7 +59,7 @@ public class User implements Serializable {
     private String email;
  
     @Size(min = 6, max = 255, message = "La contraseña debe tener entre 6 y 255 caracteres.")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$", message = "La contraseña debe contener al menos una letra minúscula, una letra mayúscula y un número.La contraseña debe contener al menos una letra minúscula, una letra mayúscula y un número.")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$", message = "La contraseña debe contener al menos una letra minúscula, una letra mayúscula y un número.")
     private String password;
 
     @Size(min = 7, max = 50, message = "El número del DNI debe tener entre 7 y 50 caracteres.")

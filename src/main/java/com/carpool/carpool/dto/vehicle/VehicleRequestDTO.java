@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,7 +22,7 @@ public class VehicleRequestDTO {
     private String domain; 
 
     @NotBlank(message = "La marca del vehiculo no puede estar en blanco.")
-    @Pattern(regexp = "^[a-zA-Z0-9 ]+$", message = "La marca debe contener sólo letras, números y espacios.")
+    @Pattern(regexp = "^[A-Za-z-]+$", message = "La marca debe contener sólo letras, números y espacios.")
     private String brand;
 
     @NotBlank(message = "El modelo del vehiculo no puede estar en blanco.")
@@ -43,9 +42,6 @@ public class VehicleRequestDTO {
     @Min(value = 1, message = "La cantidad de asientos disponibles debe ser al menos 1.")
     private Integer availableSeats;
 
-    @NotNull(message = "La cantidad de equipaje disponible no puede estar en blanco.")
-    @PositiveOrZero(message = "La cantidad de equipaje disponible debe ser un número positivo o cero.")
-    private Float luggageCapacity;   
 
     @NotNull(message = "El ID del tipo de vehículo no puede estar en blanco.")
     @Min(value = 1, message = "El ID del tipo de vehículo debe ser un número positivo.")

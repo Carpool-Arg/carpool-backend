@@ -8,6 +8,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.carpool.carpool.dto.vehicle.VehicleOnlyResponseDTO;
 import com.carpool.carpool.dto.vehicle.VehicleRequestDTO;
 import com.carpool.carpool.dto.vehicle.VehicleResponseDTO;
 import com.carpool.carpool.dto.vehicle.VehicleUpdateRequestDTO;
@@ -62,6 +64,12 @@ public class VehicleImplementation implements IVehicleService {
         return ResponseUtils.buildOKResponse(List.of("Vehiculo Creado"), null);
     }
 
+    /**
+     * Metodo utilizado para actualizar un vehiculo en la base de datos.
+     * @param id Id del vehiculo a actualizar
+     * @param vehicleUpdateRequestDTO request con los datos del vehiculo a actualizar
+     * @return Response<Void> devolviendo el mensaje si el vehiculo fue actualizado
+     */
     @Override
     public Response<Void> updateVehicle(Long id, VehicleUpdateRequestDTO vehicleUpdateRequestDTO) {
         
@@ -81,6 +89,12 @@ public class VehicleImplementation implements IVehicleService {
         return ResponseUtils.buildOKResponse(List.of("Vehiculo Actualizado"), null);
     }
 
+    /**
+     * Metodo utilizado para eliminar un vehiculo de la base de datos.
+     * 
+     * @param id Id del vehiculo a eliminar
+     * @return Response<Void> devolviendo el mensaje si el vehiculo fue eliminado
+     */
     @Override
     public Response<Void> deleteVehicle(Long id) {
 
@@ -95,11 +109,18 @@ public class VehicleImplementation implements IVehicleService {
         }
 
         vehicleToDelete.setDeletedAt(LocalDateTime.now());
+        vehicleToDelete.setDeleted_by(authenticatedDriver.getUser().getId());
         vehicleRepository.save(vehicleToDelete);
 
         return ResponseUtils.buildOKResponse(List.of("Vehículo dado de baja correctamente."), null);
     }
 
+    /**
+     * Metodo utilizado para obtener los vehiculos del chofer autenticado.
+     * 
+     * @param id Id del vehiculo a buscar
+     * @return Response<List<VehicleResponseDTO>> devolviendo la lista de vehiculos encontrados
+     */
     @Override
     @Transactional(readOnly = true)
     public Response<List<VehicleResponseDTO>> getVehiclesByAuthenticatedDriver() {
@@ -115,6 +136,25 @@ public class VehicleImplementation implements IVehicleService {
 
         List<VehicleResponseDTO> vehicleResponseDTOs = vehicleMapper.convertVehicleListToVehicleResponseDTOList(activeVehicles);
         return ResponseUtils.buildOKResponse(List.of("Listado de vehículos activos."),vehicleResponseDTOs);
+    }
+
+    /**
+     * Metodo utilizado para obtener un vehiculo por su id.
+     * @param id Id del vehiculo a buscar
+     * @return Response<VehicleOnlyResponseDTO> devolviendo el vehiculo encontrado
+     */
+    @Override
+    public Response<VehicleOnlyResponseDTO> getVehicleById(Long id) {
+        Driver authenticatedDriver = getAuthenticatedDriver();
+        Vehicle vehicle = vehicleRepository.findByIdAndDriver(id, authenticatedDriver)
+                .orElseThrow(() -> new ConflictException("Vehículo no encontrado o no pertenece al chofer autenticado."));
+        
+        if(!vehicle.isEnabled()) {
+            throw new ConflictException("El vehículo con ID " + id + " está dado de baja.");
+        }
+
+        VehicleOnlyResponseDTO vehicleOnlyResponseDTO = vehicleMapper.convertVehicleToVehicleOnlyResponseDTO(vehicle);
+        return ResponseUtils.buildOKResponse(List.of("Vehículo encontrado."), vehicleOnlyResponseDTO);
     }
 
     /**
@@ -136,15 +176,15 @@ public class VehicleImplementation implements IVehicleService {
     }
 
     /**
-     * Valida que el dominio del vehiculo sea unico.
+     * Valida que el dominio del vehiculo sea unico entre los vehiculos activos.
      * @param domain El dominio del vehiculo a validar.
-     * @throws ConflictException Si ya existe un vehiculo con el mismo dominio.
+     * @throws ConflictException Si ya existe un vehiculo activo con el mismo dominio.
      */
     private void validateUniqueDomain(String domain) {
-        Optional<Vehicle> existingVehicle = vehicleRepository.findByDomain(domain);
-        if (existingVehicle.isPresent()) {
-            throw new ConflictException("La patente '" + domain + "' ya se encuentra registrada.");
-        }
+        vehicleRepository.findByDomainIgnoreCaseAndDeletedAtIsNull(domain)
+            .ifPresent(v -> {
+                throw new ConflictException("Ya existe un vehículo activo con la patente: " + domain.toUpperCase());
+            });
     }
 
     /**
@@ -163,11 +203,9 @@ public class VehicleImplementation implements IVehicleService {
      * @param vehicle El vehiculo a normalizar.
      */
     private void normalizeVehicle(Vehicle vehicle) {
-        vehicle.setDomain(vehicle.getDomain().toUpperCase().trim());
-        vehicle.setBrand(vehicle.getBrand().toUpperCase().trim());
-        vehicle.setModel(vehicle.getModel().toUpperCase().trim());
-        vehicle.setColor(vehicle.getColor().toUpperCase().trim());
+        vehicle.setDomain(vehicle.getDomain().toUpperCase().trim().replaceAll("\\s+", " "));
+        vehicle.setBrand(vehicle.getBrand().toUpperCase().trim().replaceAll("\\s+", " "));
+        vehicle.setModel(vehicle.getModel().toUpperCase().trim().replaceAll("\\s+", " "));
+        vehicle.setColor(vehicle.getColor().toUpperCase().trim().replaceAll("\\s+", " "));
     }
-
-    
 }

@@ -6,6 +6,10 @@ import com.carpool.carpool.dto.security.token.TokenResponseDTO;
 import com.carpool.carpool.dto.user.UserEmailChangeRequestDTO;
 import com.carpool.carpool.dto.user.UserPasswordChangeRequestDTO;
 import com.carpool.carpool.dto.user.UserProfileUpdateRequestDTO;
+
+import com.carpool.carpool.dto.user.ChangePasswordRequestDTO;
+import com.carpool.carpool.dto.user.EmailRequestDTO;
+
 import com.carpool.carpool.dto.user.UserRequestDTO;
 import com.carpool.carpool.dto.user.UserResponseDTO;
 import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
@@ -103,4 +107,18 @@ public interface IUserService {
      * @return Response<Void> con los datos del usuario.
      */
     Response<UserResponseDTO> getAuthenticatedUser ();
+
+    /**
+     * Metodo para el envio de correo electronico de solicitud de cambio de contraseña.
+     * @param emailRequestDTO un email ingresado por la persona con las validaciones de formato
+     */
+    Response<Void> sendPasswordChangeEmail(EmailRequestDTO emailRequestDTO);
+
+    /**
+     * Metodo para realizar el cambio de la contraseña del usuario
+     * @param changePasswordRequestDTO contiene la contraseña nueva, la confirmacion de la misma y el token 
+     * del usuario para el cambio de contraseña
+     */
+    Response<Void> changePassword(ChangePasswordRequestDTO changePasswordRequestDTO);
+
 }

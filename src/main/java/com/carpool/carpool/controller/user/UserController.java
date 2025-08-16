@@ -2,10 +2,10 @@ package com.carpool.carpool.controller.user;
 
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
 import com.carpool.carpool.dto.user.TokenRequestDTO;
-import com.carpool.carpool.dto.user.UserActivationRequestDTO;
 import com.carpool.carpool.dto.user.UserEmailChangeRequestDTO;
 import com.carpool.carpool.dto.user.UserPasswordChangeRequestDTO;
 import com.carpool.carpool.dto.user.UserProfileUpdateRequestDTO;
+import com.carpool.carpool.dto.user.EmailRequestDTO;
 import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
 import com.carpool.carpool.enums.user.UserGenderEnum;
 
@@ -87,7 +87,7 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Correo electrónico enviado", content = @Content)
     })
     @PostMapping("/resend-activation")
-    public ResponseEntity<Response<Void>> resendActivateAccount(@RequestBody UserActivationRequestDTO userActivationRequestDTO) {
+    public ResponseEntity<Response<Void>> resendActivateAccount(@RequestBody EmailRequestDTO userActivationRequestDTO) {
         return new ResponseEntity<>(userService.resendActivateAccount(userActivationRequestDTO.getEmail()), HttpStatus.OK);
     }
 

@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import com.carpool.carpool.dto.vehicle.VehicleOnlyResponseDTO;
 import com.carpool.carpool.dto.vehicle.VehicleRequestDTO;
 import com.carpool.carpool.dto.vehicle.VehicleResponseDTO;
 import com.carpool.carpool.dto.vehicle.VehicleUpdateRequestDTO;
@@ -23,7 +24,6 @@ public class VehicleMapper {
             .year(vehicleRequestDTO.getYear())
             .color(vehicleRequestDTO.getColor())
             .availableSeats(vehicleRequestDTO.getAvailableSeats())
-            .luggageCapacity(vehicleRequestDTO.getLuggageCapacity())
             .driver(driver)
             .vehicleType(vehicleType)
             .build();
@@ -35,7 +35,6 @@ public class VehicleMapper {
         existingVehicle.setYear(vehicleUpdateRequestDTO.getYear());
         existingVehicle.setColor(vehicleUpdateRequestDTO.getColor());
         existingVehicle.setAvailableSeats(vehicleUpdateRequestDTO.getAvailableSeats());
-        existingVehicle.setLuggageCapacity(vehicleUpdateRequestDTO.getLuggageCapacity());
         return existingVehicle;
     }
 
@@ -48,7 +47,6 @@ public class VehicleMapper {
             .year(vehicle.getYear())
             .color(vehicle.getColor())
             .availableSeats(vehicle.getAvailableSeats())
-            .luggageCapacity(vehicle.getLuggageCapacity())
             .vehicleTypeId(vehicle.getVehicleType().getId())
             .vehicleTypeName(vehicle.getVehicleType().getName())
             .driverId(vehicle.getDriver().getId())
@@ -64,5 +62,18 @@ public class VehicleMapper {
         return vehicles.stream()
                 .map(this::convertVehicleToVehicleResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    public VehicleOnlyResponseDTO convertVehicleToVehicleOnlyResponseDTO(Vehicle vehicle) {
+        return VehicleOnlyResponseDTO.builder()
+            .id(vehicle.getId())
+            .domain(vehicle.getDomain())
+            .vehicleTypeId(vehicle.getVehicleType() != null ? vehicle.getVehicleType().getId() : null) //Se asegura que vehicleType no sea nulo, y no salte errores
+            .brand(vehicle.getBrand())
+            .model(vehicle.getModel())
+            .year(vehicle.getYear())
+            .color(vehicle.getColor())
+            .availableSeats(vehicle.getAvailableSeats())
+            .build();
     }
 }
