@@ -15,6 +15,7 @@ import com.carpool.carpool.exception.UnauthorizedException;
 import com.carpool.carpool.model.user.UserToken;
 import com.carpool.carpool.repository.user.token.UserTokenRepository;
 import com.carpool.carpool.service.email.IEmailService;
+import com.carpool.carpool.utils.PasswordUtils;
 import com.carpool.carpool.utils.TokenUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,10 +33,9 @@ import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.utils.ResponseUtils;
 
-import static com.carpool.carpool.utils.EmailMessageUtils.*;
-
-
 import jakarta.transaction.Transactional;
+
+import static com.carpool.carpool.utils.EmailMessageUtils.*;
 
 @RequiredArgsConstructor
 @Service
@@ -49,12 +49,6 @@ public class UserImplementation implements IUserService {
     private final UserTokenRepository userTokenRepository;
 
     private static final String EXIST_USER = "Ya existe un usuario con el ";
-
-    // private static final String SUBJECT_EMAIL = "Activación de cuenta";
-    // private static final String TITLE = "¡Casi listo, {name}!\uD83D\uDE4C";
-    // private static final String MESSAGE_EMAIL = "Haz clic en el botón de abajo para activar tu cuenta:";
-    // private static final String CONFIRM = "Activar cuenta";
-    // private static final String MESSAGE_FOOTER = "Si no solicitaste esta activación, podés ignorar este correo. Recuerda que el mismo es válido durante <strong>48 horas</strong>.";
 
     public static final String ROLE_USER = "ROLE_USER";
 
@@ -71,7 +65,7 @@ public class UserImplementation implements IUserService {
     @Transactional
     public Response<Void> saveUser(UserRequestDTO userRequestDTO) {
 
-        passwordsMatch(userRequestDTO.getPassword(), userRequestDTO.getConfirmPassword());
+        PasswordUtils.passwordsMatch(userRequestDTO.getPassword(), userRequestDTO.getConfirmPassword());
         existsByUsername(userRequestDTO.getUsername());
         existsByEmail(userRequestDTO.getEmail());
         existsByDni(userRequestDTO.getDni());
@@ -100,7 +94,7 @@ public class UserImplementation implements IUserService {
 
         if(!user.getStatus().equals(UserStateEnum.PENDING_PROFILE)) throw new UnauthorizedException("El usuario no tiene un registro pendiente para completar.");
 
-        passwordsMatch(userUpdateRequestDTO.getPassword(), userUpdateRequestDTO.getConfirmPassword());
+        PasswordUtils.passwordsMatch(userUpdateRequestDTO.getPassword(), userUpdateRequestDTO.getConfirmPassword());
         existsByUsername(userUpdateRequestDTO.getUsername());
         existsByDni(userUpdateRequestDTO.getDni());
 
@@ -117,37 +111,6 @@ public class UserImplementation implements IUserService {
         saveRequestActivationAccount(user);
 
         return ResponseUtils.buildOKResponse(List.of("Usuario con registro parcial creado") , null);
-    }
-
-    @Override
-    @Transactional
-    public Response<Void> activateAccount(String token){
-        UserToken tokenValidate = userTokenRepository.findByToken(token).
-                orElseThrow(() -> new ResourceNotFoundException("Token no encontrado"));
-
-        if (!validateUserToken(tokenValidate,TokenTypeEnum.ACTIVATION)) throw new ConflictException("Token inválido");
-
-        /*
-         * En esta parte se verifica que el token no este expirado, si es asi se le 
-         * setea el estado correspondiente y se lanza una excepcion
-         */
-        if (tokenValidate.isExpired()){
-            tokenValidate.setState(TokenStateEnum.EXPIRED);
-            userTokenRepository.save(tokenValidate);
-            throw new ConflictException("Token Expirado");
-        }
-
-        User user = userRepository.findById(tokenValidate.getUser().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-
-        user.setStatus(UserStateEnum.ACTIVE);
-        tokenValidate.setState(TokenStateEnum.USED);
-        tokenValidate.setUsedAt(LocalDateTime.now());
-
-        userRepository.save(user);
-        userTokenRepository.save(tokenValidate);
-
-        return ResponseUtils.buildOKResponse(List.of("Usuario activado con éxito") , null);
     }
 
     @Override
@@ -177,18 +140,6 @@ public class UserImplementation implements IUserService {
         return ResponseUtils.buildOKResponse(List.of("DNI disponible") , null);
     }
 
-    /**
-     * Metodo para comprobar que las contraseña y la confirmacion de la misma coinciden
-     * @param userPassword la contraseña del usuario
-     * @param userConfirmPassword la confirmacion de la contraseña del usuario
-     * @throws ConflictException si no coinciden
-     */
-    private void passwordsMatch(String userPassword, String userConfirmPassword){
-        if(!userPassword.equals(userConfirmPassword)){
-            throw new ConflictException("Las contraseñas ingresadas no coinciden");
-        }
-    }
-    
     /**
      * Metodo para comprobar no exista otro usuario en la base de datos
      * con el mismo email que el ingresado 
@@ -254,16 +205,9 @@ public class UserImplementation implements IUserService {
      * @param user Objeto del tipo {@link User}
      */
     private void saveRequestActivationAccount(User user){
-        UserToken userToken = buildUserToken(user, TokenTypeEnum.ACTIVATION);
+        UserToken userToken = TokenUtils.buildUserToken(user, TokenTypeEnum.ACTIVATION, userTokenRepository);
         userTokenRepository.save(userToken);
-        emailImplementation.sendEmail(
-            user.getEmail(), 
-            SUBJECT_EMAIL_ACTIVE, 
-            TITLE_ACTIVE.replace("{name}", user.getName()), 
-            MESSAGE_EMAIL_ACTIVE, null,
-            urlValidateEmail.replace("value", userToken.getToken()), 
-            ACTIVE, 
-            MESSAGE_FOOTER_ACTIVE);
+        emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL_ACTIVE, TITLE_ACTIVE.replace("{name}", user.getName()), MESSAGE_EMAIL_ACTIVE, null,urlValidateEmail.replace("value", userToken.getToken()), ACTIVE, MESSAGE_FOOTER_ACTIVE);
     }
 
     /**
@@ -281,14 +225,13 @@ public class UserImplementation implements IUserService {
                 .build();
     }
 
-
     /* -------------------------------------------------------------------------- */
     /*                      Solicitud de cambio de contraseña                     */
     /* -------------------------------------------------------------------------- */
-    
+
     /**
      * En este metodo se realiza el envio de correo electronico con la solicitud de cambio de contraseña
-     * La respuesta que recibe el frontend es la misma si se logra enviar el correo o no, para no dar 
+     * La respuesta que recibe el frontend es la misma si se logra enviar el correo o no, para no dar
      * informacion de mas al usuario.
      * En este metodo tambien se genera y se guarda el token que se utilizara para el cambio de contraseña
      */
@@ -304,8 +247,8 @@ public class UserImplementation implements IUserService {
     }
 
     /**
-     * En este metodo se realiza el cambio de contraseña propiamente dicho. Se realiza la validacion para la 
-     * coincidencia de las contraseñas ingresadas y la validacion del token. 
+     * En este metodo se realiza el cambio de contraseña propiamente dicho. Se realiza la validacion para la
+     * coincidencia de las contraseñas ingresadas y la validacion del token.
      * Tambien se realiza el encriptado de la contraseña
      */
     @Override
@@ -318,7 +261,7 @@ public class UserImplementation implements IUserService {
         if (!validateUserToken(userToken,TokenTypeEnum.PASSWORD_CHANGE)) throw new ConflictException("Token inválido");
 
         /*
-         * En esta parte se verifica que el token no este expirado, si es asi se le 
+         * En esta parte se verifica que el token no este expirado, si es asi se le
          * setea el estado correspondiente y se lanza una excepcion
          */
         if (userToken.isExpired()){
@@ -332,10 +275,10 @@ public class UserImplementation implements IUserService {
 
         userToken.setState(TokenStateEnum.USED);
         userToken.setUsedAt(LocalDateTime.now());
-        
+
         String userPassword = changePasswordRequestDTO.getPassword();
         String userConfirmPassword = changePasswordRequestDTO.getConfirmPassword();
-        passwordsMatch(userPassword, userConfirmPassword);
+        PasswordUtils.passwordsMatch(userPassword, userConfirmPassword);
         user.setPassword(passwordEncoder.encode(userPassword));
 
         userRepository.save(user);
@@ -343,20 +286,17 @@ public class UserImplementation implements IUserService {
         return ResponseUtils.buildOKResponse(List.of("Contraseña actualizada."), null);
     }
 
-
-
     /**
      * Metodo para validar el token de cambio de contraseña
      * Se valida el estado, el tipo y si coincide con el token que pasa el usuario como parametro
      * @param userToken el token de la base de datos
-     * @param token El token que el usuario pasa como parametro
+     * @param type el tipo de token que posee el token para validar
      * @return {@code true} si el token es valido, {@code false} si no
      */
     private boolean validateUserToken(UserToken userToken, TokenTypeEnum type){
         return ( userToken.getState().equals(TokenStateEnum.PENDING) &&
         userToken.getType().equals(type));
     }
-
 
     /**
      * Meotodo para validar el estado de la cuenta del usuario antes de realizar el cambio de contraseña
@@ -375,7 +315,7 @@ public class UserImplementation implements IUserService {
         UserToken userToken = buildUserToken(user, TokenTypeEnum.PASSWORD_CHANGE);
         userTokenRepository.save(userToken);
         emailImplementation.sendEmail(
-            user.getEmail(), 
+            user.getEmail(),
             SUBJECT_EMAIL_CHANGE_PASSWORD,
             TITLE_CHANGE_PASSWORD.replace("{name}",user.getName()),
             MESSAGE_EMAIL_CHANGE_PASSWORD,
@@ -393,6 +333,4 @@ public class UserImplementation implements IUserService {
     private Response<Void> sendEmailResponse(){
         return ResponseUtils.buildOKResponse(SENDED_PASSWORD_CHANGE_EMAIL_MESSAGE, null);
     }
-
-
 }

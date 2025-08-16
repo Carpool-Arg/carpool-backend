@@ -1,17 +1,19 @@
 package com.carpool.carpool.utils;
 
 public class EmailMessageUtils {
+
     private EmailMessageUtils() {}
 
     // WELCOME
     public static final String SUBJECT_EMAIL_WELCOME = "¡Bienvenido a Carpool!";
     public static final String TITLE_WELCOME = "¡Hola, {name}!\uD83D\uDC4B";
-    public static final String MESSAGE_EMAIL_WELCOME = " Bienvenido a Carpool, la plataforma para compartir viajes de forma fácil, segura y organizada.<br>" +
-            "Desde ahora vas a poder publicar, encontrar y coordinar viajes a distintas ciudades sin depender de los grupos de WhatsApp.<br>" +
-            "¡Nos alegra tenerte a bordo! \uD83D\uDE97";
+    public static final String MESSAGE_EMAIL_WELCOME = "¡Bienvenido a <strong>Carpool</strong>! Nos pone muy felices que te sumes a esta comunidad que cree en viajar juntos, compartir y hacer los trayectos más simples y humanos.<br>" +
+            "A partir de ahora vas a poder conectarte con otras personas que viajan como vos, y organizar tus trayectos de forma práctica, segura y acompañada.<br><br>" +
+            "Si tenés preguntas o sugerencias, <strong>estamos para ayudarte</strong>. ¡Esto recién empieza!<br><br>" +
+            "<strong>¡Bienvenido a bordo! \uD83D\uDE97✨</strong>";
     public static final String MESSAGE_FOOTER_WELCOME = "El equipo de Carpool";
 
-    //CHANGE PASSWORD   
+    //CHANGE PASSWORD
     public static final String SUBJECT_EMAIL_CHANGE_PASSWORD = "Recuperación de contraseña";
     public static final String TITLE_CHANGE_PASSWORD = "{name}, ¿Olvidaste tu contraseña? 🔒";
     public static final String MESSAGE_EMAIL_CHANGE_PASSWORD = "Haz clic en el botón de abajo para restablecer tu contraseña:";

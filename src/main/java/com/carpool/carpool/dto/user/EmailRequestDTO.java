@@ -12,6 +12,7 @@ import lombok.Setter;
 @Setter
 @Getter
 public class EmailRequestDTO {
+
     @NotBlank(message = "El correo electrónico no puede quedar en blanco.")
     @Size(max = 75, message = "El correo electrónico debe tener como máximo 75 caracteres.")
     @Schema(example = "pepe123@gmail.com")

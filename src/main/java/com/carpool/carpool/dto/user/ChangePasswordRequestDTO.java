@@ -9,11 +9,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Data
-@Getter
 @Setter
+@Getter
 public class ChangePasswordRequestDTO {
 
-    
     @NotBlank(message = "La contraseña no puede quedar en blanco.")
     @Size(min = 6, max = 255, message = "La contraseña debe tener entre 6 y 255 caracteres.")
     @Schema(example = "pJUan22")

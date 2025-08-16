@@ -1,5 +1,7 @@
 package com.carpool.carpool.controller.user;
 
+import com.carpool.carpool.dto.user.*;
+import com.carpool.carpool.service.user.account.IUserAccountService;
 import com.carpool.carpool.dto.user.TokenRequestDTO;
 import com.carpool.carpool.dto.user.EmailRequestDTO;
 import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
@@ -26,6 +28,7 @@ import jakarta.validation.Valid;
 public class UserController {
 
     private final IUserService userService;
+    private final IUserAccountService userAccountService;
 
     @Operation(
             summary = "Registrar un nuevo usuario"
@@ -64,7 +67,7 @@ public class UserController {
     })
     @PostMapping("/activate-account")
     public ResponseEntity<Response<Void>> activateAccount(@RequestBody TokenRequestDTO tokenRequestDTO) {
-        return new ResponseEntity<>(userService.activateAccount(tokenRequestDTO.getToken()), HttpStatus.OK);
+        return new ResponseEntity<>(userAccountService.activateAccount(tokenRequestDTO.getToken()), HttpStatus.OK);
     }
 
     @Operation(summary = "Reenvio de correo para activar la cuenta")
@@ -72,8 +75,17 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Correo electrónico enviado", content = @Content)
     })
     @PostMapping("/resend-activation")
-    public ResponseEntity<Response<Void>> resendActivateAccount(@RequestBody EmailRequestDTO userActivationRequestDTO) {
-        return new ResponseEntity<>(userService.resendActivateAccount(userActivationRequestDTO.getEmail()), HttpStatus.OK);
+    public ResponseEntity<Response<Void>> resendActivateAccount(@RequestBody EmailRequestDTO emailRequestDTO) {
+        return new ResponseEntity<>(userService.resendActivateAccount(emailRequestDTO.getEmail()), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Reenvio de correo para desbloquear la cuenta")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Correo electrónico enviado", content = @Content)
+    })
+    @PostMapping("/unlock-account")
+    public ResponseEntity<Response<Void>> unlockAccount(@RequestBody ChangePasswordRequestDTO changePasswordRequestDTO) {
+        return new ResponseEntity<>(userAccountService.unlockAccount(changePasswordRequestDTO), HttpStatus.OK);
     }
 
     @Operation(summary = "Validar si un username se encuentra en uso")

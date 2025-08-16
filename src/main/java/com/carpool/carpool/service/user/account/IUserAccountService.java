@@ -1,6 +1,8 @@
 package com.carpool.carpool.service.user.account;
 
+import com.carpool.carpool.dto.user.ChangePasswordRequestDTO;
 import com.carpool.carpool.model.user.User;
+import com.carpool.carpool.response.Response;
 
 public interface IUserAccountService {
     /**
@@ -34,11 +36,20 @@ public interface IUserAccountService {
     public void lockAccount(User user);
 
     /**
-     * Metodo para debloquear la cuenta de un usuario 
-     * Aun no se usa, pero queda para mas adelante 
-     * @param user
+     * Metodo encargado de validar si el token se encuentra en la base de datos y si cumple condiciones para proceder al desbloqueo
+     * de la cuenta del usuario y tambien a la caducación del token
+     * @param changePasswordRequestDTO Request dell tipo {@link ChangePasswordRequestDTO}
+     * @return {@link Response <Void>} devolviendo el mensaje si se desbloqueo la cuenta del usuario
      */
-    public void unlockAccount(User user);
+    Response<Void> unlockAccount(ChangePasswordRequestDTO changePasswordRequestDTO);
+
+    /**
+     * Metodo encargado de validar si el token se encuentra en la base de datos y si cumple condiciones para proceder a la
+     * activacion de la cuenta del usuario y tambien a la caducación del token
+     * @param token del tipo {@link String}
+     * @return {@link Response<Void>} devolviendo el mensaje si se activo la cuenta del usuario
+     */
+    Response<Void> activateAccount(String token);
 
     /**
      * Metodo para determinar si el tiempo de suspension de una cuenta (15 minutos) ha pasado

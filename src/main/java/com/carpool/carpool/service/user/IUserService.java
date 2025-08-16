@@ -24,17 +24,10 @@ public interface IUserService {
     Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO);
 
     /**
-     * Metodo encargado de validar si el token se encuentra en la base de datos y si cumple condiciones para proceder a la
-     * activacion de la cuenta del usuario y tambien a la caducación del token
-     * @param token del tipo {@link String}
-     * @return
-     */
-    Response<Void> activateAccount(String token);
-
-    /**
      * Metodo encargado de enviar nuevamente un correo electrónico para que el usuario pueda activar su cuenta. En caso de que el usuario no exista en la
      * base de datos se retornará igualmente un estado 200, ya que no deseamos brindar información privada de nuestros usuarios.
      * @param email del tipo {@link String}
+     * @return {@link Response<Void>} devolviendo el mensaje si se envió el correo
      */
     Response<Void> resendActivateAccount(String email);
 
