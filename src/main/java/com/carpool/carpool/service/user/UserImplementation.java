@@ -137,8 +137,7 @@ public class UserImplementation implements IUserService {
                 userUpdateRequestDTO,
                 passwordEncoder.encode(userUpdateRequestDTO.getPassword()),
                 roles);
-        
-       
+
         userRepository.save(user);
         saveRequestActivationAccount(user);
 
@@ -233,13 +232,7 @@ public class UserImplementation implements IUserService {
                 throw new ConflictException("El género no puede quedar en blanco.");
             }
 
-
-            if (userProfileUpdateRequestDTO.isRemoveProfileImage()) {
-                mediaService.deleteFileUser(loggedUser.getId());
-            } else if (profileImage != null && !profileImage.isEmpty()) {
-                mediaService.uploadAndSaveFileUser(profileImage, loggedUser.getId());
-            }
-
+            mediaService.uploadAndSaveFileUser(profileImage, loggedUser.getId());
             userMapper.updateUserProfileFromDTO(loggedUser, userProfileUpdateRequestDTO, newImageUrl);
             loggedUser.setGender(userProfileUpdateRequestDTO.getGender());
             userRepository.save(loggedUser);

@@ -14,6 +14,7 @@ import com.carpool.carpool.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,6 +39,9 @@ public class MediaImplementation implements IMediaService{
     private final MediaRepository mediaRepository;
     private final S3Presigner s3Presigner;
     private final UserRepository userRepository;
+
+    @Value("${cloudflare.r2.bucket-private}")
+    private String bucket;
 
     @Transactional
     public Response<String> getFileUser(Long idUser) {
@@ -58,14 +63,27 @@ public class MediaImplementation implements IMediaService{
         // Ya existe, por ende se actualiza la imagen
         if (existMedia.isPresent()) {
             Media mediaFound = existMedia.get();
+            String oldObjectKey = mediaFound.getObjectKey();
+
+            LOGGER.info("ACTUALIZANDO ARCHIVO EN LA BASE DE DATOS Y EN EL SERVIDOR, CON OBJECT KEY {}",mediaFound.getObjectKey());
             Media uploadMedia = r2StorageImplementation.uploadFile(file, user, CategoryMediaEnum.PROFILE);
             mediaFound.setObjectKey(uploadMedia.getObjectKey());
+            mediaFound.setBucket(bucket);
             mediaFound.setFileName(uploadMedia.getFileName());
             mediaFound.setContentType(uploadMedia.getContentType());
             mediaFound.setByteSize(uploadMedia.getByteSize());
+            mediaFound.setUpdatedAt(LocalDateTime.now());
 
             mediaRepository.save(mediaFound);
+
+            try {
+                r2StorageImplementation.deleteFile(oldObjectKey);
+                LOGGER.info("ARCHIVO ANTERIOR ELIMINADO: {}", oldObjectKey);
+            } catch (Exception e) {
+                LOGGER.warn("No se pudo eliminar archivo anterior: {}", oldObjectKey, e);
+            }
         }else{
+            LOGGER.info("INSERTANDO NUEVO ARCHIVO EN LA BASE DE DATOS Y EN EL SERVIDOR");
             media = r2StorageImplementation.uploadFile(file, user, CategoryMediaEnum.PROFILE);
             mediaRepository.save(media);
         }
@@ -97,7 +115,7 @@ public class MediaImplementation implements IMediaService{
     private String generatePresignedUrl(Media media){
         try {
             GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                    .bucket(media.getBucket())
+                    .bucket(bucket)
                     .key(media.getObjectKey())
                     .build();
 

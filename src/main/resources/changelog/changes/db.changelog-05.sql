@@ -10,8 +10,8 @@ CREATE TABLE media (
     filename TEXT NOT NULL,
     content_type VARCHAR(64) NOT NULL,
     byte_size BIGINT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
     UNIQUE (bucket, object_key),
     CONSTRAINT fk_user_id FOREIGN key (user_id) REFERENCES "users"(id) ON DELETE CASCADE
 );

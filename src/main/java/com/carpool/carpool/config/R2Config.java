@@ -38,7 +38,7 @@ public class R2Config {
                                 AwsBasicCredentials.create(R2AccessKey, R2SecretKey)
                         )
                 )
-                .region(Region.of("auto"))
+                .region(Region.US_EAST_1)
                 .build();
     }
 
@@ -53,7 +53,7 @@ public class R2Config {
                 .endpointOverride(URI.create(urlR2))
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(R2AccessKey, R2SecretKey)))
-                .region(Region.of("auto"))
+                .region(Region.US_EAST_1)
                 .build();
     }
 }
