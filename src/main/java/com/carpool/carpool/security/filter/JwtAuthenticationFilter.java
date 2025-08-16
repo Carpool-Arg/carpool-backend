@@ -21,7 +21,6 @@ import com.carpool.carpool.service.email.IEmailService;
 import com.carpool.carpool.utils.TokenUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -68,20 +67,20 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private final UserTokenRepository userTokenRepository;
 
     private String currentUsername;
-    private String supportEmail;
+    private final String supportEmail;
 
-    @Value("${unlock.account.url}")
-    private String urlUnlockAccount;
+    private final String urlUnlockAccount;
 
     public JwtAuthenticationFilter(AuthenticationManager authenticationManager, UserRepository userRepository,
                                    IUserAccountService userAccountService, IEmailService emailImplementation,
-                                   String supportEmail, UserTokenRepository userTokenRepository) {
+                                   String supportEmail, UserTokenRepository userTokenRepository, String urlUnlockAccount) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.userAccountService = userAccountService;
         this.emailImplementation = emailImplementation;
         this.userTokenRepository = userTokenRepository;
         this.supportEmail = supportEmail;
+        this.urlUnlockAccount = urlUnlockAccount;
     }
 
     /**

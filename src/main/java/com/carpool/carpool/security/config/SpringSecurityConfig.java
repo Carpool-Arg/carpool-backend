@@ -45,6 +45,9 @@ public class SpringSecurityConfig {
     private final IEmailService emailImplementation;
     private final UserTokenRepository userTokenRepository;
 
+    @Value("${unlock.account.url}")
+    private String urlUnlockAccount;
+
     @Value("${spring.mail.username}")
     private String supportEmail;
 
@@ -74,7 +77,7 @@ public class SpringSecurityConfig {
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         )
         .addFilterBefore(new RecaptchaFilter(authRecaptchaService), UsernamePasswordAuthenticationFilter.class)
-        .addFilter(new JwtAuthenticationFilter(authenticationManager(),userRepository, userAccountService, emailImplementation, supportEmail, userTokenRepository))
+        .addFilter(new JwtAuthenticationFilter(authenticationManager(),userRepository, userAccountService, emailImplementation, supportEmail, userTokenRepository, urlUnlockAccount))
         .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService, userRepository))
         .csrf(config-> config.disable())
         .cors(cors-> cors.configurationSource(corsConfigurationSource()))
