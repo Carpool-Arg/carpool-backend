@@ -3,6 +3,7 @@ package com.carpool.carpool.security.filter;
 import static com.carpool.carpool.security.config.TokenJwtConfig.CONTENT_TYPE;
 import static com.carpool.carpool.security.config.TokenJwtConfig.HEADER_AUTHORIZATION;
 import static com.carpool.carpool.security.config.TokenJwtConfig.PREFIX_TOKEN;
+import static com.carpool.carpool.utils.EmailMessageUtils.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,6 +12,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import com.carpool.carpool.enums.token.TokenTypeEnum;
+import com.carpool.carpool.enums.user.UserStateEnum;
+import com.carpool.carpool.model.user.UserToken;
+import com.carpool.carpool.repository.user.token.UserTokenRepository;
+import com.carpool.carpool.security.utils.JwtUtils;
+import com.carpool.carpool.service.email.IEmailService;
+import com.carpool.carpool.utils.TokenUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -50,29 +58,32 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter{
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
     public final static String AUTHORITIES = "authorities";
     public final static String USERNAME = "username";
-
-    private static final String SUBJECT_EMAIL_LOCKED = "Bloqueo de cuenta";
-    private static final String TITLE_LOCKED = "Tu cuenta ha sido bloqueada, {name}";
-    private static final String MESSAGE_EMAIL_LOCKED = "Por cuestiones de seguridad, hemos bloquado el acceso a tu cuenta. Haz clic en el botón de abajo para desbloquearla y crear una nueva contraseña:";
-    private static final String UNLOCKED = "Desbloquear cuenta";
-    private static final String MESSAGE_FOOTER_LOCKED = "El enlace para desbloquear su cuenta es válido durante <strong>48 horas</strong>.";
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final IUserAccountService userAccountService;
     private final IEmailService emailImplementation;
+    private final UserTokenRepository userTokenRepository;
 
     private String currentUsername;
+    private final String supportEmail;
 
-    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, UserRepository userRepository,  IUserAccountService userAccountService, IEmailService emailImplementation) {
+    private final String urlUnlockAccount;
+
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, UserRepository userRepository,
+                                   IUserAccountService userAccountService, IEmailService emailImplementation,
+                                   String supportEmail, UserTokenRepository userTokenRepository, String urlUnlockAccount) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.userAccountService = userAccountService;
         this.emailImplementation = emailImplementation;
+        this.userTokenRepository = userTokenRepository;
+        this.supportEmail = supportEmail;
+        this.urlUnlockAccount = urlUnlockAccount;
     }
 
     /**
@@ -119,7 +130,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         // Obtener el usuario autenticado casteado a CustomUserDetails
         CustomUserDetails authenticatedUser = (CustomUserDetails) authResult.getPrincipal();
-
 
         //Extraemos el objeto User del usuario autenticado
         User user = authenticatedUser.getUser();
@@ -268,7 +278,9 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             case 9:
                 return "Ingreso fallido. Si ingresa mal su contraseña nuevamente su cuenta sera bloqueada permanentemente!";
             case 10:
-                emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL_LOCKED, TITLE_LOCKED.replace("{name}", user.getName()), MESSAGE_EMAIL_LOCKED, null, "http://localhost:3000/unlocked", UNLOCKED, MESSAGE_FOOTER_LOCKED);
+                String emailContent = supportEmail + "?subject=Cuenta%20bloqueada&body=Hola%2C%20mi%20cuenta%20fue%20bloqueada...";
+                String message = String.format(MESSAGE_EMAIL_LOCKED, emailContent);
+                saveRequestUnlockAccount(user, message);
                 userAccountService.lockAccount(user);
                 return "Ha ingresado incorrectamente su contraseña 10 veces. Su cuenta se encuentra bloqueada permanentemente.";
             default:
@@ -288,5 +300,14 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         }
     }
 
-
+    /**
+     * Metodo que se encarga de almacenar una solicitud para activar la cuenta del usuario en la base de datos.
+     * @param user Objeto del tipo {@link User}
+     * @param message Mensaje que se va a mostrar en el email del tipo {@link String}
+     */
+    private void saveRequestUnlockAccount(User user, String message){
+        UserToken userToken = TokenUtils.buildUserToken(user, TokenTypeEnum.ACTIVATION, userTokenRepository);
+        userTokenRepository.save(userToken);
+        emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL_LOCKED, TITLE_LOCKED.replace("{name}", user.getName()), message, null, urlUnlockAccount.replace("value", userToken.getToken()), UNLOCKED, MESSAGE_FOOTER_LOCKED);
+    }
 }
