@@ -306,6 +306,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private void saveRequestUnlockAccount(User user, String message){
         UserToken userToken = TokenUtils.buildUserToken(user, TokenTypeEnum.ACTIVATION, userTokenRepository);
         userTokenRepository.save(userToken);
-        emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL_LOCKED, TITLE_LOCKED.replace("{name}", user.getName()), message, null, urlUnlockAccount, UNLOCKED, MESSAGE_FOOTER_LOCKED);
+        emailImplementation.sendEmail(user.getEmail(), SUBJECT_EMAIL_LOCKED, TITLE_LOCKED.replace("{name}", user.getName()), message, null, urlUnlockAccount.replace("value", userToken.getToken()), UNLOCKED, MESSAGE_FOOTER_LOCKED);
     }
 }
