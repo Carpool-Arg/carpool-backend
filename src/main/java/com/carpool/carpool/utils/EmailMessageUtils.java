@@ -36,4 +36,13 @@ public class EmailMessageUtils {
             "Si <b>no realizaste estos intentos</b>, por favor comunicate de inmediato con <a href='mailto:%s'>nuestro equipo de soporte</a>.";
     public static final String UNLOCKED = "Desbloquear cuenta";
     public static final String MESSAGE_FOOTER_LOCKED = "El enlace para desbloquear su cuenta es válido durante <strong>48 horas</strong>.";
+
+    // EMAIL CHANGE
+    public static final String SUBJECT_EMAIL_CHANGE = "Verificación de nuevo correo electrónico";
+    public static final String TITLE_EMAIL_CHANGE = "¡Hola, {name}!";
+    public static final String MESSAGE_EMAIL_CHANGE = "Recibimos una solicitud para cambiar tu correo electrónico en <strong>Carpool</strong>.<br>" +
+            "Para confirmar esta modificación, por favor hacé clic en el botón de abajo.<br><br>" +
+            "Si no realizaste esta solicitud, podés ignorar este mensaje.";
+    public static final String CONFIRM_EMAIL_CHANGE = "Confirmar nuevo correo";
+    public static final String MESSAGE_FOOTER_EMAIL_CHANGE = "Este enlace estará disponible por <strong>48 horas</strong>. Después de ese tiempo, deberás solicitar nuevamente el cambio si aún lo deseás.";
 }

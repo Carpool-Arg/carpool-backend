@@ -12,4 +12,5 @@ public enum TokenTypeEnum {
     ACTIVATION,
     EMAIL_CHANGE,
     PASSWORD_CHANGE
+
 }

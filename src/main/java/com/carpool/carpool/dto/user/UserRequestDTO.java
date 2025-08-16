@@ -1,7 +1,11 @@
 package com.carpool.carpool.dto.user;
 
+import com.carpool.carpool.enums.user.UserGenderEnum;
+import com.carpool.carpool.validators.genderValidEnum.GenderValidEnum;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -53,4 +57,8 @@ public class UserRequestDTO {
     @Size(min = 7, max = 25, message = "El número de teléfono debe tener entre 7 y 50 caracteres.")
     @Pattern(regexp = "^[0-9\\-+\\s]*$", message = "El número de teléfono debe contener únicamente números, guiones, signos + y espacios.")
     private String phone;
+
+    @NotNull(message = "El género no puede quedar en blanco.")
+    @GenderValidEnum
+    private UserGenderEnum gender;
 }

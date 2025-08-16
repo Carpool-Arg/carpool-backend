@@ -121,6 +121,22 @@ public class JwtUtils {
     }
 
     /**
+     * Extrae el nombre de usuario desde el access token JWT.
+     *
+     * @param token el access token JWT
+     * @return el valor del campo "subject" (username)
+     */
+    public static String extractUsernameAccessToken(String token) {
+        final Claims claims = Jwts.parser()
+                .verifyWith(SECRET_KEY_ACCESS)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        return claims.getSubject();
+    }
+
+    /**
      * Valida si un access token JWT es válido.
      *
      * Verifica tanto la firma del token con la clave secreta correspondiente,
