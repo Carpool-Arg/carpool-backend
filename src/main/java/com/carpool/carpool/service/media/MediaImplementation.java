@@ -25,6 +25,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequ
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -51,12 +52,23 @@ public class MediaImplementation implements IMediaService{
         User user = userRepository.findById(idUser)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        boolean existProfile = mediaRepository.existsByUserIdAndCategory(idUser, CategoryMediaEnum.PROFILE);
-        if (existProfile) {
-            throw new ConflictException("El usuario ya tiene una imagen de perfil");
+        Optional<Media> existMedia = mediaRepository.findByUserIdAndCategory(idUser, CategoryMediaEnum.PROFILE);
+
+        Media media;
+        // Ya existe, por ende se actualiza la imagen
+        if (existMedia.isPresent()) {
+            Media mediaFound = existMedia.get();
+            Media uploadMedia = r2StorageImplementation.uploadFile(file, user, CategoryMediaEnum.PROFILE);
+            mediaFound.setObjectKey(uploadMedia.getObjectKey());
+            mediaFound.setFileName(uploadMedia.getFileName());
+            mediaFound.setContentType(uploadMedia.getContentType());
+            mediaFound.setByteSize(uploadMedia.getByteSize());
+
+            mediaRepository.save(mediaFound);
+        }else{
+            media = r2StorageImplementation.uploadFile(file, user, CategoryMediaEnum.PROFILE);
+            mediaRepository.save(media);
         }
-        Media media = r2StorageImplementation.uploadFile(file, user, CategoryMediaEnum.PROFILE);
-        mediaRepository.save(media);
         return ResponseUtils.buildOKResponse(List.of("Archvo subido y almacenado con éxito") , null);
     }
 

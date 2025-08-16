@@ -10,5 +10,5 @@ public interface MediaRepository extends JpaRepository<Media, Long> {
 
     Optional<Media> findByUserId(Long idUser);
     boolean existsByObjectKey(String objectKey);
-    boolean existsByUserIdAndCategory(Long idUser, CategoryMediaEnum categoryMediaEnum);
+    Optional<Media> findByUserIdAndCategory(Long idUser, CategoryMediaEnum categoryMediaEnum);
 }

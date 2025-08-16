@@ -167,7 +167,6 @@ public class R2StorageImplementation implements IR2StorageService{
         media.setFileName(filename);
         media.setContentType(contentType);
         media.setByteSize(byteSize);
-        media.setCreatedAt(LocalDateTime.now());
 
         return media;
     }

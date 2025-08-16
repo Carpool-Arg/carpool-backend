@@ -11,6 +11,7 @@ CREATE TABLE media (
     content_type VARCHAR(64) NOT NULL,
     byte_size BIGINT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (bucket, object_key),
     CONSTRAINT fk_user_id FOREIGN key (user_id) REFERENCES "users"(id) ON DELETE CASCADE
 );
@@ -23,6 +24,7 @@ COMMENT ON COLUMN public.media.filename IS 'Nombre del archivo';
 COMMENT ON COLUMN public.media.content_type IS 'Tipo de contenido de la imagen';
 COMMENT ON COLUMN public.media.byte_size IS 'Tamanio de la imagen';
 COMMENT ON COLUMN public.media.created_at IS 'Fecha de cracion';
+COMMENT ON COLUMN public.media.updated_at IS 'Fecha de actualizacion';
 
 CREATE UNIQUE INDEX uq_media_profile_primary
   ON media(user_id)
