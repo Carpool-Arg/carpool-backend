@@ -2,7 +2,6 @@ package com.carpool.carpool.controller.user;
 
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
 import com.carpool.carpool.dto.user.TokenRequestDTO;
-import com.carpool.carpool.dto.user.UserEmailChangeRequestDTO;
 import com.carpool.carpool.dto.user.UserPasswordChangeRequestDTO;
 import com.carpool.carpool.dto.user.UserProfileUpdateRequestDTO;
 import com.carpool.carpool.dto.user.EmailRequestDTO;
@@ -181,8 +180,8 @@ public class UserController {
         @ApiResponse(responseCode = "401", description = "No autorizado"),
     })
     @PutMapping("/update-email")
-    public ResponseEntity<Response<?>> updateEmail(@RequestBody @Valid UserEmailChangeRequestDTO userEmailChangeRequestDTO) {
-        return new ResponseEntity<>(userService.updateUserEmail(userEmailChangeRequestDTO), HttpStatus.OK);
+    public ResponseEntity<Response<?>> updateEmail(@RequestBody @Valid EmailRequestDTO emailRequestDTO) {
+        return new ResponseEntity<>(userService.updateUserEmail(emailRequestDTO), HttpStatus.OK);
     }
 
     @Operation(summary = "Confirmar el cambio de correo electrónico")
