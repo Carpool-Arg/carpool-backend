@@ -16,7 +16,6 @@ import lombok.NoArgsConstructor;
 public class UserResponseDTO {
 
     private Long id;
-    private String profileImage;
     private String name;
     private String lastname;
     private String username;

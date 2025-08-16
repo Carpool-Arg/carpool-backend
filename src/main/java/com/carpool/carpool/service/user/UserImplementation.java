@@ -218,9 +218,7 @@ public class UserImplementation implements IUserService {
     public Response<TokenResponseDTO> updateUserProfile(UserProfileUpdateRequestDTO userProfileUpdateRequestDTO, MultipartFile profileImage) {
         
         User loggedUser = getAuthenticatedActiveUser();
-        String newImageUrl = loggedUser.getProfileImage(); 
 
-        // Try para manejar excepciones al acceder a la imagen del perfil
         try {
 
             String newPhone = userProfileUpdateRequestDTO.getPhone();
@@ -233,7 +231,7 @@ public class UserImplementation implements IUserService {
             }
 
             mediaService.uploadAndSaveFileUser(profileImage, loggedUser.getId());
-            userMapper.updateUserProfileFromDTO(loggedUser, userProfileUpdateRequestDTO, newImageUrl);
+            userMapper.updateUserProfileFromDTO(loggedUser, userProfileUpdateRequestDTO);
             loggedUser.setGender(userProfileUpdateRequestDTO.getGender());
             userRepository.save(loggedUser);
 

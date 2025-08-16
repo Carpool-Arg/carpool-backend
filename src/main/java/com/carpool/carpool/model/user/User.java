@@ -35,9 +35,7 @@ public class User implements Serializable {
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    private String profileImage;
-
+    
     @NotBlank(message = "El nombre no puede quedar en blanco.")
     @Size(min = 1, max = 100, message = "El nombre debe tener entre 1 y 100 caracter.")
     @Pattern(regexp = "^[a-zA-Z ]+$", message = "El nombre debe contener sólo letras y espacios.")

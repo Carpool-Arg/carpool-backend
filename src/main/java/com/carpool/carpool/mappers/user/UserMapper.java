@@ -42,15 +42,9 @@ public class UserMapper {
     }
 
    
-    public void updateUserProfileFromDTO(User existingUser, UserProfileUpdateRequestDTO updateRequestDTO, String profileImage) {
+    public void updateUserProfileFromDTO(User existingUser, UserProfileUpdateRequestDTO updateRequestDTO) {
         existingUser.setGender(updateRequestDTO.getGender());
         existingUser.setPhone(updateRequestDTO.getPhone());
-        
-        if (profileImage != null) {
-            existingUser.setProfileImage(profileImage);
-        } else if (updateRequestDTO.isRemoveProfileImage()) {
-            existingUser.setProfileImage(null); 
-        }
     }
 
     
