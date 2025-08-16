@@ -1,5 +1,9 @@
 package com.carpool.carpool.enums.user;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 /**
  * Enum que contiene los géneros posibles de un usuario.
  * <p>
@@ -8,26 +12,15 @@ package com.carpool.carpool.enums.user;
  * {@code UNSPECIFIED} Representa un género no especificado.
  */
 
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
 public enum UserGenderEnum {
-    MALE(1, "Masculino"),
-    FEMALE(2, "Femenino"),
-    UNSPECIFIED(3, "No especificado");
+    MALE(1),
+    FEMALE(2),
+    UNSPECIFIED(3);
 
-    private final int code;
-    private final String description;
-
-    UserGenderEnum(int code, String description) {
-        this.code = code;
-        this.description = description;
-    }
-
-    public int getCode() {
-        return code;
-    }
-
-    public String getDescription() {
-        return description;
-    }
+    private Integer code;
 
     /**
      * Busca el enum por su código.

@@ -3,7 +3,6 @@ package com.carpool.carpool.service.user;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
-import com.carpool.carpool.dto.user.UserEmailChangeRequestDTO;
 import com.carpool.carpool.dto.user.UserPasswordChangeRequestDTO;
 import com.carpool.carpool.dto.user.UserProfileUpdateRequestDTO;
 
@@ -82,7 +81,7 @@ public interface IUserService {
      * @param userEmailChangeRequestDTO
      * @return
      */
-    Response<TokenResponseDTO> updateUserEmail(UserEmailChangeRequestDTO userEmailChangeRequestDTO);
+    Response<TokenResponseDTO> updateUserEmail(EmailRequestDTO emailRequestDTO);
 
     /**
      * Metodo para actualizar la contraseña del usuario.

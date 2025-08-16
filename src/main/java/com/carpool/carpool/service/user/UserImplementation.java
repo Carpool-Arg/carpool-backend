@@ -32,7 +32,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
-import com.carpool.carpool.dto.user.UserEmailChangeRequestDTO;
 import com.carpool.carpool.dto.user.UserPasswordChangeRequestDTO;
 import com.carpool.carpool.dto.user.UserProfileUpdateRequestDTO;
 import com.carpool.carpool.dto.user.ChangePasswordRequestDTO;
@@ -244,21 +243,21 @@ public class UserImplementation implements IUserService {
     }
     
     @Override
-    public Response<TokenResponseDTO> updateUserEmail(UserEmailChangeRequestDTO userEmailChangeRequestDTO) {
+    public Response<TokenResponseDTO> updateUserEmail(EmailRequestDTO emailRequestDTO) {
         
         User loggedUser = getAuthenticatedActiveUser();
 
-        if (loggedUser.getEmail().equals(userEmailChangeRequestDTO.getNewEmail())) {
+        if (loggedUser.getEmail().equals(emailRequestDTO.getEmail())) {
             throw new ConflictException("El nuevo email no puede ser el mismo que el actual.");
         }
 
-        if (userRepository.findByEmailAndDeletedAtIsNull(userEmailChangeRequestDTO.getNewEmail()).isPresent()) {
+        if (userRepository.findByEmailAndDeletedAtIsNull(emailRequestDTO.getEmail()).isPresent()) {
             throw new ConflictException("Ya existe un usuario con el nuevo email ingresado.");
         }
 
         invalidateUserTokensByType(loggedUser, TokenTypeEnum.EMAIL_CHANGE);
 
-        userMapper.updateEmailFromDTO(loggedUser, userEmailChangeRequestDTO.getNewEmail());
+        userMapper.updateEmailFromDTO(loggedUser, emailRequestDTO.getEmail());
         userRepository.save(loggedUser);
 
         UserToken loggeduserToken = buildUserToken(loggedUser, TokenTypeEnum.EMAIL_CHANGE);
@@ -268,7 +267,7 @@ public class UserImplementation implements IUserService {
 
         // Enviamos el email de confirmación al nuevo correo
         emailImplementation.sendEmail(
-                userEmailChangeRequestDTO.getNewEmail(),
+                emailRequestDTO.getEmail(),
                 "Confirmación de cambio de correo",
                 "¡Hola " + loggedUser.getName() + "!",
                 "Hacé clic en el siguiente botón para confirmar tu nuevo correo electrónico:",
@@ -314,14 +313,14 @@ public class UserImplementation implements IUserService {
         UserToken tokenValidate = userTokenRepository.findByToken(token)
                 .orElseThrow(() -> new ResourceNotFoundException("Token no encontrado"));
 
-        if (tokenValidate.getExpiresAt().isBefore(LocalDateTime.now())) {
+        
+        if (tokenValidate.isExpired()) {
+            tokenValidate.setState(TokenStateEnum.EXPIRED);
+            userTokenRepository.save(tokenValidate);
             throw new ConflictException("El tiempo para la confirmacón del cambio de correo ha expirado. Por favor, solicita uno nuevo.");
         }
         
-        if (!tokenValidate.getState().equals(TokenStateEnum.PENDING) || 
-            !tokenValidate.getType().equals(TokenTypeEnum.EMAIL_CHANGE)) {
-            throw new ConflictException("El token ya expiró o es inválido");
-        }
+        if (!validateUserToken(tokenValidate,TokenTypeEnum.EMAIL_CHANGE)) throw new ConflictException("Token inválido");
 
         User user = userRepository.findById(tokenValidate.getUser().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
@@ -591,6 +590,8 @@ public class UserImplementation implements IUserService {
             userTokenRepository.saveAll(activeTokens);
         }
     }
+
+    
 
     /* -------------------------------------------------------------------------- */
     /*                      Solicitud de cambio de contraseña                     */
