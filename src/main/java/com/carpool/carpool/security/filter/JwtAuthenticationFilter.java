@@ -30,12 +30,15 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.carpool.carpool.dto.security.login.LoginRequestDTO;
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
+import com.carpool.carpool.enums.user.UserStateEnum;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.repository.user.UserRepository;
-import com.carpool.carpool.dto.security.login.LoginRequestDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.model.CustomUserDetails;
+import com.carpool.carpool.security.utils.JwtUtils;
+import com.carpool.carpool.service.email.IEmailService;
 import com.carpool.carpool.service.user.account.IUserAccountService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.core.exc.StreamReadException;

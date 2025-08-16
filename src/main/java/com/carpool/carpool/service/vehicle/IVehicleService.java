@@ -2,6 +2,7 @@ package com.carpool.carpool.service.vehicle;
 
 import java.util.List;
 
+import com.carpool.carpool.dto.vehicle.VehicleOnlyResponseDTO;
 import com.carpool.carpool.dto.vehicle.VehicleRequestDTO;
 import com.carpool.carpool.dto.vehicle.VehicleResponseDTO;
 import com.carpool.carpool.dto.vehicle.VehicleUpdateRequestDTO;
@@ -45,4 +46,13 @@ public interface IVehicleService {
      * @throws ConflictException si no se encuentra el chofer autenticado o acceso no autorizado
      */
     Response<List<VehicleResponseDTO>> getVehiclesByAuthenticatedDriver();
+
+    /**
+     * Metodo utilizado para obtener un vehiculo por su id.
+     * Se realizan controles para lanzar las excepciones correspondientes.
+     * @param id Id del vehiculo a buscar
+     * @return Response<VehicleOnlyResponseDTO> devolviendo el vehiculo encontrado
+     * @throws ConflictException si no se encuentra el vehiculo, no pertenece al chofer, está dado de baja o acceso no autorizado
+     */
+    Response<VehicleOnlyResponseDTO> getVehicleById(Long id);
 }

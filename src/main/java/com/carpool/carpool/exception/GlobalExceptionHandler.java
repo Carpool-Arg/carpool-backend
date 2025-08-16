@@ -6,6 +6,7 @@ import jakarta.validation.ConstraintViolationException;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -121,5 +122,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Response<Void>> handleGenericException(Exception ex) {
         return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of("Error inesperado",ex.getMessage())), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * Excepcion utilizada cuando el formato de una fecha es incorrecto.
+     * @param ex Excepción de formato de mensaje no leíble
+     * @return {@link ResponseEntity} que contiene {@link Response} con data {@link Void}
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Response<Void>> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        String errorMessage = "Formato de fecha inválido. Se esperaba el formato dd/MM/yyyy.";
+        return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(errorMessage)), HttpStatus.BAD_REQUEST);
     }
 }

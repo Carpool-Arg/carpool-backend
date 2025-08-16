@@ -208,6 +208,4 @@ public class UserAccountImplementation implements IUserAccountService{
         long currentTimeInMillis = System.currentTimeMillis();
         return user.getLastFailedLoginTime() != null && (currentTimeInMillis - user.getLastFailedLoginTime().getTime() >= FOUR_HOURS);
     }
-
-
 }

@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class VehicleUpdateRequestDTO {
     @NotBlank(message = "La marca del vehiculo no puede estar en blanco.")
-    @Pattern(regexp = "^[a-zA-Z0-9 ]+$", message = "La marca debe contener sólo letras, números y espacios.")
+    @Pattern(regexp = "^[A-Za-z-]+$", message = "La marca debe contener sólo letras, números y espacios.")
     private String brand;
 
     @NotBlank(message = "El modelo del vehiculo no puede estar en blanco.")
@@ -37,8 +37,4 @@ public class VehicleUpdateRequestDTO {
     @NotNull(message = "La cantidad de asientos disponibles no puede estar en blanco.")
     @Min(value = 1, message = "La cantidad de asientos disponibles debe ser al menos 1.")
     private Integer availableSeats;
-
-    @NotNull(message = "La cantidad de equipaje disponible no puede estar en blanco.")
-    @PositiveOrZero(message = "La cantidad de equipaje disponible debe ser un número positivo o cero.")
-    private Float luggageCapacity;
 }

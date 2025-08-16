@@ -3,6 +3,7 @@ package com.carpool.carpool.model.driver;
 import java.time.LocalDate;
 
 import com.carpool.carpool.model.user.User;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.FutureOrPresent;
@@ -48,10 +49,12 @@ public class Driver {
 
     @NotNull(message = "La fecha de vencimiento del carnet no puede ser nula.")
     @FutureOrPresent(message = "La fecha de vencimiento del carnet debe ser una fecha futura o presente.")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private LocalDate licenseExpirationDate;
 
     @NotNull(message= "La fecha de nacimiento no puede ser nula.") 
     @Past(message = "La fecha de nacimiento debe ser una fecha pasada.")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private LocalDate birthDate;
 
     @NotBlank(message= "El domicilio no puede estar en blanco.")
