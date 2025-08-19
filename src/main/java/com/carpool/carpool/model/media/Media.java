@@ -40,7 +40,6 @@ public class Media {
 
     @Comment("Categoria de la imagen, PROFILE para el perfil, VEHICLE para vehiculos, etc")
     @Enumerated(EnumType.STRING)
-    @Size(max = 50, message = "La categoría debe tener como máximo 50 caracteres")
     @Column(name = "category", nullable = false)
     private CategoryMediaEnum category;
 
