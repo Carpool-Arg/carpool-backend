@@ -38,7 +38,8 @@ public class RecaptchaFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
         try {
-            if ("/login".equals(request.getServletPath()) || "/users".equals(request.getServletPath())) {
+            if ("POST".equalsIgnoreCase(request.getMethod()) &&
+                    ("/login".equals(request.getServletPath()) || "/users".equals(request.getServletPath()))) {
                 //  Obtener el recaptcha token del header
                 String recaptcha = request.getHeader("recaptcha");
 
