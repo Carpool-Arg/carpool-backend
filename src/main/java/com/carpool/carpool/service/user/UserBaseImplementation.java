@@ -5,6 +5,7 @@ import com.carpool.carpool.enums.token.TokenTypeEnum;
 import com.carpool.carpool.enums.user.UserStateEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
+import com.carpool.carpool.exception.UnauthorizedException;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.model.user.UserToken;
 import com.carpool.carpool.repository.user.UserRepository;
@@ -123,13 +124,12 @@ public class UserBaseImplementation {
 
 
     /**
-     * Valida el token de usuario.
-     * Verifica que el token esté pendiente y sea del tipo especificado.
-     * @param userToken
-     * @param type
-     * @return true si el token es válido, false en caso contrario. 
-     * @throws UnauthorizedException si el token no es válido o ha expirado.
-     */
+     * Metodo para validar el token de cambio de contraseña
+     * Se valida el estado, el tipo y si coincide con el token que pasa el usuario como parametro
+     * @param userToken el token de la base de datos
+     * @param type el tipo de token que posee el token para validar
+     * @return {@code true} si el token es valido, {@code false} si no
+    */
     public boolean validateUserToken(UserToken userToken, TokenTypeEnum type) {
         return (userToken.getState().equals(TokenStateEnum.PENDING) &&
                 userToken.getType().equals(type));
@@ -158,11 +158,9 @@ public class UserBaseImplementation {
     }
 
     /**
-     * Valida el estado del usuario.
-     * Verifica si el usuario está activo o suspendido.
-     * @param user
-     * @return boolean
-     * @throws UnauthorizedException si el usuario no está activo o suspendido.
+     * Meotodo para validar el estado de la cuenta del usuario antes de realizar el cambio de contraseña
+     * @param user Usuario que solicita el cambio
+     * @return {@code true} si la cuenta esta acitva o suspendida, {@code false} si no
      */
     public boolean validateUserStatus(User user) {
         return (user.getStatus() == UserStateEnum.ACTIVE || user.getStatus() == UserStateEnum.SUSPENDED);

@@ -6,6 +6,7 @@ import com.carpool.carpool.enums.token.TokenStateEnum;
 import com.carpool.carpool.enums.token.TokenTypeEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
+import com.carpool.carpool.exception.UnauthorizedException;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.model.user.UserToken;
 import com.carpool.carpool.repository.user.UserRepository;
@@ -41,7 +42,13 @@ public class UserRecoveryImplementation {
     private String urlChangePassword;
 
     private static final List<String> SENDED_PASSWORD_CHANGE_EMAIL_MESSAGE = List.of("Correo enviado exitosamente.");
-
+    
+    /**
+     * En este metodo se realiza el envio de correo electronico con la solicitud de cambio de contraseña
+     * La respuesta que recibe el frontend es la misma si se logra enviar el correo o no, para no dar
+     * informacion de mas al usuario.
+     * En este metodo tambien se genera y se guarda el token que se utilizara para el cambio de contraseña
+     */
     @Transactional
     public Response<Void> sendPasswordChangeEmail(EmailRequestDTO emailRequestDTO) {
         Optional<User> optionalUser = userRepository.findByEmailAndDeletedAtIsNull(emailRequestDTO.getEmail());
@@ -54,6 +61,11 @@ public class UserRecoveryImplementation {
         return ResponseUtils.buildOKResponse(SENDED_PASSWORD_CHANGE_EMAIL_MESSAGE, null);
     }
 
+     /**
+     * En este metodo se realiza el cambio de contraseña propiamente dicho. Se realiza la validacion para la
+     * coincidencia de las contraseñas ingresadas y la validacion del token.
+     * Tambien se realiza el encriptado de la contraseña
+     */
     @Transactional
     public Response<Void> changePassword(ChangePasswordRequestDTO changePasswordRequestDTO) {
         String token = changePasswordRequestDTO.getToken();
@@ -64,6 +76,10 @@ public class UserRecoveryImplementation {
             throw new ConflictException("Token inválido");
         }
 
+        /*
+         * En esta parte se verifica que el token no este expirado, si es asi se le
+         * setea el estado correspondiente y se lanza una excepcion
+         */
         if (userToken.isExpired()) {
             userToken.setState(TokenStateEnum.EXPIRED);
             userTokenRepository.save(userToken);
@@ -73,13 +89,13 @@ public class UserRecoveryImplementation {
         User user = userRepository.findById(userToken.getUser().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
+        userToken.setState(TokenStateEnum.USED);
+        userToken.setUsedAt(LocalDateTime.now());
+        
         String userPassword = changePasswordRequestDTO.getPassword();
         String userConfirmPassword = changePasswordRequestDTO.getConfirmPassword();
         PasswordUtils.passwordsMatch(userPassword, userConfirmPassword);
         user.setPassword(passwordEncoder.encode(userPassword));
-
-        userToken.setState(TokenStateEnum.USED);
-        userToken.setUsedAt(LocalDateTime.now());
 
         userRepository.save(user);
         userTokenRepository.save(userToken);
@@ -88,9 +104,8 @@ public class UserRecoveryImplementation {
     }
 
     /**
-     * Método que guarda un token de cambio de contraseña y envía un correo al usuario.
-     * @param user Usuario al que se le enviará el correo.
-     * @throws UnauthorizedException si el usuario no es válido o ya tiene un token activo.
+     * Metodo guardar el token del usuario en la base de datos y enviar el correo electronico
+     * @param user Usuario que solicita el cambio de contraseña
      */
     private void saveChangePasswordToken(User user) {
         UserToken userToken = userBaseImplementation.buildUserToken(user, TokenTypeEnum.PASSWORD_CHANGE);
@@ -108,8 +123,9 @@ public class UserRecoveryImplementation {
     }
 
     /**
-     * Método que envía una respuesta de éxito al usuario.
-     * @return Response con un mensaje de éxito.
+     * Metodo para devolver una respuesta generica cuando se solicita el cambio de contraseña
+     * @return una respuesta con un mensaje generico para indicar que el correo electronico fue enviado con éxito
+     * (aunque no haya sido asi)
      */
     private Response<Void> sendEmailResponse() {
         return ResponseUtils.buildOKResponse(SENDED_PASSWORD_CHANGE_EMAIL_MESSAGE, null);
