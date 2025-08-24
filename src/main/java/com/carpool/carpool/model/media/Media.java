@@ -15,12 +15,7 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @RequiredArgsConstructor
-@Table(
-        name = "media",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"bucket", "object_key"})
-        }
-)
+@Table(name = "media")
 public class Media {
 
     @Id

@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.*;
 
-import static com.carpool.carpool.service.user.UserImplementation.ROLE_USER;
+import static com.carpool.carpool.service.user.register.UserRegisterImplementation.ROLE_USER;
 
 @Service
 @RequiredArgsConstructor
