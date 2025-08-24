@@ -19,6 +19,7 @@ import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.email.IEmailService;
 import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.user.UserBaseImplementation;
+import com.carpool.carpool.utils.EmailMessageUtils;
 import com.carpool.carpool.utils.ResponseUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -107,14 +108,14 @@ public class UserUpdateImplementation {
 
         String confirmLink = urlValidateEmail.replace("value", userToken.getToken());
         emailService.sendEmail(
-                emailRequestDTO.getEmail(),
-                "Confirmación de cambio de correo",
-                "¡Hola " + loggedUser.getName() + "!",
-                "Hacé clic en el siguiente botón para confirmar tu nuevo correo electrónico:",
-                null,
-                confirmLink,
-                "Confirmar nuevo correo",
-                "Si no solicitaste este cambio, ignorá este mensaje."
+            emailRequestDTO.getEmail(),
+            EmailMessageUtils.SUBJECT_EMAIL_CHANGE,
+            EmailMessageUtils.TITLE_EMAIL_CHANGE.replace("{name}", loggedUser.getName()),
+            EmailMessageUtils.MESSAGE_EMAIL_CHANGE,
+            null,
+            confirmLink,
+            EmailMessageUtils.CONFIRM_EMAIL_CHANGE,
+            EmailMessageUtils.MESSAGE_FOOTER_EMAIL_CHANGE
         );
 
         TokenResponseDTO tokenResponseDTO = updateTokenImplementation.invalidateAllUserTokensAndGenerateNew(loggedUser);
