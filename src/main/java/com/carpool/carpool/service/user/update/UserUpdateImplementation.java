@@ -19,7 +19,6 @@ import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.email.IEmailService;
 import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.user.UserBaseImplementation;
-import com.carpool.carpool.utils.EmailMessageUtils;
 import com.carpool.carpool.utils.ResponseUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -28,6 +27,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import static com.carpool.carpool.utils.EmailMessageUtils.CONFIRM_EMAIL_CHANGE;
+import static com.carpool.carpool.utils.EmailMessageUtils.MESSAGE_EMAIL_CHANGE;
+import static com.carpool.carpool.utils.EmailMessageUtils.MESSAGE_FOOTER_EMAIL_CHANGE;
+import static com.carpool.carpool.utils.EmailMessageUtils.SUBJECT_EMAIL_CHANGE;
+import static com.carpool.carpool.utils.EmailMessageUtils.TITLE_EMAIL_CHANGE;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -109,13 +114,13 @@ public class UserUpdateImplementation {
         String confirmLink = urlValidateEmail.replace("value", userToken.getToken());
         emailService.sendEmail(
             emailRequestDTO.getEmail(),
-            EmailMessageUtils.SUBJECT_EMAIL_CHANGE,
-            EmailMessageUtils.TITLE_EMAIL_CHANGE.replace("{name}", loggedUser.getName()),
-            EmailMessageUtils.MESSAGE_EMAIL_CHANGE,
+            SUBJECT_EMAIL_CHANGE,
+            TITLE_EMAIL_CHANGE.replace("{name}", loggedUser.getName()),
+            MESSAGE_EMAIL_CHANGE,
             null,
             confirmLink,
-            EmailMessageUtils.CONFIRM_EMAIL_CHANGE,
-            EmailMessageUtils.MESSAGE_FOOTER_EMAIL_CHANGE
+            CONFIRM_EMAIL_CHANGE,
+            MESSAGE_FOOTER_EMAIL_CHANGE
         );
 
         TokenResponseDTO tokenResponseDTO = updateTokenImplementation.invalidateAllUserTokensAndGenerateNew(loggedUser);
