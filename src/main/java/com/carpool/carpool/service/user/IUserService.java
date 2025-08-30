@@ -71,7 +71,7 @@ public interface IUserService {
      * Este método recibe un DTO con el email actual y el nuevo email.
      * Se espera que el DTO contenga los campos necesarios para validar el cambio de email,
      * como el email actual, el nuevo email y la contraseña del usuario.
-     * @param userEmailChangeRequestDTO
+     * @param emailRequestDTO
      * @return
      */
     Response<TokenResponseDTO> updateUserEmail(EmailRequestDTO emailRequestDTO);
@@ -95,7 +95,6 @@ public interface IUserService {
 
     /**
      * Genera un DTO de respuesta con los datos del usuario.
-     * @param userResponseDTO DTO que contiene los datos del usuario.
      * @return Response<Void> con los datos del usuario.
      */
     Response<UserResponseDTO> getAuthenticatedUser ();
