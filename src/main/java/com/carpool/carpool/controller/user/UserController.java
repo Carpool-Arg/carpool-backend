@@ -80,6 +80,18 @@ public class UserController {
         return new ResponseEntity<>(userService.validateDni(dni), HttpStatus.OK);
     }
 
+    @Operation(summary = "Validar si un telefono se encuentra en uso")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Teléfono disponible"),
+            @ApiResponse(responseCode = "401", description = "No autorizado"),
+            @ApiResponse(responseCode = "409", description = "Ya existe un usuario con el número de teléfono ingresado."),
+            @ApiResponse(responseCode = "500", description = "Error interno", content = @Content)
+    })
+    @GetMapping("/validate-phone")
+    public ResponseEntity<Response<Void>> validatePhone(@RequestParam String phone) {
+        return new ResponseEntity<>(userService.validatePhone(phone), HttpStatus.OK);
+    }
+
     @Operation(summary = "Obtener lista de géneros disponibles")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista de géneros recuperada con éxito")

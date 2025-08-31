@@ -10,6 +10,9 @@ import com.carpool.carpool.service.user.update.UserUpdateImplementation;
 import com.carpool.carpool.service.user.validations.UserValidationsImplementation;
 
 import lombok.RequiredArgsConstructor;
+
+import java.time.LocalDate;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -90,6 +93,16 @@ public class UserImplementation implements IUserService {
     @Override
     public Response<Void> validateDni(String dni) {
         return userValidationsImplementation.validateDni(dni);
+    }
+
+    @Override
+    public Response<Void> validatePhone(String phone){
+        return userValidationsImplementation.validatePhone(phone);
+    }
+
+    @Override
+    public Response<Void> validateBirthDate(LocalDate birthDate){
+        return userValidationsImplementation.validateBirthDate(birthDate);
     }
 
 }

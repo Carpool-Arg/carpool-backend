@@ -1,6 +1,7 @@
 package com.carpool.carpool.model.user;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -9,12 +10,10 @@ import com.carpool.carpool.enums.user.UserGenderEnum;
 import com.carpool.carpool.enums.user.UserStateEnum;
 import com.carpool.carpool.model.role.Role;
 import com.carpool.carpool.validators.genderValidEnum.GenderValidEnum;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -48,6 +47,9 @@ public class User implements Serializable {
     private String dni;
 
     private String phone;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+    private LocalDate birthDate;
 
     @Enumerated(EnumType.STRING)
     @GenderValidEnum

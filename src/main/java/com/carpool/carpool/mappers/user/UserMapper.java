@@ -26,6 +26,7 @@ public class UserMapper {
             .status(UserStateEnum.PENDING_VERIFICATION)
             .roles(roles)
             .gender(userRequestDTO.getGender())
+            .birthDate(userRequestDTO.getBirthDate())
             .build();
     }
 
@@ -69,6 +70,7 @@ public class UserMapper {
                 .dni(user.getDni())
                 .phone(user.getPhone())
                 .status(user.getStatus())
+                .birthDate(user.getBirthDate())
                 .build();
     }
 }

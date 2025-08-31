@@ -62,6 +62,7 @@ public class UserRegisterImplementation {
         userBaseImplementation.existsByEmail(userRequestDTO.getEmail());
         userBaseImplementation.existsByDni(userRequestDTO.getDni());
         userBaseImplementation.validateUniquePhone(userRequestDTO.getPhone());
+        userBaseImplementation.validateBirthDate(userRequestDTO.getBirthDate());
 
         Optional<Role> optionalRoleUser = roleRepository.findByName(ROLE_USER);
         List<Role> roles = new ArrayList<>();

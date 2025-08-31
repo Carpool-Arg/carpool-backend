@@ -1,5 +1,7 @@
 package com.carpool.carpool.service.user;
 
+import java.time.LocalDate;
+
 import org.springframework.web.multipart.MultipartFile;
 
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
@@ -56,6 +58,21 @@ public interface IUserService {
      * @param dni el dni ingresado por la persona.
      */
     Response<Void> validateDni (String dni);
+
+
+    /**
+     * Metodo apra validar si un numero de telefono ingresado por una persona se encuentra disponible o no. 
+     * @param phone el telefono ingresado
+     * @return
+     */
+    Response<Void> validatePhone(String phone);
+
+    /**
+     * Metodo para validar que un usuario tiene mas de 18 años
+     * @param birthDate la fecha de nacimiento del usuario
+     * @return
+     */
+    Response<Void> validateBirthDate(LocalDate birthDate);
 
     /**
      * Metodo para actualizar el perfil del usuario.

@@ -1,7 +1,5 @@
 package com.carpool.carpool.service.driver;
 
-import java.time.LocalDate;
-import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -48,7 +46,6 @@ public class DriverImplementation implements IDriverService {
 
     private static final String ROLE_DRIVER = "ROLE_DRIVER";
     private static final String EXIST_DRIVER_PROFILE = "Ya existe un perfil de chofer para este usuario.";
-    private static final int MIN_DRIVER_AGE = 18;
 
     // Constantes para los claims
     public final static String AUTHORITIES_CLAIM = "authorities";
@@ -68,7 +65,6 @@ public class DriverImplementation implements IDriverService {
     @Override
     @Transactional
     public Response<TokenResponseDTO> saveDriver(DriverRequestDTO driverRequestDTO) {
-        checkDriverAge(driverRequestDTO.getBirthDate());
 
         checkIfDriverProfileExists();
 
@@ -139,27 +135,6 @@ public class DriverImplementation implements IDriverService {
         return ResponseUtils.buildOKResponse(List.of("El perfil de chofer ha sido creado correctamente."), tokens);
     }
 
-
-    /**
-     * Metodo utilizado para verificar la edad del chofer.
-     * Se lanza una excepcion si la fecha de nacimiento es en el futuro o si el chofer es menor de edad.
-     * @param birthDate fecha de nacimiento del chofer
-     * @return void
-     * @throws ConflictException si la fecha de nacimiento es futura o el chofer es menor de edad.
-     */
-    private void checkDriverAge(LocalDate birthDate) {
-        LocalDate currentDate = LocalDate.now();
-
-        if (birthDate.isAfter(currentDate)) {
-            throw new ConflictException("La fecha de nacimiento no puede ser en el futuro.");
-        }
-
-        int age = Period.between(birthDate, currentDate).getYears();
-
-        if (age < MIN_DRIVER_AGE) { 
-            throw new ConflictException("El usuario debe tener al menos " + MIN_DRIVER_AGE + " años de edad.");
-        }
-    }
 
     /**
      * Metodo utilizado para verificar si el usuario ya tiene un perfil de chofer.

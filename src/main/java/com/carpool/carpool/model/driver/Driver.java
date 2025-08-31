@@ -3,15 +3,7 @@ package com.carpool.carpool.model.driver;
 import java.time.LocalDate;
 
 import com.carpool.carpool.model.user.User;
-import com.fasterxml.jackson.annotation.JsonFormat;
-
 import jakarta.persistence.*;
-import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Past;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -37,8 +29,6 @@ public class Driver {
     private String licenseClass;
 
     private LocalDate licenseExpirationDate;
-
-    private LocalDate birthDate;
 
     private String addressStreet;
 
