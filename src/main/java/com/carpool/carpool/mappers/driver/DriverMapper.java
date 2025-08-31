@@ -12,7 +12,6 @@ public class DriverMapper {
         return Driver.builder()
             .licenseClass(driverRequestDTO.getLicenseClass())
             .licenseExpirationDate(driverRequestDTO.getLicenseExpirationDate())
-            .birthDate(driverRequestDTO.getBirthDate())
             .addressStreet(driverRequestDTO.getAddressStreet())
             .addressNumber(driverRequestDTO.getAddressNumber())
             .addressLocality(driverRequestDTO.getLocality())

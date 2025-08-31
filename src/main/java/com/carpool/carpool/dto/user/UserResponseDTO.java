@@ -1,6 +1,8 @@
 package com.carpool.carpool.dto.user;
 
 
+import java.time.LocalDate;
+
 import com.carpool.carpool.enums.user.UserGenderEnum;
 import com.carpool.carpool.enums.user.UserStateEnum;
 
@@ -22,6 +24,7 @@ public class UserResponseDTO {
     private String email;
     private String dni;
     private String phone;
+    private LocalDate birthDate;
     private UserGenderEnum gender;
     private UserStateEnum status;
 

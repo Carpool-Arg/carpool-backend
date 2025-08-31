@@ -1,6 +1,7 @@
 package com.carpool.carpool.model.user;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -9,11 +10,13 @@ import com.carpool.carpool.enums.user.UserGenderEnum;
 import com.carpool.carpool.enums.user.UserStateEnum;
 import com.carpool.carpool.model.role.Role;
 import com.carpool.carpool.validators.genderValidEnum.GenderValidEnum;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -67,6 +70,11 @@ public class User implements Serializable {
     @Size(min = 7, max = 25, message = "El número de teléfono debe tener entre 7 y 50 caracteres.")
     @Pattern(regexp = "^[0-9\\-+\\s]*$", message = "El número de teléfono debe contener únicamente números, guiones, signos + y espacios.")
     private String phone;
+
+    @NotNull(message= "La fecha de nacimiento no puede ser nula.") 
+    @Past(message = "La fecha de nacimiento debe ser una fecha pasada.")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+    private LocalDate birthDate;
 
     @Enumerated(EnumType.STRING)
     @NotNull(message = "El género no puede quedar en blanco.")

@@ -16,7 +16,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.List;
 
 @Component
@@ -27,6 +29,9 @@ public class UserBaseImplementation {
     private final UserTokenRepository userTokenRepository;
     
     private static final String EXIST_USER = "Ya existe un usuario con el ";
+
+    //Definimos la edad minima del usuario
+    private static final int MIN_USER_AGE = 18;
 
     /**
      * Verifica si el usuario existe por correo electrónico.
@@ -78,6 +83,27 @@ public class UserBaseImplementation {
         userRepository.findByPhoneAndDeletedAtIsNull(phone).ifPresent(user -> {
             throw new ConflictException(EXIST_USER.concat("número de teléfono ingresado."));
         });
+    }
+
+    /**
+     * Metodo utilizado para verificar la edad del usuario.
+     * Se lanza una excepcion si la fecha de nacimiento es en el futuro o si el usuario es menor de edad.
+     * @param birthDate fecha de nacimiento del usuario
+     * @return void
+     * @throws ConflictException si la fecha de nacimiento es futura o el usuario es menor de edad.
+     */
+    public void validateBirthDate(LocalDate birthDate){
+        LocalDate currentDate = LocalDate.now();
+
+        if (birthDate.isAfter(currentDate)) {
+            throw new ConflictException("La fecha de nacimiento no puede ser en el futuro.");
+        }
+        
+        int age = Period.between(birthDate, currentDate).getYears();
+
+        if (age < MIN_USER_AGE) { 
+            throw new ConflictException("El usuario debe tener al menos " + MIN_USER_AGE + " años de edad.");
+        }
     }
 
     /**

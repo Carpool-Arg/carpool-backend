@@ -6,6 +6,7 @@ import com.carpool.carpool.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -26,5 +27,15 @@ public class UserValidationsImplementation {
     public Response<Void> validateDni(String dni) {
         userBaseImplementation.existsByDni(dni);
         return ResponseUtils.buildOKResponse(List.of("DNI disponible"), null);
+    }
+
+    public Response<Void> validatePhone(String phone){
+        userBaseImplementation.validateUniquePhone(phone);
+        return ResponseUtils.buildOKResponse(List.of("Teléfono disponible"), null);
+    }
+
+    public Response<Void> validateBirthDate(LocalDate birthDate){
+        userBaseImplementation.validateBirthDate(birthDate);
+        return ResponseUtils.buildOKResponse(List.of("El usuairio tiene 18 años o más."), null);
     }
 }

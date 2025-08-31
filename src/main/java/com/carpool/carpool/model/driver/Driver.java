@@ -9,7 +9,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -51,11 +50,6 @@ public class Driver {
     @FutureOrPresent(message = "La fecha de vencimiento del carnet debe ser una fecha futura o presente.")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private LocalDate licenseExpirationDate;
-
-    @NotNull(message= "La fecha de nacimiento no puede ser nula.") 
-    @Past(message = "La fecha de nacimiento debe ser una fecha pasada.")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
-    private LocalDate birthDate;
 
     @NotBlank(message= "El domicilio no puede estar en blanco.")
     @Size(max = 255, message = "El domicilio debe tener un máximo de 255 caracteres.")
