@@ -2,12 +2,12 @@ package com.carpool.carpool.dto.user;
 
 import com.carpool.carpool.enums.user.UserGenderEnum;
 import com.carpool.carpool.validators.genderValidEnum.GenderValidEnum;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Data;
+
+import java.time.LocalDate;
 
 @Data
 public class UserUpdateRequestDTO {
@@ -66,6 +66,11 @@ public class UserUpdateRequestDTO {
     @Pattern(regexp = "^[0-9\\-+\\s]*$", message = "El número de teléfono debe contener únicamente números, guiones, signos + y espacios.")
     @Schema(example = "3534222456")
     private String phone;
+
+    @NotNull(message= "La fecha de nacimiento no puede ser nula.")
+    @Past(message = "La fecha de nacimiento debe ser una fecha pasada.")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+    private LocalDate birthDate;
 
     @NotNull(message = "El género no puede quedar en blanco.")
     @GenderValidEnum

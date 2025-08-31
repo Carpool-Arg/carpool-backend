@@ -93,6 +93,7 @@ public class UserRegisterImplementation {
         PasswordUtils.passwordsMatch(userUpdateRequestDTO.getPassword(), userUpdateRequestDTO.getConfirmPassword());
         userBaseImplementation.existsByUsername(userUpdateRequestDTO.getUsername());
         userBaseImplementation.existsByDni(userUpdateRequestDTO.getDni());
+        userBaseImplementation.validateUniquePhone(userUpdateRequestDTO.getPhone());
 
         Optional<Role> optionalRoleUser = roleRepository.findByName(ROLE_USER);
         List<Role> roles = new ArrayList<>();

@@ -38,6 +38,8 @@ public class UserMapper {
                 .dni(userUpdateRequestDTO.getDni())
                 .phone(userUpdateRequestDTO.getPhone())
                 .status(UserStateEnum.PENDING_VERIFICATION)
+                .gender(userUpdateRequestDTO.getGender())
+                .birthDate(userUpdateRequestDTO.getBirthDate())
                 .roles(roles)
                 .build();
     }
