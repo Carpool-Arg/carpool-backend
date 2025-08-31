@@ -82,7 +82,7 @@ public class UserRegisterImplementation {
     }
 
     @Transactional
-    public Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO) {
+    public Response<Void> completeRegistration(UserUpdateRequestDTO userUpdateRequestDTO) {
         User user = userBaseImplementation.getUserByEmail(userUpdateRequestDTO.getEmail());
 
         if (!user.getStatus().equals(UserStateEnum.PENDING_PROFILE)) {

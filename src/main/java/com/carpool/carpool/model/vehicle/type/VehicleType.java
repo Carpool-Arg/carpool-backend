@@ -28,13 +28,7 @@ public class VehicleType {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id; 
 
-    @NotBlank(message = "El nombre no puede quedar en blanco.")
-    @Size(min = 1, message = "El nombre debe tener al menos un caracter")
-    @Pattern(regexp = "^[a-zA-Z ]+$", message = "El nombre debe contener sólo letras y espacios.")
     private String name; 
 
-    @NotBlank(message = "La descripción no puede quedar en blanco.")
-    @Size(min = 1, message = "La descripción debe tener al menos un caracter.")
     private String description;
-    
 }

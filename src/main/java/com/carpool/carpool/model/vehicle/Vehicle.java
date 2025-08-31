@@ -41,32 +41,18 @@ public class Vehicle {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "La patente no puede estar en blanco.")
-    @Size(min = 6, max = 7, message = "La patente debe tener entre 6 y 7 caracteres.") 
     @Column(nullable = false)
     private String domain;
 
-    @NotBlank(message = "El color del vehiculo no puede estar en blanco.")
-    @Pattern(regexp = "^[a-zA-Z ]+$", message = "El color debe contener sólo letras y espacios.")
     private String color;
 
-    @NotBlank(message = "La marca del vehiculo no puede estar en blanco.")
-    @Pattern(regexp = "^[A-Za-z-]+$", message = "La marca debe contener sólo letras, números y espacios.") 
     private String brand;
 
-    @NotBlank(message = "El modelo del vehiculo no puede estar en blanco.")
-    @Pattern(regexp = "^[a-zA-Z0-9 ]+$", message = "El modelo debe contener sólo letras, números y espacios.")
     private String model;
 
-    @NotNull(message = "El año del vehiculo no puede estar en blanco.")
-    @Min(value = 1900, message = "El año debe ser posterior a 1900.") 
-    @YearNotInFuture
     private Integer year;
 
-    @NotNull(message = "La cantidad de asientos disponibles no puede estar en blanco.")
-    @Min(value = 1, message = "La cantidad de asientos disponibles debe ser al menos 1.")
-    private Integer availableSeats; 
-
+    private Integer availableSeats;
 
     @ManyToOne
     @JoinColumn(name = "vehicle_type_id", nullable = false) // Eliminado unique = true

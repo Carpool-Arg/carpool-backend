@@ -1,5 +1,7 @@
 package com.carpool.carpool.dto.user;
 
+import com.carpool.carpool.enums.user.UserGenderEnum;
+import com.carpool.carpool.validators.genderValidEnum.GenderValidEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -64,4 +66,8 @@ public class UserUpdateRequestDTO {
     @Pattern(regexp = "^[0-9\\-+\\s]*$", message = "El número de teléfono debe contener únicamente números, guiones, signos + y espacios.")
     @Schema(example = "3534222456")
     private String phone;
+
+    @NotNull(message = "El género no puede quedar en blanco.")
+    @GenderValidEnum
+    private UserGenderEnum gender;
 }

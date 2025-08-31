@@ -29,8 +29,8 @@ public class UserImplementation implements IUserService {
     }
 
     @Override
-    public Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO) {
-        return userRegisterImplementation.updateUser(userUpdateRequestDTO);
+    public Response<Void> completeRegistration(UserUpdateRequestDTO userUpdateRequestDTO) {
+        return userRegisterImplementation.completeRegistration(userUpdateRequestDTO);
     }
 
     @Override

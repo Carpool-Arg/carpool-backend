@@ -27,6 +27,29 @@ public class AuthController {
     private final IAuthService authService;
 
     @Operation(
+            summary = "Verificar validez del access token",
+            description = "Verifica si el token JWT de acceso es válido (firma, expiración, estructura). "
+                    + "El token debe enviarse en el encabezado Authorization con el formato: Bearer <token>."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Token válido"),
+            @ApiResponse(responseCode = "400", description = "El token es inválido o está mal formado", content = @Content),
+            @ApiResponse(responseCode = "401", description = "No autorizado. Token expirado o inválido", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Error interno al validar el token", content = @Content)
+    })
+    @GetMapping("/verify-token")
+    public ResponseEntity<Response<Void>> verifyToken(
+            @Parameter(
+                    description = "Encabezado Authorization con el refresh token. Formato: Bearer <token>",
+                    required = true,
+                    example = "Bearer eyJhbG..."
+            )
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        return new ResponseEntity<>(authService.verifyToken(authHeader), HttpStatus.OK);
+    }
+
+    @Operation(
             summary = "Realizar logout en la aplicación"
     )
     @ApiResponses({
@@ -72,28 +95,5 @@ public class AuthController {
             @RequestHeader("Authorization") String refreshToken)
     {
         return new ResponseEntity<>(authService.refreshToken(refreshToken), HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Verificar validez del access token",
-            description = "Verifica si el token JWT de acceso es válido (firma, expiración, estructura). "
-                    + "El token debe enviarse en el encabezado Authorization con el formato: Bearer <token>."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Token válido"),
-            @ApiResponse(responseCode = "400", description = "El token es inválido o está mal formado", content = @Content),
-            @ApiResponse(responseCode = "401", description = "No autorizado. Token expirado o inválido", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Error interno al validar el token", content = @Content)
-    })
-    @GetMapping("/verify-token")
-    public ResponseEntity<Response<Void>> verifyToken(
-            @Parameter(
-                    description = "Encabezado Authorization con el refresh token. Formato: Bearer <token>",
-                    required = true,
-                    example = "Bearer eyJhbG..."
-            )
-            @RequestHeader("Authorization") String authHeader
-    ) {
-        return new ResponseEntity<>(authService.verifyToken(authHeader), HttpStatus.OK);
     }
 }

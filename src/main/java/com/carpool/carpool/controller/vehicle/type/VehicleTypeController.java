@@ -23,8 +23,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/vehicle-types")
 @RequiredArgsConstructor
 public class VehicleTypeController {
-    
-    
+
     private final IVehicleTypeService vehicleTypeService;
 
    @Operation(
@@ -35,7 +34,6 @@ public class VehicleTypeController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Vehiculos obtenidos exitosamente")
     })
-
     @GetMapping
     public ResponseEntity<Response<List<VehicleTypeResponseDTO>>> getAllVehicleTypes() {
         return new ResponseEntity<>(vehicleTypeService.getAllVehicleTypes(), HttpStatus.OK);

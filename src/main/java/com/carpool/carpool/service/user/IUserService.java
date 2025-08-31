@@ -29,7 +29,7 @@ public interface IUserService {
      * @param {@link UserUpdateRequestDTO} request con los datos del usuario a guardar
      * @return {@link Response<Void>} devolviendo el mensaje si el usuario fue creado
      */
-    Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO);
+    Response<Void> completeRegistration(UserUpdateRequestDTO userUpdateRequestDTO);
 
     /**
      * Metodo encargado de enviar nuevamente un correo electrónico para que el usuario pueda activar su cuenta. En caso de que el usuario no exista en la
