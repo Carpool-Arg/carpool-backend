@@ -29,12 +29,13 @@ public class VehicleMapper {
             .build();
     }
 
-    public Vehicle convertVehicleUpdateRequestDTOToVehicle(VehicleUpdateRequestDTO vehicleUpdateRequestDTO, Vehicle existingVehicle) {
+    public Vehicle convertVehicleUpdateRequestDTOToVehicle(VehicleUpdateRequestDTO vehicleUpdateRequestDTO, Vehicle existingVehicle, VehicleType vehicleType) {
         existingVehicle.setBrand(vehicleUpdateRequestDTO.getBrand());
         existingVehicle.setModel(vehicleUpdateRequestDTO.getModel());
         existingVehicle.setYear(vehicleUpdateRequestDTO.getYear());
         existingVehicle.setColor(vehicleUpdateRequestDTO.getColor());
         existingVehicle.setAvailableSeats(vehicleUpdateRequestDTO.getAvailableSeats());
+        existingVehicle.setVehicleType(vehicleType);
         return existingVehicle;
     }
 

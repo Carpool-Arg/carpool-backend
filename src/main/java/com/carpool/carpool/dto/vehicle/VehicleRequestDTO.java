@@ -42,7 +42,6 @@ public class VehicleRequestDTO {
     @Min(value = 1, message = "La cantidad de asientos disponibles debe ser al menos 1.")
     private Integer availableSeats;
 
-
     @NotNull(message = "El ID del tipo de vehículo no puede estar en blanco.")
     @Min(value = 1, message = "El ID del tipo de vehículo debe ser un número positivo.")
     private Long vehicleType_Id; 

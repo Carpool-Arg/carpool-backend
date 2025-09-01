@@ -82,7 +82,9 @@ public class VehicleImplementation implements IVehicleService {
             throw new ConflictException("No se puede editar un vehículo que ha sido dado de baja.");
         }
 
-        vehicleMapper.convertVehicleUpdateRequestDTOToVehicle(vehicleUpdateRequestDTO, existingVehicle);
+        VehicleType vehicleType = getVehicleTypeById(vehicleUpdateRequestDTO.getVehicleType_Id());
+
+        vehicleMapper.convertVehicleUpdateRequestDTOToVehicle(vehicleUpdateRequestDTO, existingVehicle, vehicleType);
         normalizeVehicle(existingVehicle);
 
         vehicleRepository.save(existingVehicle);
