@@ -67,7 +67,6 @@ public class Vehicle {
     @Min(value = 1, message = "La cantidad de asientos disponibles debe ser al menos 1.")
     private Integer availableSeats; 
 
-
     @ManyToOne
     @JoinColumn(name = "vehicle_type_id", nullable = false) // Eliminado unique = true
     private VehicleType vehicleType;
