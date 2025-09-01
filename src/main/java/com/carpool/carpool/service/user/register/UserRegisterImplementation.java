@@ -89,7 +89,7 @@ public class UserRegisterImplementation {
         if (!user.getStatus().equals(UserStateEnum.PENDING_PROFILE)) {
             throw new UnauthorizedException("El usuario no tiene un registro pendiente para completar.");
         }
-
+        
         PasswordUtils.passwordsMatch(userUpdateRequestDTO.getPassword(), userUpdateRequestDTO.getConfirmPassword());
         userBaseImplementation.existsByUsername(userUpdateRequestDTO.getUsername());
         userBaseImplementation.existsByDni(userUpdateRequestDTO.getDni());
@@ -98,6 +98,7 @@ public class UserRegisterImplementation {
         Optional<Role> optionalRoleUser = roleRepository.findByName(ROLE_USER);
         List<Role> roles = new ArrayList<>();
         optionalRoleUser.ifPresent(roles::add);
+
         
         user = userMapper.convertUserUpdateRequestDTOToUser(
                 user, userUpdateRequestDTO,

@@ -11,6 +11,7 @@ import com.carpool.carpool.dto.user.UserRequestDTO;
 import com.carpool.carpool.dto.user.UserResponseDTO;
 import com.carpool.carpool.model.role.Role;
 import com.carpool.carpool.model.user.User;
+import static com.carpool.carpool.utils.DateUtils.*;
 
 @Component
 public class UserMapper {
@@ -33,6 +34,7 @@ public class UserMapper {
     public User convertUserUpdateRequestDTOToUser(User user, UserUpdateRequestDTO userUpdateRequestDTO, String encritpedPassword, List<Role> roles){
         return user.toBuilder()
                 .lastname(userUpdateRequestDTO.getLastname())
+                .name(userUpdateRequestDTO.getName())
                 .username(userUpdateRequestDTO.getUsername())
                 .password(encritpedPassword)
                 .dni(userUpdateRequestDTO.getDni())
@@ -58,6 +60,7 @@ public class UserMapper {
     
     public void updatePasswordFromDTO(User existingUser, String encryptedNewPassword) {
         existingUser.setPassword(encryptedNewPassword);
+    
     }
 
    
@@ -72,7 +75,7 @@ public class UserMapper {
                 .dni(user.getDni())
                 .phone(user.getPhone())
                 .status(user.getStatus())
-                .birthDate(user.getBirthDate())
+                .birthDate(formatDate(user.getBirthDate()))
                 .build();
     }
 }
