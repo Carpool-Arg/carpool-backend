@@ -33,10 +33,36 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/vehicles")
 @RequiredArgsConstructor
 public class VehicleController {
-    
-    
+
     private final IVehicleService vehicleService;
-    
+
+    @Operation(
+            summary = "Obtener un vehículo por ID",
+            description = "Obtiene los detalles de un vehículo específico por su ID."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Vehículo obtenido exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Vehículo no encontrado")
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<Response<VehicleOnlyResponseDTO>> getVehicleById(@PathVariable Long id) {
+        Response<VehicleOnlyResponseDTO> serviceResponse = vehicleService.getVehicleById(id);
+        return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Obtener vehículos del chofer autenticado",
+            description = "Obtiene una lista de vehículos asociados al chofer autenticado."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Vehiculos obtenidos exitosamente"),
+            @ApiResponse(responseCode = "404", description = "No se encontraron vehiculos para el chofer autenticado")
+    })
+    @GetMapping("/my-vehicles")
+    public ResponseEntity<Response<List<VehicleResponseDTO>>> getMyVehicles(){
+        Response<List<VehicleResponseDTO>> serviceResponse = vehicleService.getVehiclesByAuthenticatedDriver();
+        return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
+    }
 
     @Operation(
         summary = "Registrar un nuevo vehículo",
@@ -47,7 +73,6 @@ public class VehicleController {
         @ApiResponse(responseCode = "400", description = "Error de validación en los campos de entrada",
             content = @Content(mediaType = "application/json"))
     })
-
     @PostMapping
     public ResponseEntity<Response<Void>> saveVehicle(
                 @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Request para crear un vehiculo de un chofer especifico.", required = true)
@@ -68,7 +93,6 @@ public class VehicleController {
             content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "404", description = "Vehiculo no encontrado")
     })
-
     @PutMapping("/{id}") 
     public ResponseEntity<Response<Void>> updateVehicle(
             @PathVariable Long id, 
@@ -88,43 +112,10 @@ public class VehicleController {
         @ApiResponse(responseCode = "200", description = "Vehiculo eliminado exitosamente"),
         @ApiResponse(responseCode = "404", description = "Vehiculo no encontrado")
     })
-
     @DeleteMapping("/{id}") 
     public ResponseEntity<Response<Void>> deleteVehicle(@PathVariable Long id){
         Response<Void> serviceResponse = vehicleService.deleteVehicle(id);
         return new ResponseEntity<>(serviceResponse, HttpStatus.OK); 
     }
-
-
-    @Operation(
-        summary = "Obtener vehículos del chofer autenticado",
-        description = "Obtiene una lista de vehículos asociados al chofer autenticado."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Vehiculos obtenidos exitosamente"),
-        @ApiResponse(responseCode = "404", description = "No se encontraron vehiculos para el chofer autenticado")
-    })
-
-    @GetMapping("/my-vehicles")
-    public ResponseEntity<Response<List<VehicleResponseDTO>>> getMyVehicles(){
-        Response<List<VehicleResponseDTO>> serviceResponse = vehicleService.getVehiclesByAuthenticatedDriver();
-        return new ResponseEntity<>(serviceResponse, HttpStatus.OK); 
-    }
-
-    @Operation(
-        summary = "Obtener un vehículo por ID",
-        description = "Obtiene los detalles de un vehículo específico por su ID."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Vehículo obtenido exitosamente"),
-        @ApiResponse(responseCode = "404", description = "Vehículo no encontrado")
-    })
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Response<VehicleOnlyResponseDTO>> getVehicleById(@PathVariable Long id) {
-        Response<VehicleOnlyResponseDTO> serviceResponse = vehicleService.getVehicleById(id);
-        return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
-    }
-
 }
 

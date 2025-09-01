@@ -47,7 +47,6 @@ public class UserPasswordChangeController {
         return new ResponseEntity<>(serviceResponse,HttpStatus.OK);
     }
 
-
     @Operation(
         summary = "Realizar el cambio de contraseña",
         description = "Realizar el cambio de contraseña pasando la nueva contraseña, la confirmacion de la misma y el token correspondiente."
@@ -66,5 +65,4 @@ public class UserPasswordChangeController {
         Response<Void> serviceResponse = userService.changePassword(changePasswordRequestDTO);
         return new ResponseEntity<>(serviceResponse,HttpStatus.OK);
     }
-      
 }

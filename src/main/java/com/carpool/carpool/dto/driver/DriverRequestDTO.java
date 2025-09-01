@@ -26,6 +26,12 @@ public class DriverRequestDTO {
     )
     private String licenseClass;
 
+    /*
+     * FutureOrPresent: La fecha debe ser una fecha futura o presente.
+     *                  Utilizamos esta validación para asegurarnos de que la fecha de vencimiento del carnet no sea una fecha pasada.
+     * Past: La fecha debe ser una fecha pasada.
+     *       Utilizamos esta validación para asegurarnos de que la fecha de nacimiento del conductor
+     */
     @NotNull(message = "La fecha de vencimiento del Carnet es obligatoria.")
     @FutureOrPresent(message = "La fecha de vencimiento del carnet debe ser una fecha futura o presente.")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
