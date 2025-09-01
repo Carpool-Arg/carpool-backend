@@ -44,5 +44,5 @@ public class VehicleRequestDTO {
 
     @NotNull(message = "El ID del tipo de vehículo no puede estar en blanco.")
     @Min(value = 1, message = "El ID del tipo de vehículo debe ser un número positivo.")
-    private Long vehicleType_Id; 
+    private Long vehicleTypeId;
 }
