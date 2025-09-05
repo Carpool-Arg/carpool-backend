@@ -1,5 +1,7 @@
 package com.carpool.carpool.service.user;
 
+import java.time.LocalDate;
+
 import org.springframework.web.multipart.MultipartFile;
 
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
@@ -29,7 +31,7 @@ public interface IUserService {
      * @param {@link UserUpdateRequestDTO} request con los datos del usuario a guardar
      * @return {@link Response<Void>} devolviendo el mensaje si el usuario fue creado
      */
-    Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO);
+    Response<Void> completeRegistration(UserUpdateRequestDTO userUpdateRequestDTO);
 
     /**
      * Metodo encargado de enviar nuevamente un correo electrónico para que el usuario pueda activar su cuenta. En caso de que el usuario no exista en la
@@ -56,6 +58,21 @@ public interface IUserService {
      * @param dni el dni ingresado por la persona.
      */
     Response<Void> validateDni (String dni);
+
+
+    /**
+     * Metodo apra validar si un numero de telefono ingresado por una persona se encuentra disponible o no. 
+     * @param phone el telefono ingresado
+     * @return
+     */
+    Response<Void> validatePhone(String phone);
+
+    /**
+     * Metodo para validar que un usuario tiene mas de 18 años
+     * @param birthDate la fecha de nacimiento del usuario
+     * @return
+     */
+    Response<Void> validateBirthDate(LocalDate birthDate);
 
     /**
      * Metodo para actualizar el perfil del usuario.

@@ -25,8 +25,6 @@ public class UserToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "El nombre no puede quedar en blanco.")
-    @Size(min = 32, max = 64, message = "El token debe tener entre 32 y 64 caracter.")
     @Column(unique = true, nullable = false)
     private String token;
 

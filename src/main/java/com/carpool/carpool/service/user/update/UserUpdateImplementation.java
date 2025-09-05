@@ -50,7 +50,7 @@ public class UserUpdateImplementation {
     private final IEmailService emailService;
     private final UpdateTokenImplementation updateTokenImplementation;
 
-    @Value("${redirect.validate.email}")
+    @Value("${redirect.email.change}")
     private String urlValidateEmail;
 
     public Response<UserResponseDTO> getAuthenticatedUser() {

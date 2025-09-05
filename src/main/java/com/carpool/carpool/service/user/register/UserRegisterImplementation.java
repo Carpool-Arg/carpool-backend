@@ -62,6 +62,7 @@ public class UserRegisterImplementation {
         userBaseImplementation.existsByEmail(userRequestDTO.getEmail());
         userBaseImplementation.existsByDni(userRequestDTO.getDni());
         userBaseImplementation.validateUniquePhone(userRequestDTO.getPhone());
+        userBaseImplementation.validateBirthDate(userRequestDTO.getBirthDate());
 
         Optional<Role> optionalRoleUser = roleRepository.findByName(ROLE_USER);
         List<Role> roles = new ArrayList<>();
@@ -82,20 +83,22 @@ public class UserRegisterImplementation {
     }
 
     @Transactional
-    public Response<Void> updateUser(UserUpdateRequestDTO userUpdateRequestDTO) {
+    public Response<Void> completeRegistration(UserUpdateRequestDTO userUpdateRequestDTO) {
         User user = userBaseImplementation.getUserByEmail(userUpdateRequestDTO.getEmail());
 
         if (!user.getStatus().equals(UserStateEnum.PENDING_PROFILE)) {
             throw new UnauthorizedException("El usuario no tiene un registro pendiente para completar.");
         }
-
+        
         PasswordUtils.passwordsMatch(userUpdateRequestDTO.getPassword(), userUpdateRequestDTO.getConfirmPassword());
         userBaseImplementation.existsByUsername(userUpdateRequestDTO.getUsername());
         userBaseImplementation.existsByDni(userUpdateRequestDTO.getDni());
+        userBaseImplementation.validateUniquePhone(userUpdateRequestDTO.getPhone());
 
         Optional<Role> optionalRoleUser = roleRepository.findByName(ROLE_USER);
         List<Role> roles = new ArrayList<>();
         optionalRoleUser.ifPresent(roles::add);
+
         
         user = userMapper.convertUserUpdateRequestDTOToUser(
                 user, userUpdateRequestDTO,

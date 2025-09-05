@@ -22,6 +22,7 @@ public class UserResponseDTO {
     private String email;
     private String dni;
     private String phone;
+    private String birthDate;
     private UserGenderEnum gender;
     private UserStateEnum status;
 
