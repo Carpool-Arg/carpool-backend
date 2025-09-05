@@ -1,6 +1,7 @@
 package com.carpool.carpool.controller.trip;
 
 import com.carpool.carpool.dto.trip.TripRequestDTO;
+import com.carpool.carpool.dto.trip.TripResponseDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.trip.ITripService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,12 +25,24 @@ public class TripController {
 
     // TODO: ver mensajes de apiResponse
     @Operation(
+            summary = "Visualizar los detalles de un viaje específico"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Detalles del viaje obtenidos con éxito"),
+            @ApiResponse(responseCode = "404", description = "El viaje no existe", content = @Content)
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<Response<TripResponseDTO>> getTripDetails(@PathVariable Long id) {
+        return new ResponseEntity<>(tripService.getTripDetails(id), HttpStatus.OK);
+    } 
+
+    @Operation(
             summary = "Crear y publicar un viaje"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Viaje creado y publicado con exito"),
-            @ApiResponse(responseCode = "409", description = "Errores de validaciones"),
-            @ApiResponse(responseCode = "500", description = "Errores al intentar subir el archivo a R2", content = @Content)
+            @ApiResponse(responseCode = "409", description = "Errores de validaciones", content = @Content),
+            
     })
     @PostMapping()
     public ResponseEntity<Response<Void>> createTrip(@Valid @RequestBody TripRequestDTO tripRequestDTO){

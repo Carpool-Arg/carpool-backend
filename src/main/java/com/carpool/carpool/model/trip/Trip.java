@@ -2,16 +2,23 @@ package com.carpool.carpool.model.trip;
 
 import com.carpool.carpool.enums.trip.BaggageEnum;
 import com.carpool.carpool.enums.trip.TripEnum;
+import com.carpool.carpool.model.province.town.Town;
 import com.carpool.carpool.model.vehicle.Vehicle;
+
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Data
 @Entity
 @Table(name="trip")
+@AllArgsConstructor
+@NoArgsConstructor  
+@Builder
 public class Trip {
 
     @Id
@@ -19,8 +26,15 @@ public class Trip {
     private Long id;
 
     //TODO: esperar a cambios que realicen los chicos
-    private String originTown;
-    private String destinationTown;
+
+    @ManyToOne
+    @JoinColumn(name = "origin_town_id", nullable = false)
+    private Town originTown;
+
+    @ManyToOne
+    @JoinColumn(name = "destination_town_id", nullable = false)
+    private Town destinationTown;
+
     private String intermediateTown;
 
     @Column(name="start_date_time", nullable = false)

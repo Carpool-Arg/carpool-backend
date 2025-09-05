@@ -1,10 +1,10 @@
 package com.carpool.carpool.dto.trip;
 
-import com.carpool.carpool.enums.trip.BaggageEnum;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+
 
 @Getter
 public class TripRequestDTO {
@@ -13,11 +13,11 @@ public class TripRequestDTO {
     @FutureOrPresent(message = "La fecha de inicio debe ser igual o posterior a la actual.")
     private LocalDateTime startDateTime;
 
-    @NotBlank(message = "La ciudad de origen es un dato obligatorio.")
-    private String originTown;
+    @NotNull(message = "La ciudad de origen es un dato obligatorio.")
+    private Long originTownId;
 
-    @NotBlank(message = "La ciudad de destino es un dato obligatorio.")
-    private String destinationTown;
+    @NotNull(message = "La ciudad de destino es un dato obligatorio.")
+    private Long destinationTownId;
 
     private String intermediateTown;
 
