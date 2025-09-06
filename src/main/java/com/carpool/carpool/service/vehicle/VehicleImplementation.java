@@ -54,7 +54,7 @@ public class VehicleImplementation implements IVehicleService {
         //Llamada al metodo que obtiene el chofer autenticado
         Driver driver = getAuthenticatedDriver(); 
 
-        VehicleType vehicleType = getVehicleTypeById(vehicleRequestDTO.getVehicleType_Id());
+        VehicleType vehicleType = getVehicleTypeById(vehicleRequestDTO.getVehicleTypeId());
 
         Vehicle vehicle = vehicleMapper.convertVehicleRequestDTOToVehicle(vehicleRequestDTO, driver, vehicleType);
 
@@ -82,7 +82,9 @@ public class VehicleImplementation implements IVehicleService {
             throw new ConflictException("No se puede editar un vehículo que ha sido dado de baja.");
         }
 
-        vehicleMapper.convertVehicleUpdateRequestDTOToVehicle(vehicleUpdateRequestDTO, existingVehicle);
+        VehicleType vehicleType = getVehicleTypeById(vehicleUpdateRequestDTO.getVehicleTypeId());
+
+        vehicleMapper.convertVehicleUpdateRequestDTOToVehicle(vehicleUpdateRequestDTO, existingVehicle, vehicleType);
         normalizeVehicle(existingVehicle);
 
         vehicleRepository.save(existingVehicle);
