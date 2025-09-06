@@ -1,4 +1,4 @@
-package com.carpool.carpool.controller.town;
+package com.carpool.carpool.controller.city;
 
 import java.util.List;
 
@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.carpool.carpool.dto.town.TownResponseDTO;
+import com.carpool.carpool.dto.city.CityResponseDTO;
 import com.carpool.carpool.response.Response;
-import com.carpool.carpool.service.town.ITownService;
+import com.carpool.carpool.service.city.ICityService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -22,12 +22,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@Tag(name = "Town", description = "Operaciones relacionadas con las localidades")
-@RequestMapping("/town")
+@Tag(name = "City", description = "Operaciones relacionadas con las localidades")
+@RequestMapping("/city")
 @RequiredArgsConstructor
-public class TownController {
+public class CityController {
     
-    private final ITownService townService;
+    private final ICityService cityService;
 
     @Operation(
         summary = "Obtener una localidad por id"
@@ -37,8 +37,8 @@ public class TownController {
         @ApiResponse(responseCode = "401", description = "No autorizado"),
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Response<TownResponseDTO>> getTownById(@PathVariable Long id) {
-        return new ResponseEntity<>(townService.getTownById(id), HttpStatus.OK);
+    public ResponseEntity<Response<CityResponseDTO>> getCityById(@PathVariable Long id) {
+        return new ResponseEntity<>(cityService.getCityById(id), HttpStatus.OK);
     }
 
 
@@ -51,12 +51,12 @@ public class TownController {
         @ApiResponse(responseCode = "401", description = "No autorizado"),
     })
     @GetMapping("/autocomplete")
-    public ResponseEntity<Response<List<TownResponseDTO>>> getTownsForAutocomplete(
+    public ResponseEntity<Response<List<CityResponseDTO>>> getCitiesForAutocomplete(
             @RequestParam(required = false) 
             @Parameter(description = "Nombre de la localidad a buscar (mínimo 2 caracteres)", example = "Buenos")
             String name) {
         
-        Response<List<TownResponseDTO>> response = townService.getTownsForAutocomplete(name, 10);
+        Response<List<CityResponseDTO>> response = cityService.getCitiesForAutocomplete(name, 10);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     

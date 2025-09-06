@@ -11,9 +11,9 @@ public class TripResponseDTO {
     private Long id;
     private String driverName;
         //TODO: poner la clasificación del chofer, cuando see haga
-    private String originTown;
-    private String destinationTown;
-    private String intermediateTown;
+    private String originCity;
+    private String destinationCity;
+    private String intermediateCity;
         //TODO: esperar a cambios que realicen los chicos
     private LocalDateTime startDateTime;
     private int availableSeat;

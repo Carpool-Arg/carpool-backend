@@ -2,7 +2,7 @@ package com.carpool.carpool.model.trip;
 
 import com.carpool.carpool.enums.trip.BaggageEnum;
 import com.carpool.carpool.enums.trip.TripEnum;
-import com.carpool.carpool.model.province.town.Town;
+import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.vehicle.Vehicle;
 
 import jakarta.persistence.*;
@@ -28,14 +28,14 @@ public class Trip {
     //TODO: esperar a cambios que realicen los chicos
 
     @ManyToOne
-    @JoinColumn(name = "origin_town_id", nullable = false)
-    private Town originTown;
+    @JoinColumn(name = "origin_city_id", nullable = false)
+    private City originCity;
 
     @ManyToOne
-    @JoinColumn(name = "destination_town_id", nullable = false)
-    private Town destinationTown;
+    @JoinColumn(name = "destination_city_id", nullable = false)
+    private City destinationCity;
 
-    private String intermediateTown;
+    private String intermediateCity;
 
     @Column(name="start_date_time", nullable = false)
     private LocalDateTime startTripDateTime;

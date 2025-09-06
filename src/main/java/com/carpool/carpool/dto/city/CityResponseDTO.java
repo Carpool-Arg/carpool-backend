@@ -1,4 +1,4 @@
-package com.carpool.carpool.dto.town;
+package com.carpool.carpool.dto.city;
 
 
 
@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class TownResponseDTO {
+public class CityResponseDTO {
     
     private Long id;
     private String name;

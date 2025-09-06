@@ -1,4 +1,4 @@
-package com.carpool.carpool.model.province.town;
+package com.carpool.carpool.model.province.city;
 
 import com.carpool.carpool.model.province.Province;
 
@@ -14,8 +14,8 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name="town")
-public class Town {
+@Table(name="city")
+public class City {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

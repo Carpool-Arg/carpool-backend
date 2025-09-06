@@ -2,6 +2,7 @@ package com.carpool.carpool.model.driver;
 
 import java.time.LocalDate;
 
+import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -17,8 +18,6 @@ import lombok.ToString;
 @ToString
 @Entity
 @Table(name = "driver")
-
-
 public class Driver {
 
     @Id
@@ -34,7 +33,9 @@ public class Driver {
 
     private String addressNumber;
 
-    private String addressLocality; 
+    @ManyToOne
+    @JoinColumn(name = "city_id", nullable = false)
+    private City city; 
 
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, unique = true)

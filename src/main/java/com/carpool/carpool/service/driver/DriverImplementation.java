@@ -14,8 +14,10 @@ import com.carpool.carpool.dto.security.token.TokenResponseDTO;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.mappers.driver.DriverMapper;
 import com.carpool.carpool.model.driver.Driver;
+import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.role.Role;
 import com.carpool.carpool.model.user.User;
+import com.carpool.carpool.repository.city.CityRepository;
 import com.carpool.carpool.repository.driver.DriverRepository;
 import com.carpool.carpool.repository.role.RoleRepository;
 import com.carpool.carpool.repository.user.UserRepository;
@@ -40,6 +42,7 @@ public class DriverImplementation implements IDriverService {
     private final DriverRepository driverRepository;
     private final DriverMapper driverMapper;
     private final UserRepository userRepository;
+    private final CityRepository cityRepository;
 
     //Para asignar roles a los choferes, se inyecta el RoleRepository
     private final RoleRepository roleRepository;
@@ -74,7 +77,10 @@ public class DriverImplementation implements IDriverService {
         User user = userRepository.findByUsernameAndDeletedAtIsNull(username)
                 .orElseThrow(() -> new ConflictException("Usuario no encontrado."));
 
-        Driver driver = driverMapper.convertDriverRequestDTOToDriver(driverRequestDTO, user);
+        City city = cityRepository.findById(driverRequestDTO.getCityId())
+                .orElseThrow(() -> new ConflictException("La ciudad no existe."));
+        
+        Driver driver = driverMapper.convertDriverRequestDTOToDriver(driverRequestDTO, user, city);
 
         assignDriverRoleToUser(user);
         normalizedDriverFields(driver);
@@ -209,6 +215,5 @@ public class DriverImplementation implements IDriverService {
     private void normalizedDriverFields(Driver driver){
         driver.setLicenseClass(driver.getLicenseClass().toUpperCase().trim());
         driver.setAddressStreet(driver.getAddressStreet().toUpperCase().trim());
-        driver.setAddressLocality(driver.getAddressLocality().toUpperCase().trim());
     }
 }

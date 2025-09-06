@@ -46,7 +46,6 @@ public class DriverRequestDTO {
     @Pattern(regexp = "^\\d{1,255}$", message = "El número del domicilio debe contener solo números.")
     private String addressNumber;
 
-    @NotBlank(message = "La ciudad no puede estar en blanco.")
-    @Size(max = 100, message = "La ciudad debe tener un máximo de 100 caracteres.")
-    private String locality;
+    @NotNull(message = "La ciudad es un dato obligatorio.")
+    private Long cityId;
 }

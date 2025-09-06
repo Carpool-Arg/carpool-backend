@@ -7,12 +7,12 @@ import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.trip.TripMapper;
 import com.carpool.carpool.model.driver.Driver;
-import com.carpool.carpool.model.province.town.Town;
+import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.model.vehicle.Vehicle;
+import com.carpool.carpool.repository.city.CityRepository;
 import com.carpool.carpool.repository.driver.DriverRepository;
-import com.carpool.carpool.repository.town.TownRepository;
 import com.carpool.carpool.repository.trip.TripRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.vehicle.VehicleRepository;
@@ -33,7 +33,7 @@ import java.util.List;
 public class TripImplementation implements ITripService{
 
     private final VehicleRepository vehicleRepository;
-    private final TownRepository townRepository;
+    private final CityRepository cityRepository;
     private final TripMapper tripMapper;
     private final TripRepository tripRepository;
     private final UserRepository userRepository;
@@ -48,17 +48,17 @@ public class TripImplementation implements ITripService{
 
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())
                 .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe.")); 
-        Town originTown = townRepository.findById(tripRequestDTO.getOriginTownId())
+        City originCity = cityRepository.findById(tripRequestDTO.getOriginCityId())
                 .orElseThrow(() -> new ResourceNotFoundException("La ciudad de origen no existe."));
 
-        Town destinationTown = townRepository.findById(tripRequestDTO.getDestinationTownId())
+        City destinationCity = cityRepository.findById(tripRequestDTO.getDestinationCityId())
                 .orElseThrow(() -> new ResourceNotFoundException("La ciudad de destino no existe."));
 
        
         if (!vehicle.getDriver().getId().equals(authenticatedDriver.getId())) {
             throw new ConflictException("El vehículo no pertenece al conductor autenticado.");
         }
-        if(tripRequestDTO.getOriginTownId().equals(tripRequestDTO.getDestinationTownId())){
+        if(tripRequestDTO.getOriginCityId().equals(tripRequestDTO.getDestinationCityId())){
             throw new ConflictException("La ciudad origen y destino no pueden ser las mismas.");
         }
 
@@ -70,7 +70,7 @@ public class TripImplementation implements ITripService{
             throw new ConflictException("El tipo de equipaje es inválido.");
         }
 
-        Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, originTown, destinationTown, vehicle);
+        Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, originCity, destinationCity, vehicle);
         tripRepository.save(newTrip);
 
         return ResponseUtils.buildOKResponse(List.of("Viaje creado con éxito") , null);
@@ -87,7 +87,7 @@ public class TripImplementation implements ITripService{
                            " " + user.getLastname();
         
         
-        TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip, driverFullName, trip.getOriginTown().getName(),trip.getDestinationTown().getName());
+        TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip, driverFullName, trip.getOriginCity().getName(),trip.getDestinationCity().getName());
         return ResponseUtils.buildOKResponse(List.of("Viaje encontrado con éxito"), tripResponseDTO);
     }
 

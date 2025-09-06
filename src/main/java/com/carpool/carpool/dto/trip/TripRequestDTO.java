@@ -14,12 +14,12 @@ public class TripRequestDTO {
     private LocalDateTime startDateTime;
 
     @NotNull(message = "La ciudad de origen es un dato obligatorio.")
-    private Long originTownId;
+    private Long originCityId;
 
     @NotNull(message = "La ciudad de destino es un dato obligatorio.")
-    private Long destinationTownId;
+    private Long destinationCityId;
 
-    private String intermediateTown;
+    private String intermediateCity;
 
     @Min(value = 1, message = "Debe indicar una cantidad correcta de asientos.")
     private int availableSeat;
