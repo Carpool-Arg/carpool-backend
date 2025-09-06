@@ -8,6 +8,7 @@ import lombok.Getter;
  * <p>
  *     {@code NO_EQUIPAJE}
  *     {@code LIVIANO}
+ *     {@code MEDIANO}
  *     {@code PESADO}
  * </p>
  */
@@ -17,6 +18,7 @@ public enum BaggageEnum {
 
     NO_EQUIPAJE("No equipaje"),
     LIVIANO("Liviano"),
+    MEDIANO("Mediano"),
     PESADO("Pesado");
 
     private final String typeBaggage;
