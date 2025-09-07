@@ -8,11 +8,15 @@ import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.trip.TripMapper;
 import com.carpool.carpool.model.driver.Driver;
 import com.carpool.carpool.model.province.city.City;
+import com.carpool.carpool.model.state.State;
+import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.model.vehicle.Vehicle;
 import com.carpool.carpool.repository.city.CityRepository;
 import com.carpool.carpool.repository.driver.DriverRepository;
+import com.carpool.carpool.repository.state.StateRepository;
+import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
 import com.carpool.carpool.repository.trip.TripRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.vehicle.VehicleRepository;
@@ -38,22 +42,24 @@ public class TripImplementation implements ITripService{
     private final TripRepository tripRepository;
     private final UserRepository userRepository;
     private final DriverRepository driverRepository;
-
+    private final StateRepository stateRepository;
+    private final StateHistoryRepository stateHistoryRepository;
 
     @Override
     @Transactional
     public Response<Void> createTrip(TripRequestDTO tripRequestDTO) {
 
-        Driver authenticatedDriver = getAuthenticatedDriver();  
+        Driver authenticatedDriver = getAuthenticatedDriver();
 
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())
-                .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe.")); 
+                .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe."));
         City originCity = cityRepository.findById(tripRequestDTO.getOriginCityId())
                 .orElseThrow(() -> new ResourceNotFoundException("La ciudad de origen no existe."));
 
         City destinationCity = cityRepository.findById(tripRequestDTO.getDestinationCityId())
                 .orElseThrow(() -> new ResourceNotFoundException("La ciudad de destino no existe."));
 
+        State stateCreate = stateRepository.findByName("CREATE");
        
         if (!vehicle.getDriver().getId().equals(authenticatedDriver.getId())) {
             throw new ConflictException("El vehículo no pertenece al conductor autenticado.");
@@ -70,9 +76,15 @@ public class TripImplementation implements ITripService{
             throw new ConflictException("El tipo de equipaje es inválido.");
         }
 
-        Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, originCity, destinationCity, vehicle);
+        Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, originCity, destinationCity, vehicle, stateCreate);
         tripRepository.save(newTrip);
 
+        StateHistory stateHistory = StateHistory.builder()
+                .state(stateCreate)
+                .tripState(newTrip)
+                .build();
+
+        stateHistoryRepository.save(stateHistory);
         return ResponseUtils.buildOKResponse(List.of("Viaje creado con éxito") , null);
     }
 

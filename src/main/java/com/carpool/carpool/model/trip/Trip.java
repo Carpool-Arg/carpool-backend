@@ -1,8 +1,8 @@
 package com.carpool.carpool.model.trip;
 
 import com.carpool.carpool.enums.trip.BaggageEnum;
-import com.carpool.carpool.enums.trip.TripEnum;
 import com.carpool.carpool.model.province.city.City;
+import com.carpool.carpool.model.state.State;
 import com.carpool.carpool.model.vehicle.Vehicle;
 
 import jakarta.persistence.*;
@@ -50,9 +50,9 @@ public class Trip {
     @Column(name="seat_price", nullable = false)
     private double seatPrice;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name="state", nullable = false)
-    private TripEnum state;
+    @OneToMany
+    @JoinColumn(name = "state", nullable = false)
+    private State state;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -77,7 +77,6 @@ public class Trip {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        this.state = TripEnum.CREATE;
     }
 
     @PreUpdate

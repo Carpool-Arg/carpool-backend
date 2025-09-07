@@ -1,5 +1,6 @@
 package com.carpool.carpool.mappers.trip;
 
+import com.carpool.carpool.model.state.State;
 import org.springframework.stereotype.Component;
 
 import com.carpool.carpool.dto.trip.TripRequestDTO;
@@ -12,7 +13,7 @@ import com.carpool.carpool.model.vehicle.Vehicle;
 @Component
 public class TripMapper {
     
-    public Trip convertTripRequestDTOToTrip(TripRequestDTO tripRequestDTO, City originCityId, City destinationCityId, Vehicle vehicle){ {
+    public Trip convertTripRequestDTOToTrip(TripRequestDTO tripRequestDTO, City originCityId, City destinationCityId, Vehicle vehicle, State state){ {
         return Trip.builder()
             .startTripDateTime(tripRequestDTO.getStartDateTime())
             .originCity(originCityId)
@@ -20,6 +21,7 @@ public class TripMapper {
             .intermediateCity(tripRequestDTO.getIntermediateCity())
             .availableSeat(tripRequestDTO.getAvailableSeat())
             .availableBaggage(BaggageEnum.valueOf(tripRequestDTO.getAvailableBaggage()))
+            .state(state)
             .vehicle(vehicle)
             .seatPrice(tripRequestDTO.getSeatPrice())
             .build();
@@ -27,7 +29,7 @@ public class TripMapper {
     }
 
 
-    public TripResponseDTO convertTripToTripResponseDTO(Trip trip,  String driverName, String originCityName, String destinationCityName) {
+    public TripResponseDTO convertTripToTripResponseDTO(Trip trip, String driverName, String originCityName, String destinationCityName) {
         return TripResponseDTO.builder()
             .id(trip.getId())
             .driverName(driverName)
