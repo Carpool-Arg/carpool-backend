@@ -3,14 +3,18 @@ package com.carpool.carpool.model.stateHistory;
 import com.carpool.carpool.model.state.State;
 import com.carpool.carpool.model.trip.Trip;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Data
 @Entity
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor 
 @Table(name="state_history")
 public class StateHistory {
 
@@ -26,17 +30,17 @@ public class StateHistory {
 
     @ManyToOne
     @JoinColumn(
-            name = "state",
-            referencedColumnName = "id",
-            nullable = false
+        name = "state_id",
+        referencedColumnName = "id",
+        nullable = false
     )
     private State state;
 
     @ManyToOne
     @JoinColumn(
-            name = "trip",
-            referencedColumnName = "id",
-            nullable = false
+        name = "trip_id",
+        referencedColumnName = "id",
+        nullable = false
     )
     private Trip tripState;
 

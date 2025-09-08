@@ -76,14 +76,16 @@ public class TripImplementation implements ITripService{
             throw new ConflictException("El tipo de equipaje es inválido.");
         }
 
-        Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, originCity, destinationCity, vehicle, stateCreate);
-        tripRepository.save(newTrip);
+        Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, originCity, destinationCity, vehicle);
+        
 
         StateHistory stateHistory = StateHistory.builder()
                 .state(stateCreate)
-                .tripState(newTrip)
                 .build();
-
+        
+        stateHistory.setTripState(newTrip);
+        
+        tripRepository.save(newTrip);
         stateHistoryRepository.save(stateHistory);
         return ResponseUtils.buildOKResponse(List.of("Viaje creado con éxito") , null);
     }

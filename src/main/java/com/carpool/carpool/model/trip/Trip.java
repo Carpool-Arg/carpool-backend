@@ -2,7 +2,7 @@ package com.carpool.carpool.model.trip;
 
 import com.carpool.carpool.enums.trip.BaggageEnum;
 import com.carpool.carpool.model.province.city.City;
-import com.carpool.carpool.model.state.State;
+import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.vehicle.Vehicle;
 
 import jakarta.persistence.*;
@@ -12,6 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Entity
@@ -50,9 +51,8 @@ public class Trip {
     @Column(name="seat_price", nullable = false)
     private double seatPrice;
 
-    @OneToMany
-    @JoinColumn(name = "state", nullable = false)
-    private State state;
+    @OneToMany(mappedBy = "tripState", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<StateHistory> stateHistory;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
