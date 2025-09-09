@@ -40,8 +40,12 @@ public class CityImplementation implements ICityService {
         if(name.isBlank() || name.trim().length() < 2){
             return ResponseUtils.buildOKResponse(List.of("Se requieren al menos 2 caracteres para la búsqueda."), new ArrayList<>());
         }
+
+        // Dividir el nombre en palabras y crear un patrón de búsqueda
+        String[] searchWords = name.trim().toLowerCase().split("\\s+");
+        String pattern = "%" + String.join("%", searchWords) + "%";
         
-        List<City> cities = cityRepository.findByNameStartingWithIgnoreCase(name.trim());
+        List<City> cities = cityRepository.findCitiesByPattern(pattern);
 
         if(cities.size() > limit){
             cities = cities.subList(0, limit);
@@ -51,19 +55,11 @@ public class CityImplementation implements ICityService {
                 .map(cityMapper::convertCityToCityResponseDTO)
                 .toList();
             
-         if (cityResponseDTO.isEmpty()) {
+        if (cityResponseDTO.isEmpty()) {
             return ResponseUtils.buildOKResponse(List.of("No se encontraron localidades que coincidan con la búsqueda."), cityResponseDTO);
         }
             
         return ResponseUtils.buildOKResponse(List.of("Localidades obtenidas con éxito."), cityResponseDTO);
-    }
-
-
-
-    
-
-    
-
-    
+    }  
         
 }
