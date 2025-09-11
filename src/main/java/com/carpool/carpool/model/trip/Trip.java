@@ -1,8 +1,8 @@
 package com.carpool.carpool.model.trip;
 
 import com.carpool.carpool.enums.trip.BaggageEnum;
-import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.stateHistory.StateHistory;
+import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.vehicle.Vehicle;
 
 import jakarta.persistence.*;
@@ -26,18 +26,6 @@ public class Trip {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    //TODO: esperar a cambios que realicen los chicos
-
-    @ManyToOne
-    @JoinColumn(name = "origin_city_id", nullable = false)
-    private City originCity;
-
-    @ManyToOne
-    @JoinColumn(name = "destination_city_id", nullable = false)
-    private City destinationCity;
-
-    private String intermediateCity;
-
     @Column(name="start_date_time", nullable = false)
     private LocalDateTime startTripDateTime;
 
@@ -53,6 +41,9 @@ public class Trip {
 
     @OneToMany(mappedBy = "tripState", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StateHistory> stateHistory;
+
+    @OneToMany(mappedBy = "trip",cascade = CascadeType.ALL,orphanRemoval = true)
+    private List<TripStop> tripStops;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

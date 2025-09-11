@@ -4,6 +4,9 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
+import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 
 
 @Getter
@@ -12,14 +15,6 @@ public class TripRequestDTO {
     @NotNull(message = "La fecha de inicio del viaje es un dato obligatorio.")
     @FutureOrPresent(message = "La fecha de inicio debe ser igual o posterior a la actual.")
     private LocalDateTime startDateTime;
-
-    @NotNull(message = "La ciudad de origen es un dato obligatorio.")
-    private Long originCityId;
-
-    @NotNull(message = "La ciudad de destino es un dato obligatorio.")
-    private Long destinationCityId;
-
-    private String intermediateCity;
 
     @Min(value = 1, message = "Debe indicar una cantidad correcta de asientos.")
     private int availableSeat;
@@ -33,4 +28,8 @@ public class TripRequestDTO {
 
     @NotNull(message = "El vehiculo es un dato obligatorio.")
     private Long idVehicle;
+
+    @NotEmpty(message = "La lista de paradas no puede estar vacia.")
+    @Size(min = 2, message = "Debe haber 2 o mas paradas.")
+    private List<TripStopRequestDTO> tripStops;
 }

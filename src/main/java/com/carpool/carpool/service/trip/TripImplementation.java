@@ -2,6 +2,7 @@ package com.carpool.carpool.service.trip;
 
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
+import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.enums.trip.BaggageEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
@@ -30,6 +31,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -37,7 +39,6 @@ import java.util.List;
 public class TripImplementation implements ITripService{
 
     private final VehicleRepository vehicleRepository;
-    private final CityRepository cityRepository;
     private final TripMapper tripMapper;
     private final TripRepository tripRepository;
     private final UserRepository userRepository;
@@ -53,20 +54,30 @@ public class TripImplementation implements ITripService{
 
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())
                 .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe."));
-        City originCity = cityRepository.findById(tripRequestDTO.getOriginCityId())
-                .orElseThrow(() -> new ResourceNotFoundException("La ciudad de origen no existe."));
 
-        City destinationCity = cityRepository.findById(tripRequestDTO.getDestinationCityId())
-                .orElseThrow(() -> new ResourceNotFoundException("La ciudad de destino no existe."));
 
         State stateCreate = stateRepository.findByName("CREATE");
        
         if (!vehicle.getDriver().getId().equals(authenticatedDriver.getId())) {
             throw new ConflictException("El vehículo no pertenece al conductor autenticado.");
         }
-        if(tripRequestDTO.getOriginCityId().equals(tripRequestDTO.getDestinationCityId())){
-            throw new ConflictException("La ciudad origen y destino no pueden ser las mismas.");
-        }
+
+        startDestinationValidation(tripRequestDTO.getTripStops());
+        validateTripStopsOrder(tripRequestDTO.getTripStops());
+
+        Long idStartCity = tripRequestDTO.getTripStops().stream()
+            .filter(TripStopRequestDTO::getIsStart)
+            .map(TripStopRequestDTO::getCityId)
+            .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("No se definio la ciudad de origen."));
+
+        Long idDestinationCity = tripRequestDTO.getTripStops().stream()
+            .filter(TripStopRequestDTO::getIsDestination)
+            .map(TripStopRequestDTO::getCityId)
+            .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("No se definio la ciudad de destino."));  
+        
+        if(idStartCity == idDestinationCity) throw new ConflictException("La ciudad de origen y la ciudad de destino no puedne ser la misma");
 
         if(tripRequestDTO.getAvailableSeat() > vehicle.getAvailableSeats()){
             throw new ConflictException("La cantidad de asiento no corresponde con el vehiculo registrado.");
@@ -76,8 +87,7 @@ public class TripImplementation implements ITripService{
             throw new ConflictException("El tipo de equipaje es inválido.");
         }
 
-        Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, originCity, destinationCity, vehicle);
-        
+        Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, vehicle);
 
         StateHistory stateHistory = StateHistory.builder()
                 .state(stateCreate)
@@ -90,6 +100,22 @@ public class TripImplementation implements ITripService{
         return ResponseUtils.buildOKResponse(List.of("Viaje creado con éxito") , null);
     }
 
+    private void startDestinationValidation(List<TripStopRequestDTO> tripStops){
+        long starts = tripStops.stream().filter(TripStopRequestDTO::getIsStart).count();
+        long destinations = tripStops.stream().filter(TripStopRequestDTO::getIsDestination).count();
+        if (starts != 1 || destinations != 1) throw new ConflictException("No puede haber mas de un origen o mas de un destino en la lista de paradas.");
+    }
+
+    private void validateTripStopsOrder(List<TripStopRequestDTO> tripStops){
+        boolean allUnique = tripStops.stream()
+        .map(TripStopRequestDTO::getOrder)
+        .allMatch(new HashSet<>()::add);
+
+        if (!allUnique) throw new ConflictException("El orden en las paradas no se puede repetir"); 
+    }
+
+    
+
     @Override
     public Response<TripResponseDTO> getTripDetails(Long id) {
         Trip trip = tripRepository.findById(id)
@@ -101,7 +127,7 @@ public class TripImplementation implements ITripService{
                            " " + user.getLastname();
         
         
-        TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip, driverFullName, trip.getOriginCity().getName(),trip.getDestinationCity().getName());
+        TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip, driverFullName);
         return ResponseUtils.buildOKResponse(List.of("Viaje encontrado con éxito"), tripResponseDTO);
     }
 

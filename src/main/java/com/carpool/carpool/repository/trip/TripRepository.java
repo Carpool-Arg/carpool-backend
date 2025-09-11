@@ -14,8 +14,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
            "JOIN FETCH t.vehicle v " +
            "JOIN FETCH v.driver d " +
            "JOIN FETCH d.user u " +
-           "JOIN FETCH t.originCity " +
-           "JOIN FETCH t.destinationCity " +
            "WHERE t.id = :id")
     Optional<Trip> findTripWithAllDetails(@Param("id") Long id);
 }
