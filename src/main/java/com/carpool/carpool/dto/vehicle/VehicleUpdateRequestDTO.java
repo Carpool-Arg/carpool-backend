@@ -1,13 +1,11 @@
 package com.carpool.carpool.dto.vehicle;
 
-import com.carpool.carpool.model.vehicle.type.VehicleType;
 import com.carpool.carpool.validators.yearNotInFuture.YearNotInFuture;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

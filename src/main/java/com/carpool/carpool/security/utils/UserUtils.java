@@ -1,11 +1,6 @@
 package com.carpool.carpool.security.utils;
 
-import com.carpool.carpool.model.role.Role;
-
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 
 public class UserUtils {

@@ -8,6 +8,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.carpool.carpool.dto.driver.DriverRequestDTO;
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
@@ -23,7 +24,6 @@ import com.carpool.carpool.repository.role.RoleRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.model.CustomUserDetails;
-import com.carpool.carpool.security.utils.JwtUtils;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,7 +32,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.transaction.annotation.Transactional;
+import static com.carpool.carpool.security.utils.JwtUtils.*;
 
 @Service
 @RequiredArgsConstructor
@@ -55,7 +55,6 @@ public class DriverImplementation implements IDriverService {
     private final static String USERNAME_CLAIM = "username";
 
 
-    private final JwtUtils jwtUtils;
 
     /**
      * Metodo utilizado para guardar un nuevo perfil de chofer.
@@ -125,13 +124,13 @@ public class DriverImplementation implements IDriverService {
          * Generamos el Access Token utilizando los métodos de JwtUtils.
          * Esto incluye la firma del token y la adición de los claims necesarios.
          */
-        String accessToken = jwtUtils.generateAccessToken(updatedUserDetails.getUsername(), claims);
+        String accessToken = generateAccessToken(updatedUserDetails.getUsername(), claims);
 
         /*
          * Generamos el Refresh Token utilizando los mismos claims.
          * Esto es necesario para que el usuario pueda obtener un nuevo Access Token
          */
-        String refreshToken = jwtUtils.generateRefreshToken(updatedUserDetails.getUsername(), claims);
+        String refreshToken = generateRefreshToken(updatedUserDetails.getUsername(), claims);
 
         /*
          * Creamos una instancia de TokenResponseDTO con los tokens generados.

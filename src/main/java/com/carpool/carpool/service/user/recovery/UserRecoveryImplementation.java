@@ -1,12 +1,26 @@
 package com.carpool.carpool.service.user.recovery;
 
+import static com.carpool.carpool.utils.EmailMessageUtils.CONFIRM_CHANGE_PASSWORD;
+import static com.carpool.carpool.utils.EmailMessageUtils.MESSAGE_EMAIL_CHANGE_PASSWORD;
+import static com.carpool.carpool.utils.EmailMessageUtils.MESSAGE_FOOTER_CHANGE_PASSWORD;
+import static com.carpool.carpool.utils.EmailMessageUtils.SUBJECT_EMAIL_CHANGE_PASSWORD;
+import static com.carpool.carpool.utils.EmailMessageUtils.TITLE_CHANGE_PASSWORD;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.carpool.carpool.dto.user.ChangePasswordRequestDTO;
 import com.carpool.carpool.dto.user.EmailRequestDTO;
 import com.carpool.carpool.enums.token.TokenStateEnum;
 import com.carpool.carpool.enums.token.TokenTypeEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
-import com.carpool.carpool.exception.UnauthorizedException;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.model.user.UserToken;
 import com.carpool.carpool.repository.user.UserRepository;
@@ -16,17 +30,8 @@ import com.carpool.carpool.service.email.IEmailService;
 import com.carpool.carpool.service.user.UserBaseImplementation;
 import com.carpool.carpool.utils.PasswordUtils;
 import com.carpool.carpool.utils.ResponseUtils;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-
-import static com.carpool.carpool.utils.EmailMessageUtils.*;
 
 @Service
 @RequiredArgsConstructor

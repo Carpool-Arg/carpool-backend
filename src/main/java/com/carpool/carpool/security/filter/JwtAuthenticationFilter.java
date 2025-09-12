@@ -3,7 +3,11 @@ package com.carpool.carpool.security.filter;
 import static com.carpool.carpool.security.config.TokenJwtConfig.CONTENT_TYPE;
 import static com.carpool.carpool.security.config.TokenJwtConfig.HEADER_AUTHORIZATION;
 import static com.carpool.carpool.security.config.TokenJwtConfig.PREFIX_TOKEN;
-import static com.carpool.carpool.utils.EmailMessageUtils.*;
+import static com.carpool.carpool.utils.EmailMessageUtils.MESSAGE_EMAIL_LOCKED;
+import static com.carpool.carpool.utils.EmailMessageUtils.MESSAGE_FOOTER_LOCKED;
+import static com.carpool.carpool.utils.EmailMessageUtils.SUBJECT_EMAIL_LOCKED;
+import static com.carpool.carpool.utils.EmailMessageUtils.TITLE_LOCKED;
+import static com.carpool.carpool.utils.EmailMessageUtils.UNLOCKED;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,13 +16,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import com.carpool.carpool.enums.token.TokenTypeEnum;
-import com.carpool.carpool.enums.user.UserStateEnum;
-import com.carpool.carpool.model.user.UserToken;
-import com.carpool.carpool.repository.user.token.UserTokenRepository;
-import com.carpool.carpool.security.utils.JwtUtils;
-import com.carpool.carpool.service.email.IEmailService;
-import com.carpool.carpool.utils.TokenUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -32,15 +29,19 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.carpool.carpool.dto.security.login.LoginRequestDTO;
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
+import com.carpool.carpool.enums.token.TokenTypeEnum;
 import com.carpool.carpool.enums.user.UserStateEnum;
 import com.carpool.carpool.model.user.User;
+import com.carpool.carpool.model.user.UserToken;
 import com.carpool.carpool.repository.user.UserRepository;
+import com.carpool.carpool.repository.user.token.UserTokenRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.model.CustomUserDetails;
 import com.carpool.carpool.security.utils.JwtUtils;
 import com.carpool.carpool.service.email.IEmailService;
 import com.carpool.carpool.service.user.account.IUserAccountService;
 import com.carpool.carpool.utils.ResponseUtils;
+import com.carpool.carpool.utils.TokenUtils;
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

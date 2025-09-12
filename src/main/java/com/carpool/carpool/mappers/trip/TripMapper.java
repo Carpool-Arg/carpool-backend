@@ -1,5 +1,7 @@
 package com.carpool.carpool.mappers.trip;
 
+import java.util.ArrayList;
+
 import org.springframework.stereotype.Component;
 
 import com.carpool.carpool.dto.trip.TripRequestDTO;
@@ -16,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class TripMapper {   
-    private CityRepository cityRepository;
+    private final CityRepository cityRepository;
     
     public Trip convertTripRequestDTOToTrip(TripRequestDTO tripRequestDTO, Vehicle vehicle){ 
         Trip trip = Trip.builder()
@@ -25,15 +27,17 @@ public class TripMapper {
             .availableBaggage(BaggageEnum.valueOf(tripRequestDTO.getAvailableBaggage()))
             .vehicle(vehicle)
             .seatPrice(tripRequestDTO.getSeatPrice())
+            .tripStops(new ArrayList<>())
         .build();
         
         tripRequestDTO.getTripStops().forEach(tripStopDto ->{
             TripStop tripStop = TripStop.builder()
-                .city(cityRepository.findById(tripStopDto.getCityId()).orElseThrow(()-> new ResourceNotFoundException("La ciudad con el ID " + tripStopDto.getCityId() + "no existe.")))
-                .isStart(tripStopDto.getIsStart())
-                .isDestination(tripStopDto.getIsDestination())
+                .city(cityRepository.findById(tripStopDto.getCityId()).orElseThrow(()-> new ResourceNotFoundException("La ciudad con el ID " + tripStopDto.getCityId() + " no existe.")))
+                .isStart(tripStopDto.isStart())
+                .isDestination(tripStopDto.isDestination())
                 .observation(tripStopDto.getObservation())
                 .stopOrder(tripStopDto.getOrder())
+                .trip(trip)
             .build();
             trip.getTripStops().add(tripStop);            
         });

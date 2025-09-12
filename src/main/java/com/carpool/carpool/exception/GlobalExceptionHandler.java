@@ -1,20 +1,21 @@
 package com.carpool.carpool.exception;
 
-import com.carpool.carpool.response.Response;
-import com.carpool.carpool.utils.ResponseUtils;
-import jakarta.validation.ConstraintViolationException;
+import java.util.List;
+
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import io.swagger.v3.oas.annotations.Hidden;
 
-import java.util.List;
+import com.carpool.carpool.response.Response;
+import com.carpool.carpool.utils.ResponseUtils;
+
+import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.validation.ConstraintViolationException;
 
 @Hidden
 @ControllerAdvice

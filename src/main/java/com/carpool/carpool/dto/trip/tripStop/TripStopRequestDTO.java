@@ -1,5 +1,7 @@
 package com.carpool.carpool.dto.trip.tripStop;
 
+
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.validation.constraints.AssertTrue;
@@ -14,10 +16,10 @@ public class TripStopRequestDTO {
     private Long cityId;
 
     @NotNull(message = "Debes definir si la parada es el origen del viaje.")
-    private Boolean isStart;
+    private boolean start;
 
     @NotNull(message = "Debes definir si la parada es el destino del viaje.")
-    private Boolean isDestination;
+    private boolean destination;
 
     @NotNull(message = "El orden de la parada no puede ser nulo.")
     @Min(value=1, message = "Debe especificar un orden correcto para las paradas.")
@@ -27,4 +29,9 @@ public class TripStopRequestDTO {
     private String observation;
 
 
+    @AssertTrue(message = "Una ciudad no puede ser origen y destino al mismo tiempo")
+    @JsonIgnore
+    public boolean isOriginOrDestinationValid() {
+        return !(start && destination);
+    }
 }
