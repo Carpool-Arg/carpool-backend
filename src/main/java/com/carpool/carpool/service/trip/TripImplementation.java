@@ -135,7 +135,7 @@ public class TripImplementation implements ITripService{
         .map(TripStopRequestDTO::getCityId)
         .allMatch(new HashSet<>()::add);
 
-        if (!allCitiesUnique) throw new ConflictException("Cada ciudad puede estar solo en una parada. Si va a hacer mas paradas en la ciudad puede indicarlo en el cmapo de observaciones.");
+        if (!allCitiesUnique) throw new ConflictException("Cada ciudad puede estar solo en una parada. Si va a hacer mas paradas en la ciudad puede indicarlo en el campo de observaciones.");
     }
     
     /**

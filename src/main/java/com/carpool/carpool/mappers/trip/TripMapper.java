@@ -1,11 +1,14 @@
 package com.carpool.carpool.mappers.trip;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
+import com.carpool.carpool.dto.trip.tripStop.TripStopResponseDTO;
 import com.carpool.carpool.enums.trip.BaggageEnum;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.model.trip.Trip;
@@ -47,9 +50,17 @@ public class TripMapper {
     }
 
     public TripResponseDTO convertTripToTripResponseDTO(Trip trip, String driverName) {
+       List<TripStopResponseDTO> tripStopDTOs = trip.getTripStops().stream()
+        .map(tripStop -> TripStopResponseDTO.builder()
+            .cityName(tripStop.getCity().getName())
+            .observation(tripStop.getObservation())
+            .build())
+        .collect(Collectors.toList());
+
         return TripResponseDTO.builder()
             .id(trip.getId())
             .driverName(driverName)
+            .tripStops(tripStopDTOs)
             .startDateTime(trip.getStartTripDateTime())
             .availableSeat(trip.getAvailableSeat())
             .availableBaggage(trip.getAvailableBaggage().toString())
