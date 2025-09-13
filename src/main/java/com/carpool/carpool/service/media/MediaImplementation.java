@@ -114,7 +114,7 @@ public class MediaImplementation implements IMediaService{
     private String generatePresignedUrl(Media media){
         try {
             GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                    .bucket(bucket)
+                    .bucket(media.getBucket())
                     .key(media.getObjectKey())
                     .build();
 
