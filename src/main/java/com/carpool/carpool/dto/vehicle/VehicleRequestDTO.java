@@ -2,6 +2,7 @@ package com.carpool.carpool.dto.vehicle;
 
 import com.carpool.carpool.validators.yearNotInFuture.YearNotInFuture;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -40,6 +41,7 @@ public class VehicleRequestDTO {
 
     @NotNull(message = "La cantidad de asientos disponibles no puede estar en blanco.")
     @Min(value = 1, message = "La cantidad de asientos disponibles debe ser al menos 1.")
+    @Max(value = 40, message = "La cantidad de asientos disponibles no puede ser mayor a 40.")
     private Integer availableSeats;
 
     @NotNull(message = "El ID del tipo de vehículo no puede estar en blanco.")
