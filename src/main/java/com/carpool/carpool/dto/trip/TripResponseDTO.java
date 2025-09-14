@@ -6,9 +6,9 @@ import java.util.List;
 import com.carpool.carpool.dto.trip.tripStop.TripStopResponseDTO;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 
-@Data
+@Getter
 @Builder
 public class TripResponseDTO {
     private Long id;

@@ -1,9 +1,9 @@
 package com.carpool.carpool.dto.trip.tripStop;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 
-@Data
+@Getter
 @Builder
 public class TripStopResponseDTO {
     private String cityName;

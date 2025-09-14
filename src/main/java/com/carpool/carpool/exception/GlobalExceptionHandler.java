@@ -124,4 +124,28 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Response<Void>> handleGenericException(Exception ex) {
         return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of("Error inesperado",ex.getMessage())), HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    /**
+     * Excepción utilizada para cuando la request es inválida.
+     * @param ex Excepción
+     * @return {@link ResponseEntity} que contiene {@link Response} con data {@link Void}
+     */
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<Response<Void>> handleBadRequest(BadRequestException ex) {
+        return new ResponseEntity<>(
+            ResponseUtils.buildErrorResponse(List.of(ex.getMessage())),
+            HttpStatus.BAD_REQUEST
+        );
+    }
+
+    /**
+     * Excepción utilizada para cuando no hay contenido que devolver.
+     * 
+     * @param ex Excepción
+     * @return {@link ResponseEntity} que contiene {@link Response} con data {@link Void}
+     */
+   @ExceptionHandler(NoContentException.class)
+    public ResponseEntity<Void> handleNoContent(NoContentException ex) {
+        return ResponseEntity.noContent().build();
+    }
 }

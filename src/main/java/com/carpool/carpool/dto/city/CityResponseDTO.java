@@ -3,9 +3,9 @@ package com.carpool.carpool.dto.city;
 
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 
-@Data
+@Getter
 @Builder
 public class CityResponseDTO {
     

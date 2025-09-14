@@ -64,18 +64,19 @@ public class SpringSecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint, IUserAccountService userAccountService) throws Exception{
         return http.authorizeHttpRequests((authz)-> authz
-        .requestMatchers(HttpMethod.POST, "/users/complete-registration").authenticated()
+        // Endpoints disponibles para todos
         .requestMatchers("/users", "/users/**").permitAll()
         .requestMatchers("/password-change", "/password-change/**").permitAll()
         .requestMatchers(HttpMethod.POST, "/auth-google/**").permitAll()
         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-        .requestMatchers(HttpMethod.POST, "/drivers/become_driver").authenticated()
-        .requestMatchers(HttpMethod.POST, "/drivers").authenticated()
+        
+        // Endpoints para roles específicos
         .requestMatchers(HttpMethod.GET, "/vehicle-types").hasAnyRole("DRIVER", "ADMIN")
         .requestMatchers("/vehicles", "/vehicles/**").hasRole("DRIVER")
         .requestMatchers("/trip", "/trip/**").hasRole("DRIVER")
         .requestMatchers(HttpMethod.GET, "/trip/{id}").hasRole("USER")
-        .requestMatchers("/city", "/city/**").authenticated()
+        
+        // Todos los demas endpoints que solamente necesitan autenticación
         .anyRequest().authenticated())
         .exceptionHandling(config -> config
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
@@ -87,6 +88,7 @@ public class SpringSecurityConfig {
         .cors(cors-> cors.configurationSource(corsConfigurationSource()))
         .sessionManagement(managment->managment.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .build();
+        
     }
 
     @Bean

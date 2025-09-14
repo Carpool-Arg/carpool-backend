@@ -23,13 +23,15 @@ public class TripController {
 
     private final ITripService tripService;
 
-    // TODO: ver mensajes de apiResponse
     @Operation(
             summary = "Visualizar los detalles de un viaje específico"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Detalles del viaje obtenidos con éxito"),
-            @ApiResponse(responseCode = "404", description = "El viaje no existe", content = @Content)
+            @ApiResponse(responseCode = "400", description = "ID de viaje inválido"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado para ver los detalles del viaje"),
+            @ApiResponse(responseCode = "404", description = "El viaje no existe", content = @Content),
     })
     @GetMapping("/{id}")
     public ResponseEntity<Response<TripResponseDTO>> getTripDetails(@PathVariable Long id) {
@@ -41,8 +43,11 @@ public class TripController {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Viaje creado y publicado con exito"),
-            @ApiResponse(responseCode = "409", description = "Errores de validaciones", content = @Content),
-            
+            @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado para crear un viaje"),
+            @ApiResponse(responseCode = "404", description = "Recurso no encontrado"),
+            @ApiResponse(responseCode = "409", description = "Errores de validaciones", content = @Content),       
     })
     @PostMapping()
     public ResponseEntity<Response<Void>> createTrip(@Valid @RequestBody TripRequestDTO tripRequestDTO){

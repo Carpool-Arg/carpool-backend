@@ -1,11 +1,12 @@
 package com.carpool.carpool.service.city;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
 import com.carpool.carpool.dto.city.CityResponseDTO;
+import com.carpool.carpool.exception.BadRequestException;
+import com.carpool.carpool.exception.NoContentException;
 import com.carpool.carpool.mappers.city.CityMapper;
 import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.repository.city.CityRepository;
@@ -37,8 +38,8 @@ public class CityImplementation implements ICityService {
     @Override
     public Response<List<CityResponseDTO>> getCitiesForAutocomplete(String name, int limit) {
 
-        if(name.isBlank() || name.trim().length() < 2){
-            return ResponseUtils.buildOKResponse(List.of("Se requieren al menos 2 caracteres para la búsqueda."), new ArrayList<>());
+      if (name.isBlank() || name.trim().length() < 2) {
+            throw new BadRequestException("Se requieren al menos 2 caracteres para la búsqueda.");
         }
 
         // Dividir el nombre en palabras y crear un patrón de búsqueda
@@ -56,7 +57,7 @@ public class CityImplementation implements ICityService {
                 .toList();
             
         if (cityResponseDTO.isEmpty()) {
-            return ResponseUtils.buildOKResponse(List.of("No se encontraron localidades que coincidan con la búsqueda."), cityResponseDTO);
+           throw new NoContentException("No se encontraron localidades que coincidan con la búsqueda.");
         }
             
         return ResponseUtils.buildOKResponse(List.of("Localidades obtenidas con éxito."), cityResponseDTO);
