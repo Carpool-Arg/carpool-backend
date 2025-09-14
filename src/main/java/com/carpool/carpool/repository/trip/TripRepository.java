@@ -2,6 +2,7 @@ package com.carpool.carpool.repository.trip;
 
 import com.carpool.carpool.model.trip.Trip;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,4 +17,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
            "JOIN FETCH d.user u " +
            "WHERE t.id = :id")
     Optional<Trip> findTripWithAllDetails(@Param("id") Long id);
+
+
+    boolean existsByVehicleIdAndStartTripDateTimeAfter(Long vehicleId, LocalDateTime starTime);
 }

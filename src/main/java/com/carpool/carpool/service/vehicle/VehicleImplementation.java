@@ -19,6 +19,7 @@ import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.model.vehicle.Vehicle;
 import com.carpool.carpool.model.vehicle.type.VehicleType;
 import com.carpool.carpool.repository.driver.DriverRepository;
+import com.carpool.carpool.repository.trip.TripRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.vehicle.VehicleRepository;
 import com.carpool.carpool.repository.vehicle.type.VehicleTypeRepository;
@@ -37,6 +38,7 @@ public class VehicleImplementation implements IVehicleService {
     private final DriverRepository driverRepository;
     private final VehicleTypeRepository vehicleTypeRepository;
     private final UserRepository userRepository;
+    private final TripRepository tripRepository;
 
     /**
      * Metodo utilizado para almacenar un vehiculo en la base de datos.
@@ -107,6 +109,10 @@ public class VehicleImplementation implements IVehicleService {
        
         if (!vehicleToDelete.isEnabled()) { 
             throw new ConflictException("El vehículo con ID " + id + " ya se encuentra dado de baja.");
+        }
+
+        if(tripRepository.existsByVehicleIdAndStartTripDateTimeAfter(vehicleToDelete.getId(), LocalDateTime.now())) {
+            throw new ConflictException("No se puede dar de baja el vehículo porque tiene un viaje programado.");
         }
 
         vehicleToDelete.setDeletedAt(LocalDateTime.now());
