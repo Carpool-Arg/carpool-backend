@@ -1,5 +1,6 @@
 package com.carpool.carpool.service.trip;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 
@@ -56,6 +57,11 @@ public class TripImplementation implements ITripService{
 
         //Validaciones del viaje en general 
         tripValidations(vehicle,tripRequestDTO);
+
+        //Validacion para comprobar que la fecha de inicio del viaje es igual o posterior a la actual + 30 minutos
+        if(tripRequestDTO.getStartDateTime().isBefore(LocalDateTime.now().plusMinutes(30))){
+            throw new ConflictException("La fecha y hora del viaje deben tener un intervalo superior a 30 minutos desde la hora actual.");
+        }
 
         //Validaciones para las paradas intermedias
         startDestinationValidation(tripRequestDTO.getTripStops());
