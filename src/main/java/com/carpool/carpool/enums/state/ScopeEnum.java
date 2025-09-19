@@ -18,14 +18,4 @@ public enum ScopeEnum {
     TRIP("Viaje");
 
     private final String typeScope;
-
-    public static boolean contains(String value) {
-        for (ScopeEnum scope : values()) {
-            if (scope.name().equalsIgnoreCase(value)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
 }
