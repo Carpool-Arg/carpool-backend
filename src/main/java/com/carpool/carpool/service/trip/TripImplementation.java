@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
+import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.enums.trip.BaggageEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
@@ -52,11 +53,12 @@ public class TripImplementation implements ITripService{
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())
         .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe."));
 
-        State stateCreate = stateRepository.findByName("CREATE")
+        State stateCreate = stateRepository.findByNameAndScope("CREATE", ScopeEnum.TRIP)
         .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para crear el viaje."));
 
         //Validaciones del viaje en general 
         tripValidations(vehicle,tripRequestDTO);
+
 
         //Validacion para comprobar que la fecha de inicio del viaje es igual o posterior a la actual + 30 minutos
         if(tripRequestDTO.getStartDateTime().isBefore(LocalDateTime.now().plusMinutes(30))){
