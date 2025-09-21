@@ -22,11 +22,10 @@ public interface ITripService {
     Response<TripResponseDTO> getTripDetails(Long id);
 
     /**
-     * Metodo para verificar la disponibilidad de un viaje basado en el conductor, vehiculo y fecha/hora de inicio.
-     * @param driverId 
-     * @param vehicleId
-     * @param startDateTime
-     * @return Response<Void> devolviendo un mensaje si el viaje es posible o no
+     * Metodo para verificar la disponibilidad de un viaje.
+     * @param startDateTime La fecha y hora a partir de la cual verificar.
+     * @return Response<Void> devolviendo el mensaje si el viaje es posible o no.
+     * 
      */
-    Response<Void> checkTripAvailability(Long driverId, LocalDateTime startDateTime);
+    Response<Void> checkTripAvailability(LocalDateTime startDateTime);
 }

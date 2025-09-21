@@ -50,8 +50,6 @@ public class TripImplementation implements ITripService{
     @Transactional
     public Response<Void> createTrip(TripRequestDTO tripRequestDTO) {
 
-        Driver authenticatedDriver = getAuthenticatedDriver();
-
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())
         .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe."));
 
@@ -67,7 +65,7 @@ public class TripImplementation implements ITripService{
         }
 
         //Validacion para comprobar que no existe otro viaje programado para el mismo vehiculo en la misma fecha y hora
-        if (hasATripPlanned(authenticatedDriver.getId(), tripRequestDTO.getStartDateTime())) {
+        if (hasATripPlanned(tripRequestDTO.getStartDateTime())) {
             throw new ConflictException("Ya existe un viaje programado para este conductor en la misma fecha y hora.");
         }
 
@@ -89,8 +87,8 @@ public class TripImplementation implements ITripService{
     }
 
     @Override
-    public Response<Void> checkTripAvailability(Long driverId, LocalDateTime startDateTime) {
-        if(hasATripPlanned(driverId, startDateTime)){
+    public Response<Void> checkTripAvailability(LocalDateTime startDateTime) {
+        if(hasATripPlanned(startDateTime)){
            throw new ConflictException("Ya existe un viaje programado para este conductor y vehículo en la misma fecha y hora.");
         }else{
             return ResponseUtils.buildOKResponse(List.of("El viaje es posible"), null);
@@ -210,8 +208,10 @@ public class TripImplementation implements ITripService{
      * @param startDateTime La fecha y hora a partir de la cual verificar.
      * @return true si el chofer tiene un viaje planificado después de la fecha y hora dadas, false en caso contrario.
      */
-    private boolean hasATripPlanned (Long driverId, LocalDateTime startDateTime){
-        return tripRepository.existsByVehicleDriverIdAndStartTripDateTime(driverId, startDateTime);
+    private boolean hasATripPlanned (LocalDateTime startDateTime){
+        Driver driver = getAuthenticatedDriver();
+
+        return tripRepository.existsByVehicleDriverIdAndStartTripDateTime(driver.getId(), startDateTime);
     }
 
    

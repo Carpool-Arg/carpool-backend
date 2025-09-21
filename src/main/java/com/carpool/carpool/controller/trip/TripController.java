@@ -49,9 +49,9 @@ public class TripController {
             @ApiResponse(responseCode = "200", description = "El viaje es posible"),
             @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
     })
-    @GetMapping("checkTripAvailability")
-    public  Response<Void> checkTripAvailability(@RequestParam Long driverId, @RequestParam String startDateTime) {
-        return tripService.checkTripAvailability(driverId, LocalDateTime.parse(startDateTime));
+    @GetMapping("check-trip-availability")
+    public  Response<Void> checkTripAvailability(@RequestParam String startDateTime) {
+        return tripService.checkTripAvailability(LocalDateTime.parse(startDateTime));
     }
     
 
