@@ -1,5 +1,7 @@
 package com.carpool.carpool.service.trip;
 
+import java.time.LocalDateTime;
+
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
 import com.carpool.carpool.response.Response;
@@ -18,4 +20,13 @@ public interface ITripService {
      * @return Response<TripResponseDTO> devolviendo el viaje solicitado
      */
     Response<TripResponseDTO> getTripDetails(Long id);
+
+    /**
+     * Metodo para verificar la disponibilidad de un viaje basado en el conductor, vehiculo y fecha/hora de inicio.
+     * @param driverId 
+     * @param vehicleId
+     * @param startDateTime
+     * @return Response<Void> devolviendo un mensaje si el viaje es posible o no
+     */
+    Response<Void> checkTripAvailability(Long driverId, LocalDateTime startDateTime);
 }

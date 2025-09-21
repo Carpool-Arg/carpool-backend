@@ -20,4 +20,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
 
 
     boolean existsByVehicleIdAndStartTripDateTimeAfter(Long vehicleId, LocalDateTime starTime);
+
+    boolean existsByVehicleDriverIdAndStartTripDateTime(Long driverId, LocalDateTime startTripDateTime);
+
 }

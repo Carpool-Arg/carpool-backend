@@ -50,6 +50,8 @@ public class TripImplementation implements ITripService{
     @Transactional
     public Response<Void> createTrip(TripRequestDTO tripRequestDTO) {
 
+        Driver authenticatedDriver = getAuthenticatedDriver();
+
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())
         .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe."));
 
@@ -59,10 +61,14 @@ public class TripImplementation implements ITripService{
         //Validaciones del viaje en general 
         tripValidations(vehicle,tripRequestDTO);
 
-
         //Validacion para comprobar que la fecha de inicio del viaje es igual o posterior a la actual + 30 minutos
         if(tripRequestDTO.getStartDateTime().isBefore(LocalDateTime.now().plusMinutes(30))){
             throw new ConflictException("La fecha y hora del viaje deben tener un intervalo superior a 30 minutos desde la hora actual.");
+        }
+
+        //Validacion para comprobar que no existe otro viaje programado para el mismo vehiculo en la misma fecha y hora
+        if (hasATripPlanned(authenticatedDriver.getId(), tripRequestDTO.getStartDateTime())) {
+            throw new ConflictException("Ya existe un viaje programado para este conductor en la misma fecha y hora.");
         }
 
         //Validaciones para las paradas intermedias
@@ -80,6 +86,15 @@ public class TripImplementation implements ITripService{
         tripRepository.save(newTrip);
         stateHistoryRepository.save(stateHistory);
         return ResponseUtils.buildOKResponse(List.of("Viaje creado con éxito") , null);
+    }
+
+    @Override
+    public Response<Void> checkTripAvailability(Long driverId, LocalDateTime startDateTime) {
+        if(hasATripPlanned(driverId, startDateTime)){
+           throw new ConflictException("Ya existe un viaje programado para este conductor y vehículo en la misma fecha y hora.");
+        }else{
+            return ResponseUtils.buildOKResponse(List.of("El viaje es posible"), null);
+        }
     }
 
     /**
@@ -188,4 +203,16 @@ public class TripImplementation implements ITripService{
         return driverRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new ConflictException("No se encontró el perfil de chofer para el usuario autenticado."));
     }
+
+    /**
+     * Verifica si un chofer tiene un viaje planificado en una fecha y hora determinadas.
+     * @param driverId El ID del chofer.
+     * @param startDateTime La fecha y hora a partir de la cual verificar.
+     * @return true si el chofer tiene un viaje planificado después de la fecha y hora dadas, false en caso contrario.
+     */
+    private boolean hasATripPlanned (Long driverId, LocalDateTime startDateTime){
+        return tripRepository.existsByVehicleDriverIdAndStartTripDateTime(driverId, startDateTime);
+    }
+
+   
 }
