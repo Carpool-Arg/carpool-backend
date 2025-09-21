@@ -49,7 +49,7 @@ public class TripController {
             @ApiResponse(responseCode = "200", description = "El viaje es posible"),
             @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
     })
-    @GetMapping("check-trip-availability")
+    @GetMapping("/check-trip-availability")
     public  Response<Void> checkTripAvailability(@RequestParam String startDateTime) {
         return tripService.checkTripAvailability(LocalDateTime.parse(startDateTime));
     }

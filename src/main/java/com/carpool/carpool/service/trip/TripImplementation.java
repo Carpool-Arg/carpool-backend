@@ -66,7 +66,7 @@ public class TripImplementation implements ITripService{
 
         //Validacion para comprobar que no existe otro viaje programado para el mismo vehiculo en la misma fecha y hora
         if (hasATripPlanned(tripRequestDTO.getStartDateTime())) {
-            throw new ConflictException("Ya existe un viaje programado para este conductor en la misma fecha y hora.");
+            throw new ConflictException("Ya tenés un viaje programado en la misma fecha y hora.");
         }
 
         //Validaciones para las paradas intermedias
@@ -87,9 +87,24 @@ public class TripImplementation implements ITripService{
     }
 
     @Override
+    public Response<TripResponseDTO> getTripDetails(Long id) {
+        Trip trip = tripRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("El viaje no existe."));
+
+        User user = trip.getVehicle().getDriver().getUser();
+
+        String driverFullName = user.getName() +
+                " " + user.getLastname();
+
+
+        TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip, driverFullName);
+        return ResponseUtils.buildOKResponse(List.of("Viaje encontrado con éxito"), tripResponseDTO);
+    }
+
+    @Override
     public Response<Void> checkTripAvailability(LocalDateTime startDateTime) {
         if(hasATripPlanned(startDateTime)){
-           throw new ConflictException("Ya existe un viaje programado para este conductor y vehículo en la misma fecha y hora.");
+           throw new ConflictException("Ya tenés un viaje programado en la misma fecha y hora.");
         }else{
             return ResponseUtils.buildOKResponse(List.of("El viaje es posible"), null);
         }
@@ -170,21 +185,6 @@ public class TripImplementation implements ITripService{
         .allMatch(new HashSet<>()::add);
 
         if (!allOrderUnique) throw new ConflictException("El orden en las paradas no se puede repetir."); 
-    }
-
-    @Override
-    public Response<TripResponseDTO> getTripDetails(Long id) {
-        Trip trip = tripRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("El viaje no existe."));
-
-        User user = trip.getVehicle().getDriver().getUser();
-
-        String driverFullName = user.getName() + 
-                           " " + user.getLastname();
-        
-        
-        TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip, driverFullName);
-        return ResponseUtils.buildOKResponse(List.of("Viaje encontrado con éxito"), tripResponseDTO);
     }
 
     /**
