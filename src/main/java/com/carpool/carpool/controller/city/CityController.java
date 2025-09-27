@@ -10,14 +10,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.carpool.carpool.dto.city.CityNameRequestDTO;
 import com.carpool.carpool.dto.city.CityResponseDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.city.ICityService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -53,8 +51,8 @@ public class CityController {
         @ApiResponse(responseCode = "401", description = "No autorizado")
     })
     @GetMapping("/name")
-    public ResponseEntity<Response<CityResponseDTO>> getCityByName(@RequestBody CityNameRequestDTO cityNameRequestDTO){
-        return new ResponseEntity<>(cityService.getCityByName(cityNameRequestDTO), HttpStatus.OK);
+    public ResponseEntity<Response<CityResponseDTO>> getCityByName(@PathVariable String name){
+        return new ResponseEntity<>(cityService.getCityByName(name), HttpStatus.OK);
     }
 
 

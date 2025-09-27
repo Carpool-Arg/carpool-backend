@@ -2,7 +2,6 @@ package com.carpool.carpool.service.city;
 
 import java.util.List;
 
-import com.carpool.carpool.dto.city.CityNameRequestDTO;
 import com.carpool.carpool.dto.city.CityResponseDTO;
 import com.carpool.carpool.response.Response;
 
@@ -18,7 +17,7 @@ public interface ICityService {
      * @param cityNameRequestDTO una request con el nombre de la ciudad 
      * @return  la ciudad convertida a un objeto DTO
      */
-    Response<CityResponseDTO> getCityByName(CityNameRequestDTO cityNameRequestDTO);
+    Response<CityResponseDTO> getCityByName(String name);
 
     /**
      * Metodo para obtener localidades para autocompletar por nombre.

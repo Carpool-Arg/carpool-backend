@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.carpool.carpool.dto.city.CityNameRequestDTO;
 import com.carpool.carpool.dto.city.CityResponseDTO;
 import com.carpool.carpool.exception.BadRequestException;
 import com.carpool.carpool.exception.NoContentException;
@@ -36,8 +35,8 @@ public class CityImplementation implements ICityService {
     }
 
     @Override
-    public Response<CityResponseDTO> getCityByName(CityNameRequestDTO cityNameRequestDTO) {
-        City city = cityRepository.findByNameIgnoreCase(cityNameRequestDTO.getName())
+    public Response<CityResponseDTO> getCityByName(String name) {
+        City city = cityRepository.findByNameIgnoreCase(name)
             .orElseThrow(()-> new IllegalArgumentException("No existe una localidad con el nombre ingresado"));
         CityResponseDTO cityResponseDTO = cityMapper.convertCityToCityResponseDTO(city);
         return ResponseUtils.buildOKResponse(List.of("Localidad obtenida con éxito."), cityResponseDTO);
