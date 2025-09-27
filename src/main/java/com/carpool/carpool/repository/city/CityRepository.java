@@ -14,5 +14,5 @@ public interface CityRepository extends JpaRepository<City, Long> {
     @Query("SELECT c FROM City c WHERE LOWER(c.name) LIKE :pattern")
     List<City> findCitiesByPattern(@Param("pattern") String pattern);
 
-    Optional<City> findByNameIgnoreCase(String name); 
+    Optional<City> findByName(String name); 
 }   

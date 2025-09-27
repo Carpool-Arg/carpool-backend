@@ -50,7 +50,7 @@ public class CityController {
         @ApiResponse(responseCode = "400", description = "No existe una localidad con el nombre ingresado"),
         @ApiResponse(responseCode = "401", description = "No autorizado")
     })
-    @GetMapping("/name")
+    @GetMapping("/name/{name}")
     public ResponseEntity<Response<CityResponseDTO>> getCityByName(@PathVariable String name){
         return new ResponseEntity<>(cityService.getCityByName(name), HttpStatus.OK);
     }
