@@ -79,7 +79,7 @@ public class TripImplementation implements ITripService{
             .state(stateCreate)
         .build();
         
-        stateHistory.setTripState(newTrip);
+        stateHistory.setTrip(newTrip);
         
         tripRepository.save(newTrip);
         stateHistoryRepository.save(stateHistory);

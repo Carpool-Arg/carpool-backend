@@ -1,5 +1,6 @@
 package com.carpool.carpool.model.stateHistory;
 
+import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.state.State;
 import com.carpool.carpool.model.trip.Trip;
 import jakarta.persistence.*;
@@ -39,12 +40,18 @@ public class StateHistory {
     @ManyToOne
     @JoinColumn(
         name = "trip_id",
-        referencedColumnName = "id",
-        nullable = false
+        referencedColumnName = "id"
     )
-    private Trip tripState;
+    private Trip trip;
 
-    //TODO: agregar reportState reservationState
+    @ManyToOne
+    @JoinColumn(
+            name = "reservation_id",
+            referencedColumnName = "id"
+    )
+    private Reservation reservation;
+
+    //TODO: agregar reportState
 
     @PrePersist
     protected void onCreate() {

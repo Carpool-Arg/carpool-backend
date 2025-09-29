@@ -39,7 +39,7 @@ public class Trip {
     @Column(name="seat_price", nullable = false)
     private double seatPrice;
 
-    @OneToMany(mappedBy = "tripState", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StateHistory> stateHistory;
 
     @OneToMany(mappedBy = "trip",cascade = CascadeType.ALL,orphanRemoval = true)

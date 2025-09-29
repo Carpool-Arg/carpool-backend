@@ -15,7 +15,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum ScopeEnum {
     
-    TRIP("Viaje");
+    TRIP("Viaje"),
+    RESERVATION("Reserva");
 
     private final String typeScope;
 }
