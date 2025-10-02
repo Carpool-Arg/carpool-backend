@@ -13,6 +13,13 @@ public interface ICityService {
     Response<CityResponseDTO> getCityById(Long id);
 
     /**
+     * Metodo para obtener una localidad por su nombre.
+     * @param cityNameRequestDTO una request con el nombre de la ciudad 
+     * @return  la ciudad convertida a un objeto DTO
+     */
+    Response<CityResponseDTO> getCityByName(String name);
+
+    /**
      * Metodo para obtener localidades para autocompletar por nombre.
      * @param name nombre de la localidad a buscar (mínimo 2 caracteres)
      * @param limit cantidad máxima de resultados a devolver

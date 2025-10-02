@@ -12,6 +12,7 @@ import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.repository.city.CityRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.utils.ResponseUtils;
+import static com.carpool.carpool.utils.TextUtils.normalize;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,6 +34,14 @@ public class CityImplementation implements ICityService {
 
         return ResponseUtils.buildOKResponse(List.of("Localidad obtenida con éxito."), cityResponseDTO);
     }
+
+    @Override
+    public Response<CityResponseDTO> getCityByName(String name) {
+        City city = cityRepository.findByName(normalize(name))
+            .orElseThrow(()-> new IllegalArgumentException("No existe una localidad con el nombre ingresado"));
+        CityResponseDTO cityResponseDTO = cityMapper.convertCityToCityResponseDTO(city);
+        return ResponseUtils.buildOKResponse(List.of("Localidad obtenida con éxito."), cityResponseDTO);
+    }  
 
 
     @Override
@@ -61,6 +70,6 @@ public class CityImplementation implements ICityService {
         }
             
         return ResponseUtils.buildOKResponse(List.of("Localidades obtenidas con éxito."), cityResponseDTO);
-    }  
+    }
         
 }
