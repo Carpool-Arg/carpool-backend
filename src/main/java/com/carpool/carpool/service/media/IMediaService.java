@@ -27,4 +27,11 @@ public interface IMediaService {
      * @param idUser Id del usuario propietario del recurso del tipo {@link Long}
      */
     Response<Void> deleteFileUser(Long idUser);
+
+    /**
+     * Metodo encargado de obtener la URL de la foto de perfil de un usuario por su ID.
+     * @param idUser Id del usuario del tipo {@link Long}
+     * @return {@link String} con la URL del archivo.
+     */
+    String getProfilePictureUrlByUserId(Long idUser);
 }

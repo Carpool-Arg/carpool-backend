@@ -3,6 +3,8 @@ package com.carpool.carpool.service.trip;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
+
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -10,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
+import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
+import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.enums.trip.BaggageEnum;
@@ -45,6 +49,9 @@ public class TripImplementation implements ITripService{
     private final DriverRepository driverRepository;
     private final StateRepository stateRepository;
     private final StateHistoryRepository stateHistoryRepository;
+
+    //ID por defecto de la ciudad de Cordoba, se utiliza cuando el usuario no envia su ciudad actual en el feed inicial
+    public static final Long DEFAULT_CITY_ID = 232L;
     
     @Override
     @Transactional
@@ -96,8 +103,9 @@ public class TripImplementation implements ITripService{
         String driverFullName = user.getName() +
                 " " + user.getLastname();
 
-
-        TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip, driverFullName);
+        Double driverRating = trip.getVehicle().getDriver().getRating();
+        
+        TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip, driverFullName, driverRating);
         return ResponseUtils.buildOKResponse(List.of("Viaje encontrado con éxito"), tripResponseDTO);
     }
 
@@ -108,6 +116,75 @@ public class TripImplementation implements ITripService{
         }else{
             return ResponseUtils.buildOKResponse(List.of("El viaje es posible"), null);
         }
+    }
+
+    @Override
+    public Response<List<TripSearchResponseDTO>> getInitialFeed(Long userCityId, int limit) {
+       
+        String defaultMessage = null;
+
+        if (userCityId == null) {
+            userCityId = DEFAULT_CITY_ID;
+            defaultMessage = "No se proporcionó la ciudad del usuario, se utilizó la ciudad por defecto (CÓRDOBA) para el feed.";
+        }
+                
+        List<Trip> trips = tripRepository.findTripsForInitialFeed(userCityId);
+
+         if (trips.size() > limit) {
+            trips = trips.subList(0, limit);
+        }
+
+        List<TripSearchResponseDTO> responseDTOs = trips.stream()
+            .map(tripMapper::converTripToTripSearchResponseDTO)
+            .collect(Collectors.toList());
+        
+        String message;
+        if (responseDTOs.isEmpty()) {
+            message = "No se encontraron más viajes que coincidan con los criterios.";
+        } else {
+            message = String.format("Se cargaron %d viajes.", responseDTOs.size());
+        }
+
+        if (defaultMessage != null) {
+            message = defaultMessage + " " + message;
+        }
+
+        return ResponseUtils.buildOKResponse(List.of(message), responseDTOs);
+
+    }
+
+    @Override
+    public Response<List<TripSearchResponseDTO>> searchTrips(TripSearchRequestDTO request, int limit) {
+        
+        if (request.getOriginCityId() == null || request.getDestinationCityId() == null) {
+            throw new ConflictException("Los campos de origen y destino son obligatorios para la búsqueda de viajes.");
+        }
+        
+        List<Trip> trips = tripRepository.findFilteredTrips(
+            request.getOriginCityId(),
+            request.getDestinationCityId(),
+            request.getDepartureDate(),
+            request.getMinPrice(),
+            request.getMaxPrice(),
+            request.getDriverRating()
+        );
+
+        if (trips.size() > limit) {
+            trips = trips.subList(0, limit);
+        }
+        
+        List<TripSearchResponseDTO> responseDTOs = trips.stream()
+            .map(tripMapper::converTripToTripSearchResponseDTO)
+            .collect(Collectors.toList());
+
+        String message;
+        if (responseDTOs.isEmpty()) {
+            message = "No se encontraron más viajes que coincidan con los criterios.";
+        } else {
+            message = String.format("Se cargaron %d viajes.", responseDTOs.size());
+        }
+ 
+        return ResponseUtils.buildOKResponse(List.of(message), responseDTOs);
     }
 
     /**
@@ -213,6 +290,4 @@ public class TripImplementation implements ITripService{
 
         return tripRepository.existsByVehicleDriverIdAndStartTripDateTime(driver.getId(), startDateTime);
     }
-
-   
 }

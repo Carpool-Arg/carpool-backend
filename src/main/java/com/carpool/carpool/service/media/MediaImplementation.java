@@ -105,6 +105,24 @@ public class MediaImplementation implements IMediaService{
             throw new RuntimeException("Error al eliminar archivo");
         }
     }
+    
+    @Override
+    public String getProfilePictureUrlByUserId(Long idUser) {
+        Optional<Media> mediaOptional = mediaRepository.findByUserIdAndCategory(idUser, CategoryMediaEnum.PROFILE);
+                
+        if (mediaOptional.isEmpty()) {
+            return null; 
+        }
+        
+        Media media = mediaOptional.get();
+
+        try {
+            return generatePresignedUrl(media);
+        } catch (Exception e) {
+            LOGGER.error("Error al generar URL pre-firmada para el usuario {}", idUser, e);
+            return null; 
+        }
+    }
 
     /**
      * Metodo encargado de generar la url del archivo para que pueda ser accedido

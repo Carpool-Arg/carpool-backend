@@ -3,6 +3,7 @@ package com.carpool.carpool.dto.trip;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.carpool.carpool.dto.driver.DriverSearchResponseDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopResponseDTO;
 
 import lombok.Builder;
@@ -10,14 +11,12 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class TripResponseDTO {
-    private Long id;
-    private String driverName;
-    private Double driverRating;
-    private List<TripStopResponseDTO> tripStops;
-    private LocalDateTime startDateTime;
-    private int availableSeat;
-    private String availableBaggage;
-    private double seatPrice;
+public class TripSearchResponseDTO {
 
+    private DriverSearchResponseDTO driverInfo;
+    private LocalDateTime startDateTime;
+    private List<TripStopResponseDTO> tripStops;
+    private int availableSeat;
+    private double seatPrice;
+    
 }

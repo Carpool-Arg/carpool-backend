@@ -25,6 +25,8 @@ public class Driver {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Double rating;
+
     private String licenseClass;
 
     private LocalDate licenseExpirationDate;
