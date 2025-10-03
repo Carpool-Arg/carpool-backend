@@ -120,12 +120,12 @@ public class TripImplementation implements ITripService{
 
     @Override
     public Response<List<TripSearchResponseDTO>> getInitialFeed(Long userCityId, int limit) {
-       
-        String defaultMessage = null;
+
+        String message;
 
         if (userCityId == null) {
             userCityId = DEFAULT_CITY_ID;
-            defaultMessage = "No se proporcionó la ciudad del usuario, se utilizó la ciudad por defecto (CÓRDOBA) para el feed.";
+            message = "No se proporcionó una ciudad actual. Se muestran viajes desde Córdoba por defecto.";
         }
                 
         List<Trip> trips = tripRepository.findTripsForInitialFeed(userCityId);
@@ -138,15 +138,11 @@ public class TripImplementation implements ITripService{
             .map(tripMapper::converTripToTripSearchResponseDTO)
             .collect(Collectors.toList());
         
-        String message;
+        
         if (responseDTOs.isEmpty()) {
-            message = "No se encontraron más viajes que coincidan con los criterios.";
+            message = "No se encontraron viajes para tu ubicación actual.";
         } else {
-            message = String.format("Se cargaron %d viajes.", responseDTOs.size());
-        }
-
-        if (defaultMessage != null) {
-            message = defaultMessage + " " + message;
+            message = String.format("Se cargaron los siguientes viajes.", responseDTOs.size());
         }
 
         return ResponseUtils.buildOKResponse(List.of(message), responseDTOs);

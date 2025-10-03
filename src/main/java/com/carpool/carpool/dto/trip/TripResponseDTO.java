@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.carpool.carpool.dto.trip.tripStop.TripStopResponseDTO;
+import com.carpool.carpool.dto.vehicle.VehicleResponseTripDTO;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -15,6 +16,7 @@ public class TripResponseDTO {
     private String driverName;
     private Double driverRating;
     private List<TripStopResponseDTO> tripStops;
+    private VehicleResponseTripDTO vehicle;
     private LocalDateTime startDateTime;
     private int availableSeat;
     private String availableBaggage;

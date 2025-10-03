@@ -11,6 +11,7 @@ import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
 import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopResponseDTO;
+import com.carpool.carpool.dto.vehicle.VehicleResponseTripDTO;
 import com.carpool.carpool.enums.trip.BaggageEnum;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.model.driver.Driver;
@@ -56,18 +57,31 @@ public class TripMapper {
     }
 
     public TripResponseDTO convertTripToTripResponseDTO(Trip trip, String driverName, Double driverRating) {
-       List<TripStopResponseDTO> tripStopDTOs = trip.getTripStops().stream()
-        .map(tripStop -> TripStopResponseDTO.builder()
-            .cityName(tripStop.getCity().getName())
-            .observation(tripStop.getObservation())
-            .build())
-        .collect(Collectors.toList());
+       List<TripStopResponseDTO> tripStopResponseDTOs = trip.getTripStops().stream()
+            .map(tripStop -> TripStopResponseDTO.builder()
+                .cityName(tripStop.getCity().getName())
+                .observation(tripStop.getObservation())
+                .order(tripStop.getStopOrder())
+                .isStart(tripStop.isStart())
+                .isDestination(tripStop.isDestination())
+                .build())
+            .collect(Collectors.toList());
+        
+        Vehicle vehicleEntity = trip.getVehicle();
+        VehicleResponseTripDTO vehicle = VehicleResponseTripDTO.builder()
+            .domain(vehicleEntity.getDomain())
+            .vehicleTypeName(vehicleEntity.getVehicleType().getName())
+            .brand(vehicleEntity.getBrand())
+            .model(vehicleEntity.getModel())
+            .color(vehicleEntity.getColor())
+            .build();
 
         return TripResponseDTO.builder()
             .id(trip.getId())
             .driverName(driverName)
             .driverRating(driverRating)
-            .tripStops(tripStopDTOs)
+            .tripStops(tripStopResponseDTOs)
+            .vehicle(vehicle)
             .startDateTime(trip.getStartTripDateTime())
             .availableSeat(trip.getAvailableSeat())
             .availableBaggage(trip.getAvailableBaggage().toString())

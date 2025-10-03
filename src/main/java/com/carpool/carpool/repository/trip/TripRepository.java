@@ -38,16 +38,16 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     /*
     * Busca viajes para el caso de la busqueda con filtros aplicados 
     */
-   @Query(value = "SELECT t.* FROM trip t " +
+    @Query(value = "SELECT t.* FROM trip t " +
         "JOIN vehicles v ON v.id = t.vehicle_id " +
         "JOIN driver d ON d.id = v.driver_id " + 
         
         "WHERE t.available_seat > 0 " +
         
+        // Filtro de fecha 
+        "AND ((:departureDate)::date IS NULL OR t.start_date_time::date = :departureDate) " +
         
-        "AND ((:departureDate)::date IS NULL OR t.start_date_time::date = :departureDate) "+
-        
-        // Filtro de ruta obligatorio 
+        // Filtro de ruta obligatorio
         "AND EXISTS (SELECT 1 FROM trip_stop ts1, trip_stop ts2 " +
         "           WHERE ts1.city_id = :originCityId " + 
         "           AND ts2.city_id = :destinationCityId " + 
@@ -55,12 +55,11 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         "           AND t.id = ts1.trip_id " +
         "           AND t.id = ts2.trip_id) " +
         
-        // Filtros opcionales 
+        // Filtros opcionales de PRECIO (no hay cambios)
         "AND (:minPrice IS NULL OR t.seat_price >= :minPrice) " + 
         "AND (:maxPrice IS NULL OR t.seat_price <= :maxPrice) " + 
-        "AND (:driverRating IS NULL OR d.rating >= :driverRating) " + 
-        
-        "ORDER BY t.start_date_time ASC",
+    
+        "ORDER BY d.rating DESC, t.start_date_time ASC",
         nativeQuery = true)
     List<Trip> findFilteredTrips(
         @Param("originCityId") Long originCityId,
