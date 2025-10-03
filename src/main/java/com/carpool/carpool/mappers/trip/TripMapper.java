@@ -27,6 +27,7 @@ public class TripMapper {
         Trip trip = Trip.builder()
             .startTripDateTime(tripRequestDTO.getStartDateTime())
             .availableSeat(tripRequestDTO.getAvailableSeat())
+            .currentAvailableSeats(tripRequestDTO.getAvailableSeat())
             .availableBaggage(BaggageEnum.valueOf(tripRequestDTO.getAvailableBaggage()))
             .vehicle(vehicle)
             .seatPrice(tripRequestDTO.getSeatPrice())

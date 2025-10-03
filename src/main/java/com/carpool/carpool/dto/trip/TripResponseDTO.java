@@ -17,6 +17,7 @@ public class TripResponseDTO {
     private List<TripStopResponseDTO> tripStops;
     private LocalDateTime startDateTime;
     private int availableSeat;
+    private int currentAvailableSeats;
     private String availableBaggage;
     private double seatPrice;
 

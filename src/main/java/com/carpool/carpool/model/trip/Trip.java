@@ -32,6 +32,9 @@ public class Trip {
     @Column(name="available_seat", nullable = false)
     private int availableSeat;
 
+    @Column(name="current_available_seats",nullable = false)
+    private int currentAvailableSeats;
+
     @Enumerated(EnumType.STRING)
     @Column(name="available_baggage", nullable = false)
     private BaggageEnum availableBaggage;
