@@ -34,6 +34,7 @@ public class TripMapper {
         Trip trip = Trip.builder()
             .startTripDateTime(tripRequestDTO.getStartDateTime())
             .availableSeat(tripRequestDTO.getAvailableSeat())
+            .currentAvailableSeats(tripRequestDTO.getAvailableSeat())
             .availableBaggage(BaggageEnum.valueOf(tripRequestDTO.getAvailableBaggage()))
             .vehicle(vehicle)
             .seatPrice(tripRequestDTO.getSeatPrice())
@@ -59,11 +60,12 @@ public class TripMapper {
     public TripResponseDTO convertTripToTripResponseDTO(Trip trip, String driverName, Double driverRating) {
        List<TripStopResponseDTO> tripStopResponseDTOs = trip.getTripStops().stream()
             .map(tripStop -> TripStopResponseDTO.builder()
+                .cityId(tripStop.getCity().getId())
                 .cityName(tripStop.getCity().getName())
                 .observation(tripStop.getObservation())
                 .order(tripStop.getStopOrder())
-                .isStart(tripStop.isStart())
-                .isDestination(tripStop.isDestination())
+                .start(tripStop.isStart())
+                .destination(tripStop.isDestination())
                 .build())
             .collect(Collectors.toList());
         
@@ -84,6 +86,7 @@ public class TripMapper {
             .vehicle(vehicle)
             .startDateTime(trip.getStartTripDateTime())
             .availableSeat(trip.getAvailableSeat())
+            .currentAvailableSeats(trip.getCurrentAvailableSeats())
             .availableBaggage(trip.getAvailableBaggage().toString())
             .seatPrice(trip.getSeatPrice())
             .build();

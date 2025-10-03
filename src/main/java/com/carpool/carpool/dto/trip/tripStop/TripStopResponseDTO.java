@@ -6,9 +6,10 @@ import lombok.Getter;
 @Getter
 @Builder
 public class TripStopResponseDTO {
+    private Long cityId;
     private String cityName;
     private String observation;
     private int order;
-    private boolean isStart;
-    private boolean isDestination;
+    private boolean start;
+    private boolean destination;
 }

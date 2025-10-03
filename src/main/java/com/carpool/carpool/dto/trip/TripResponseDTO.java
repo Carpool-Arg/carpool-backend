@@ -19,6 +19,7 @@ public class TripResponseDTO {
     private VehicleResponseTripDTO vehicle;
     private LocalDateTime startDateTime;
     private int availableSeat;
+    private int currentAvailableSeats;
     private String availableBaggage;
     private double seatPrice;
 
