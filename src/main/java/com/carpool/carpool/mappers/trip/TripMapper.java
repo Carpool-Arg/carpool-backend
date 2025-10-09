@@ -92,8 +92,13 @@ public class TripMapper {
 
     }
 
-    public TripResponseDTO convertTripToTripResponseDTO(Trip trip, String driverName, Double driverRating) {
-       List<TripStopResponseDTO> tripStopResponseDTOs = trip.getTripStops().stream()
+    public TripResponseDTO convertTripToTripResponseDTO(Trip trip) {
+       
+        Driver driver = trip.getVehicle().getDriver();
+        User user = driver.getUser();
+        String profilePictureUrl = mediaService.getProfilePictureUrlByUserId(user.getId());
+       
+        List<TripStopResponseDTO> tripStopResponseDTOs = trip.getTripStops().stream()
             .map(tripStop -> TripStopResponseDTO.builder()
                 .cityId(tripStop.getCity().getId())
                 .cityName(tripStop.getCity().getName())
@@ -113,10 +118,15 @@ public class TripMapper {
             .color(vehicleEntity.getColor())
             .build();
 
+        DriverSearchResponseDTO driverSearchDTO = DriverSearchResponseDTO.builder()
+            .fullName(user.getName() + " " + user.getLastname()) 
+            .profileImageUrl(profilePictureUrl)
+            .rating(driver.getRating()) 
+            .build();
+
         return TripResponseDTO.builder()
             .id(trip.getId())
-            .driverName(driverName)
-            .driverRating(driverRating)
+            .driverInfo(driverSearchDTO)
             .tripStops(tripStopResponseDTOs)
             .vehicle(vehicle)
             .startDateTime(trip.getStartTripDateTime())
