@@ -36,18 +36,18 @@ public interface ITripService {
     /**
      *  Metodo para obtener el feed inicial de viajes.
      *  Este feed muestra viajes con asientos disponibles que pasen por la localidad del usuario
-     * @param userCityId
-     * @param limit
-     * @param offset
+     * @param userCityId El ID de la ciudad del usuario 
+     * @param userId El ID del usuario que solicita el feed
+     * @param limit El numero maximo de resultados a devolver
      * @return Response<List<TripSearchResponseDTO>> devolviendo la lista de viajes encontrados
      */
     Response<List<TripSearchResponseDTO>> getInitialFeed(Long userCityId, int limit);
     
     /**
      * Metodo para buscar viajes con filtros aplicados. 
-     * @param request
-     * @param limit
-     * @param offset
+     * @param request Objeto que contiene los filtros de busqueda
+     * @param userId El ID del usuario que realiza la busqueda
+     * @param limit El numero maximo de resultados a devolver
      * @return Response<List<TripSearchResponseDTO>> devolviendo la lista de viajes encontrados
      */
     Response<List<TripSearchResponseDTO>> searchTrips(TripSearchRequestDTO request, int limit);

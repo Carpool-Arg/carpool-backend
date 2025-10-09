@@ -18,5 +18,7 @@ public class TripSearchRequestDTO {
     private Double minPrice;
     private Double maxPrice;
     private Double driverRating; 
+
+    private Boolean orderByDriverRating;
     
 }

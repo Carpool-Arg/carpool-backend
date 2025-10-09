@@ -29,11 +29,14 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
      */
     @Query("SELECT t FROM Trip t " +
         "JOIN t.tripStops ts " +
+        "JOIN t.vehicle v " +          
+        "JOIN v.driver d " +
         "WHERE t.availableSeat > 0 " +
         "AND ts.city.id = :cityId " +
+        "AND d.user.id != :userId " +
         "AND ts.stopOrder < (SELECT MAX(tsMax.stopOrder) FROM TripStop tsMax WHERE tsMax.trip.id = t.id) " +
         "ORDER BY t.startTripDateTime  ASC")
-    List<Trip> findTripsForInitialFeed(@Param("cityId") Long cityId);
+    List<Trip> findTripsForInitialFeed(@Param("cityId") Long cityId, @Param("userId") Long userId);
     
     /*
     * Busca viajes para el caso de la busqueda con filtros aplicados 
@@ -43,6 +46,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         "JOIN driver d ON d.id = v.driver_id " + 
         
         "WHERE t.available_seat > 0 " +
+
+        "AND d.user_id != :userId " + 
         
         // Filtro de fecha 
         "AND ((:departureDate)::date IS NULL OR t.start_date_time::date = :departureDate) " +
@@ -54,12 +59,16 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         "           AND ts1.stop_order < ts2.stop_order " +
         "           AND t.id = ts1.trip_id " +
         "           AND t.id = ts2.trip_id) " +
-        
-        // Filtros opcionales de PRECIO (no hay cambios)
+        // Filtro opcional de calificacion del driver
+        "AND (:driverRating IS NULL OR d.rating >= :driverRating) " +
+        // Filtros opcionales de precio 
         "AND (:minPrice IS NULL OR t.seat_price >= :minPrice) " + 
         "AND (:maxPrice IS NULL OR t.seat_price <= :maxPrice) " + 
-    
-        "ORDER BY d.rating DESC, t.start_date_time ASC",
+
+        //Ordenar por calificacion del driver opcionalmente o por fecha de salida
+        "ORDER BY " +
+        "CASE WHEN :orderByRating = TRUE THEN d.rating ELSE NULL END DESC, " + 
+        "t.start_date_time ASC",
         nativeQuery = true)
     List<Trip> findFilteredTrips(
         @Param("originCityId") Long originCityId,
@@ -67,6 +76,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         @Param("departureDate") java.time.LocalDate departureDate, 
         @Param("minPrice") Double minPrice,
         @Param("maxPrice") Double maxPrice,
-        @Param("driverRating") Double driverRating
+        @Param("driverRating") Double driverRating,
+        @Param("userId") Long userId,
+        @Param("orderByRating") Boolean orderByRating 
     );
 }
