@@ -13,7 +13,7 @@ public class ReservationRequestDTO {
     private Long startCity;
 
     @NotNull(message = "Debe indicar la localidad destino")
-    private Long destintationCity;
+    private Long destinationCity;
 
     @NotNull(message = "El equipaje es un dato obligatorio.")
     private boolean baggage;
