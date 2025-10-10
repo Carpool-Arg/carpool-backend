@@ -1,8 +1,10 @@
 package com.carpool.carpool.service.reservation;
 
 import com.carpool.carpool.dto.reservation.ReservationRequestDTO;
+import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
+import com.carpool.carpool.mappers.reservation.ReservationMapper;
 import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.state.State;
@@ -11,17 +13,20 @@ import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.repository.reservation.ReservationRepository;
+import com.carpool.carpool.repository.state.StateRepository;
 import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
 import com.carpool.carpool.repository.trip.TripRepository;
 import com.carpool.carpool.repository.trip.stop.TripStopRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.user.IUserService;
+import com.carpool.carpool.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -33,12 +38,14 @@ public class ReservationImplementation implements  IReservationService{
     private final UserRepository userRepository;
     private final ReservationRepository reservationRepository;
     private final TripStopRepository  tripStopRepository;
+    private final ReservationMapper reservationMapper;
+    private final StateRepository stateRepository;
 
-    /*
-
-     * */
     @Override
     public Response<Void> createReservation(ReservationRequestDTO reservationRequestDTO) {
+        State statePending = stateRepository.findByNameAndScope("PENDING", ScopeEnum.RESERVATION)
+                .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para crear la reserva."));
+
         Trip trip = tripRepository.findById(reservationRequestDTO.getTrip())
                 .orElseThrow(()->new ResourceNotFoundException("El viaje no existe"));
 
@@ -52,10 +59,28 @@ public class ReservationImplementation implements  IReservationService{
             throw new ConflictException("Ya tenés una reserva asociada, no se permiten múltiples solicitudes.");
         }
 
-        cityValidations(reservationRequestDTO.getStartCity(), reservationRequestDTO.getDestinationCity(), trip);
+        // Validaciones de las ciudades
+        TripStop[] tripStops =  cityValidations(reservationRequestDTO.getStartCity(), reservationRequestDTO.getDestinationCity(), trip);
 
+        Reservation newReservation = reservationMapper.convertReservationRequestDTOToReservation(
+                reservationRequestDTO,
+                userAuth,
+                trip,
+                tripStops[0],
+                tripStops[1]
+        );
 
-        return null;
+        StateHistory stateHistory = StateHistory.builder()
+                .state(statePending)
+        .build();
+
+        stateHistory.setReservation(newReservation);
+
+        reservationRepository.save(newReservation);
+
+        stateHistoryRepository.save(stateHistory);
+
+        return ResponseUtils.buildOKResponse(List.of("Viaje creado con éxito") , null);
     }
 
     /**
@@ -68,10 +93,15 @@ public class ReservationImplementation implements  IReservationService{
      * @param Trip trip viaje que se quiere reservar
      */
     private void tripValidations(Trip trip){
-        // 1. obtener el estado actual (sin fecha fin)
+        // 1. Validar que no esté lleno
+        if (trip.getCurrentAvailableSeats() == 0){
+            throw new ConflictException("Lo sentimos, no es posible reservar ya que el viaje está lleno.");
+        }
+
+        // 2. obtener el estado actual (sin fecha fin)
         Optional<StateHistory> currentStateOptional = stateHistoryRepository.findByTripAndFinishDateTimeIsNull(trip);
 
-        //2. Si no se encuentra un estado actual, obtener el ultimo estado con fecha fin
+        //3. Si no se encuentra un estado actual, obtener el ultimo estado con fecha fin
         StateHistory stateHistory = currentStateOptional
                 .orElseGet(() -> stateHistoryRepository
                         .findTopByTripAndFinishDateTimeIsNotNullOrderByFinishDateTimeDesc(trip)
@@ -79,7 +109,7 @@ public class ReservationImplementation implements  IReservationService{
 
         State currentState = stateHistory.getState();
 
-        // 3. validar estados
+        // 4. validar estados
         if (!currentState.getName().equals("CREATED")){
             throw new ConflictException("No es posible reservar el viaje, debido a su estado actual.");
         }
@@ -94,9 +124,10 @@ public class ReservationImplementation implements  IReservationService{
      * @param Long startCity ciduad origen
      * @param Long destinationCity ciduad destino
      * @param Trip trip viaje para el cual se solicita la reserva
+     * @return TripStop[] Arreglo con los TripStops correspondientes a las ciudades de origen y destino válidas.
      * @throws ConflictException si las ciudades son iguales, si no existen en tripStop o no respetan el orden.
      */
-    private void cityValidations(Long startCity, Long destinationCity, Trip trip){
+    private TripStop[] cityValidations(Long startCity, Long destinationCity, Trip trip){
         if (Objects.equals(startCity, destinationCity)){
             throw new ConflictException("La ciudad origen y destino no pueden ser iguales");
         }
@@ -110,6 +141,9 @@ public class ReservationImplementation implements  IReservationService{
         if (stopStartCity.getStopOrder() > stopDestinationCity.getStopOrder()){
             throw new ConflictException("El orden de las ciudades seleccionadas no es válido para este viaje.");
         }
+
+        // Retornar un arreglo de TripStop con las ciudades de inicio y destino
+        return new TripStop[] { stopStartCity, stopDestinationCity };
     }
 
     /**

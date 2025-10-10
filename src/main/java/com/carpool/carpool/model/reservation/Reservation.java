@@ -58,7 +58,7 @@ public class Reservation {
     private TripStop destinationCity;
 
     @Column(name="baggage", nullable = false)
-    private int baggage;
+    private boolean baggage;
 
     @PrePersist
     protected void onCreate() {
