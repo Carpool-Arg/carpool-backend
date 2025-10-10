@@ -46,11 +46,13 @@ public class ReservationImplementation implements  IReservationService{
         State statePending = stateRepository.findByNameAndScope("PENDING", ScopeEnum.RESERVATION)
                 .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para crear la reserva."));
 
+        //Validacioens de viaje
         Trip trip = tripRepository.findById(reservationRequestDTO.getTrip())
                 .orElseThrow(()->new ResourceNotFoundException("El viaje no existe"));
 
         tripValidations(trip);
 
+        //Validaciones de usuario
         User userAuth = this.getAuthenticatedActiveUser();
 
         Optional<Reservation> existingReservation = reservationRepository.findByUserId(userAuth.getId());
@@ -70,6 +72,7 @@ public class ReservationImplementation implements  IReservationService{
                 tripStops[1]
         );
 
+        //Creacion de reserva
         StateHistory stateHistory = StateHistory.builder()
                 .state(statePending)
         .build();
@@ -80,7 +83,7 @@ public class ReservationImplementation implements  IReservationService{
 
         stateHistoryRepository.save(stateHistory);
 
-        return ResponseUtils.buildOKResponse(List.of("Viaje creado con éxito") , null);
+        return ResponseUtils.buildOKResponse(List.of("Reserva registrada éxito, se encuentra pendiente a confirmación.") , null);
     }
 
     /**
@@ -110,7 +113,7 @@ public class ReservationImplementation implements  IReservationService{
         State currentState = stateHistory.getState();
 
         // 4. validar estados
-        if (!currentState.getName().equals("CREATED")){
+        if (!currentState.getName().equals("CREATE")){
             throw new ConflictException("No es posible reservar el viaje, debido a su estado actual.");
         }
     }
