@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -27,6 +27,7 @@ import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.model.vehicle.Vehicle;
+import com.carpool.carpool.repository.city.CityRepository;
 import com.carpool.carpool.repository.driver.DriverRepository;
 import com.carpool.carpool.repository.state.StateRepository;
 import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
@@ -50,9 +51,10 @@ public class TripImplementation implements ITripService{
     private final DriverRepository driverRepository;
     private final StateRepository stateRepository;
     private final StateHistoryRepository stateHistoryRepository;
+    private final CityRepository cityRepository;
 
-    //ID por defecto de la ciudad de Villa María, se utiliza cuando el usuario no envia su ciudad actual en el feed inicial
-    public static final Long DEFAULT_CITY_ID = 409L;
+    @Value("${app.trip.default-city-id}")
+    private Long defaultCityId;
     
     @Override
     @Transactional
@@ -127,8 +129,8 @@ public class TripImplementation implements ITripService{
         String infoMessage = null;
 
         if (userCityId == null) {
-            userCityId = DEFAULT_CITY_ID;
-            infoMessage = "No se proporcionó la ubicación actual del usuario, por lo que se cargaron los viajes que salen o pasan por Villa María";
+            userCityId = this.defaultCityId;
+            infoMessage = "No se proporcionó la ubicación actual del usuario, por lo que se cargaron los viajes que salen o pasan por " + cityRepository.findById(defaultCityId).get().getName();
         }
                 
         List<Trip> trips = tripRepository.findTripsForInitialFeed(userCityId, userId);
