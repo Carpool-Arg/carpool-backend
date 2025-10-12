@@ -3,7 +3,7 @@ package com.carpool.carpool.utils;
 import com.carpool.carpool.enums.token.TokenStateEnum;
 import com.carpool.carpool.enums.token.TokenTypeEnum;
 import com.carpool.carpool.model.user.User;
-import com.carpool.carpool.model.user.UserToken;
+import com.carpool.carpool.model.user.token.UserToken;
 import com.carpool.carpool.repository.user.token.UserTokenRepository;
 import org.apache.commons.lang3.RandomStringUtils;
 

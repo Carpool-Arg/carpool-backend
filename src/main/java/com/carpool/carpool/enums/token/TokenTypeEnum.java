@@ -11,6 +11,6 @@ package com.carpool.carpool.enums.token;
 public enum TokenTypeEnum {
     ACTIVATION,
     EMAIL_CHANGE,
-    PASSWORD_CHANGE
-
+    PASSWORD_CHANGE,
+    PUSH_NOTIFICATION,
 }

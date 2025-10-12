@@ -46,7 +46,7 @@ public class ReservationImplementation implements  IReservationService{
         State statePending = stateRepository.findByNameAndScope("PENDING", ScopeEnum.RESERVATION)
                 .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para crear la reserva."));
 
-        //Validacioens de viaje
+        //Validaciones de viaje
         Trip trip = tripRepository.findById(reservationRequestDTO.getTrip())
                 .orElseThrow(()->new ResourceNotFoundException("El viaje no existe"));
 
@@ -155,7 +155,7 @@ public class ReservationImplementation implements  IReservationService{
      * @return User
      * @throws ResourceNotFoundException si no se encuentra un usuario autenticado.
      */
-    public User getAuthenticatedActiveUser() {
+    private User getAuthenticatedActiveUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         return userRepository.findByUsernameAndDeletedAtIsNull(username)

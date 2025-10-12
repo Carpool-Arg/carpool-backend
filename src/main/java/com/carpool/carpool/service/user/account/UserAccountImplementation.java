@@ -10,7 +10,7 @@ import com.carpool.carpool.enums.token.TokenTypeEnum;
 import com.carpool.carpool.enums.user.UserStateEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
-import com.carpool.carpool.model.user.UserToken;
+import com.carpool.carpool.model.user.token.UserToken;
 import com.carpool.carpool.repository.user.token.UserTokenRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.email.IEmailService;

@@ -7,7 +7,7 @@ import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.exception.UnauthorizedException;
 import com.carpool.carpool.model.user.User;
-import com.carpool.carpool.model.user.UserToken;
+import com.carpool.carpool.model.user.token.UserToken;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.user.token.UserTokenRepository;
 import com.carpool.carpool.utils.TokenUtils;
@@ -147,7 +147,6 @@ public class UserBaseImplementation {
                 .user(user)
                 .build();
     }
-
 
     /**
      * Metodo para validar el token de cambio de contraseña

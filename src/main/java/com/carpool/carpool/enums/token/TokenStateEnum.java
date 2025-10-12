@@ -11,5 +11,6 @@ package com.carpool.carpool.enums.token;
 public enum TokenStateEnum {
     PENDING,
     USED,
-    EXPIRED
+    EXPIRED,
+    ACTIVE
 }
