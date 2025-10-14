@@ -167,7 +167,6 @@ public class TripImplementation implements ITripService{
             request.getDepartureDate(),
             request.getMinPrice(),
             request.getMaxPrice(),
-            request.getDriverRating(),
             userId,
             request.getOrderByDriverRating()
         );

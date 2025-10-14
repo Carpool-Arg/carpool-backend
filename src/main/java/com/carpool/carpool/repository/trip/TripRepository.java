@@ -59,8 +59,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         "           AND ts1.stop_order < ts2.stop_order " +
         "           AND t.id = ts1.trip_id " +
         "           AND t.id = ts2.trip_id) " +
-        // Filtro opcional de calificacion del driver
-        "AND (:driverRating IS NULL OR d.rating >= :driverRating) " +
         // Filtros opcionales de precio 
         "AND (:minPrice IS NULL OR t.seat_price >= :minPrice) " + 
         "AND (:maxPrice IS NULL OR t.seat_price <= :maxPrice) " + 
@@ -76,7 +74,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         @Param("departureDate") java.time.LocalDate departureDate, 
         @Param("minPrice") Double minPrice,
         @Param("maxPrice") Double maxPrice,
-        @Param("driverRating") Double driverRating,
         @Param("userId") Long userId,
         @Param("orderByRating") Boolean orderByRating 
     );

@@ -76,6 +76,10 @@ public class SpringSecurityConfig {
         .requestMatchers(HttpMethod.POST, "/trip").hasRole("DRIVER")
         .requestMatchers(HttpMethod.GET, "/trip/check-trip-availability").hasRole("DRIVER")
         
+        // Los endpoints de viaje (trip) que pueden usar los pasajeros
+        .requestMatchers(HttpMethod.GET, "/trip/**").authenticated() 
+        .requestMatchers(HttpMethod.POST, "/trip/search").authenticated() 
+        
         // Todos los demas endpoints que solamente necesitan autenticación
         .anyRequest().authenticated())
         .exceptionHandling(config -> config

@@ -154,6 +154,7 @@ public class TripMapper {
             .map(tripStop -> TripStopResponseDTO.builder()
                 .cityName(tripStop.getCity().getName())
                 .observation(tripStop.getObservation())
+                .estimatedArrivalDateTime(tripStop.getEstimatedArrivalDateTime())
                 .build())
             .collect(Collectors.toList());
 
