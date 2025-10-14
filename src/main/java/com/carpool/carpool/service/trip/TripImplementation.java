@@ -101,14 +101,7 @@ public class TripImplementation implements ITripService{
         Trip trip = tripRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("El viaje no existe."));
 
-        User user = trip.getVehicle().getDriver().getUser();
-
-        String driverFullName = user.getName() +
-                " " + user.getLastname();
-
-        Double driverRating = trip.getVehicle().getDriver().getRating();
-        
-        TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip, driverFullName, driverRating);
+        TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip); 
         return ResponseUtils.buildOKResponse(List.of("Viaje encontrado con éxito"), tripResponseDTO);
     }
 

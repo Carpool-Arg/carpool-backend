@@ -1,14 +1,19 @@
 package com.carpool.carpool.dto.trip.tripStop;
 
+import java.time.LocalDateTime;
+
+
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
 public class TripStopResponseDTO {
+    private Long cityId;
     private String cityName;
     private String observation;
     private int order;
-    private boolean isStart;
-    private boolean isDestination;
+    private boolean start;
+    private boolean destination;
+    private LocalDateTime estimatedArrivalDateTime;
 }

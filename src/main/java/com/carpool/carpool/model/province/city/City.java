@@ -28,6 +28,12 @@ public class City {
     @Column(name="zip_code", nullable = false)
     private int zipCode;
 
+    @Column(name="latitude")
+    private double latitude;
+
+    @Column(name="longitude")
+    private double longitude;
+
     @ManyToOne
     @JoinColumn( name = "province_id", referencedColumnName = "id", nullable = false)
     private Province province;
