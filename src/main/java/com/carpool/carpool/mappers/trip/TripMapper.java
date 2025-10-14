@@ -102,6 +102,7 @@ public class TripMapper {
             .map(tripStop -> TripStopResponseDTO.builder()
                 .cityId(tripStop.getCity().getId())
                 .cityName(tripStop.getCity().getName())
+                .estimatedArrivalDateTime(tripStop.getEstimatedArrivalDateTime())
                 .observation(tripStop.getObservation())
                 .order(tripStop.getStopOrder())
                 .start(tripStop.isStart())
