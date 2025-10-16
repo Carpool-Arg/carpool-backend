@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -35,6 +34,7 @@ import com.carpool.carpool.repository.trip.TripRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.vehicle.VehicleRepository;
 import com.carpool.carpool.response.Response;
+import com.carpool.carpool.service.setting.IConfigService;
 import com.carpool.carpool.utils.ResponseUtils;
 
 import jakarta.transaction.Transactional;
@@ -52,9 +52,8 @@ public class TripImplementation implements ITripService{
     private final StateRepository stateRepository;
     private final StateHistoryRepository stateHistoryRepository;
     private final CityRepository cityRepository;
+    private final IConfigService configService;
 
-    @Value("${app.trip.default-city-id}")
-    private Long defaultCityId;
     
     @Override
     @Transactional
@@ -122,8 +121,8 @@ public class TripImplementation implements ITripService{
         String infoMessage = null;
 
         if (userCityId == null) {
-            userCityId = this.defaultCityId;
-            infoMessage = "No se proporcionó la ubicación actual del usuario, por lo que se cargaron los viajes que salen o pasan por " + cityRepository.findById(defaultCityId).get().getName();
+            userCityId = configService.getDefaultCityId();
+            infoMessage = "No se proporcionó la ubicación actual del usuario, por lo que se cargaron los viajes que salen o pasan por " + cityRepository.findById(userCityId).get().getName();
         }
                 
         List<Trip> trips = tripRepository.findTripsForInitialFeed(userCityId, userId);
