@@ -27,7 +27,7 @@ INSERT INTO public."province" (id, "name") VALUES (23, 'TUCUMAN') ON CONFLICT (i
 INSERT INTO public."province" (id, "name") VALUES (24, 'CIUDAD AUTONOMA DE BUENOS AIRES') ON CONFLICT (id) DO NOTHING;
 
 
-INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (1, '2651', 'ALDEA SANTA MARIA', 5) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (1, '2651', 'COLONIA SANTA MARIA', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (2, '5281', 'ALTO DE LOS QUEBRACHOS', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (3, '5199', 'AMBOY', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (4, '5299', 'AMBUL', 5) ON CONFLICT (id) DO NOTHING;
@@ -151,7 +151,7 @@ INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (121, '5119'
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (122, '6271', 'RANQUELES', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (123, '5246', 'RAYO CORTADO', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (124, '5961', 'RINCON', 5) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (125, '5233', 'ROSARIO DEL SALADILLO', 5) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (125, '5233', 'VILLA ROSARIO DEL SALADILLO', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (126, '6134', 'RIO BAMBA', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (127, '5875', 'SAGRADA FAMILIA', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (128, '2587', 'SALADILLO', 5) ON CONFLICT (id) DO NOTHING;
@@ -230,7 +230,7 @@ INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (200, '2585'
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (201, '2650', 'CANALS', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (202, '5963', 'CAPILLA DEL CARMEN', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (203, '5184', 'CAPILLA DEL MONTE', 5) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (204, '2645', 'CAPITAN GENERAL BERNARDO O', 5) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (204, '2645', 'CAPITAN GENERAL BERNARDO OHIGGINS', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (205, '5805', 'CARNERILLO', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (206, '5915', 'CARRILOBO', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (207, '2625', 'CAVANAGH', 5) ON CONFLICT (id) DO NOTHING;
@@ -259,7 +259,7 @@ INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (229, '5961'
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (230, '2189', 'CRUZ ALTA', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (231, '5280', 'CRUZ DEL EJE', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (232, '5000', 'CORDOBA', 5) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (233, '5919', 'DALMACIO VELEZ', 5) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (233, '5919', 'DALMACIO VELEZ SARSFIELD', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (234, '6271', 'DEL CAMPILLO', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (235, '5121', 'DESPENADEROS', 5) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public."city" (id,"zip_code","name",province_id) VALUES (236, '2424', 'DEVOTO', 5) ON CONFLICT (id) DO NOTHING;
