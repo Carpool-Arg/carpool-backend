@@ -35,8 +35,23 @@ public class NotificationImplementation implements INotificationService {
                 firebaseNotificationService.sendPushNotification(user,title,body);
             }
         } else {
-            // Si no hay tokens, enviar email
-            emailService.sendEmail();
+            // Enviar correo electrónico si no hay tokens activos
+            String subject = "Tienes una nueva reserva pendiente";
+            String optionalMessage = "Por favor, revisá la sección de viajes en tu cuenta de Carpool para aceptarla o rechazarla.";
+            String buttonUrl = "https://carpool.com.ar/trips"; // 🔧 cambiá por tu dominio real
+            String buttonText = "Ver viaje";
+            String messageFooter = "Gracias por utilizar Carpool.";
+
+            emailService.sendEmail(
+                    user.getEmail(),
+                    subject,
+                    title,
+                    body,
+                    optionalMessage,
+                    buttonUrl,
+                    buttonText,
+                    messageFooter
+            );
         }
     }
 }
