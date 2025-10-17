@@ -70,16 +70,13 @@ public class SpringSecurityConfig {
         .requestMatchers(HttpMethod.POST, "/auth-google/**").permitAll()
         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
         
+        
         // Endpoints para roles específicos
         .requestMatchers(HttpMethod.GET, "/vehicle-types").hasAnyRole("DRIVER", "ADMIN")
         .requestMatchers("/vehicles", "/vehicles/**").hasRole("DRIVER")
-        .requestMatchers(HttpMethod.POST, "/trip").hasRole("DRIVER")
-        .requestMatchers(HttpMethod.GET, "/trip/check-trip-availability").hasRole("DRIVER")
-        
-        // Los endpoints de viaje (trip) que pueden usar los pasajeros
-        .requestMatchers(HttpMethod.GET, "/trip/**").authenticated() 
-        .requestMatchers(HttpMethod.POST, "/trip/search").authenticated() 
-        
+        .requestMatchers("/trip", "/trip/check-trip-availability").hasRole("DRIVER")
+
+
         // Todos los demas endpoints que solamente necesitan autenticación
         .anyRequest().authenticated())
         .exceptionHandling(config -> config

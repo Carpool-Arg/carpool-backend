@@ -13,6 +13,7 @@ import com.carpool.carpool.dto.trip.TripResponseDTO;
 import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopResponseDTO;
+import com.carpool.carpool.dto.trip.tripStop.TripStopSearchResponseDTO;
 import com.carpool.carpool.dto.vehicle.VehicleResponseTripDTO;
 import com.carpool.carpool.enums.trip.BaggageEnum;
 import com.carpool.carpool.exception.ResourceNotFoundException;
@@ -150,19 +151,30 @@ public class TripMapper {
             .rating(driver.getRating()) 
             .build();
         
-        List<TripStopResponseDTO> tripStopDTOs = trip.getTripStops().stream()
-            .map(tripStop -> TripStopResponseDTO.builder()
-                .cityId(tripStop.getCity().getId())
+        // List<TripStopResponseDTO> tripStopDTOs = trip.getTripStops().stream()
+        //     .map(tripStop -> TripStopResponseDTO.builder()
+        //         .cityId(tripStop.getCity().getId())
+        //         .cityName(tripStop.getCity().getName())
+        //         .observation(tripStop.getObservation())
+        //         .estimatedArrivalDateTime(tripStop.getEstimatedArrivalDateTime())
+        //         .build())
+        //     .collect(Collectors.toList());
+
+        List<TripStopSearchResponseDTO> tripStopSearchResponseDTOs = trip.getTripStops().stream()
+            .map(tripStop -> TripStopSearchResponseDTO.builder()
                 .cityName(tripStop.getCity().getName())
                 .observation(tripStop.getObservation())
+                .start(tripStop.isStart())
+                .destination(tripStop.isDestination())
                 .estimatedArrivalDateTime(tripStop.getEstimatedArrivalDateTime())
                 .build())
             .collect(Collectors.toList());
 
+
         return TripSearchResponseDTO.builder()
             .driverInfo(driverSearchDTO)
             .startDateTime(trip.getStartTripDateTime())
-            .tripStops(tripStopDTOs) 
+            .tripStops(tripStopSearchResponseDTOs) 
             .availableSeat(trip.getAvailableSeat())
             .seatPrice(trip.getSeatPrice())
             .build();
