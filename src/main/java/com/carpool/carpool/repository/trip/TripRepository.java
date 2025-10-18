@@ -31,7 +31,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         "JOIN t.tripStops ts " +
         "JOIN t.vehicle v " +          
         "JOIN v.driver d " +
-        "WHERE t.availableSeat > 0 " +
+        "WHERE t.currentAvailableSeats > 0 " +
         "AND ts.city.id = :cityId " +
         "AND d.user.id != :userId " +
         "AND ts.stopOrder < (SELECT MAX(tsMax.stopOrder) FROM TripStop tsMax WHERE tsMax.trip.id = t.id) " +
@@ -45,7 +45,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         "JOIN vehicles v ON v.id = t.vehicle_id " +
         "JOIN driver d ON d.id = v.driver_id " + 
         
-        "WHERE t.available_seat > 0 " +
+        "WHERE t.current_available_seats > 0 " +
 
         "AND d.user_id != :userId " + 
         

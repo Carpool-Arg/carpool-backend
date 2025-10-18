@@ -151,15 +151,6 @@ public class TripMapper {
             .rating(driver.getRating()) 
             .build();
         
-        // List<TripStopResponseDTO> tripStopDTOs = trip.getTripStops().stream()
-        //     .map(tripStop -> TripStopResponseDTO.builder()
-        //         .cityId(tripStop.getCity().getId())
-        //         .cityName(tripStop.getCity().getName())
-        //         .observation(tripStop.getObservation())
-        //         .estimatedArrivalDateTime(tripStop.getEstimatedArrivalDateTime())
-        //         .build())
-        //     .collect(Collectors.toList());
-
         List<TripStopSearchResponseDTO> tripStopSearchResponseDTOs = trip.getTripStops().stream()
             .map(tripStop -> TripStopSearchResponseDTO.builder()
                 .cityName(tripStop.getCity().getName())
@@ -175,7 +166,7 @@ public class TripMapper {
             .driverInfo(driverSearchDTO)
             .startDateTime(trip.getStartTripDateTime())
             .tripStops(tripStopSearchResponseDTOs) 
-            .availableSeat(trip.getAvailableSeat())
+            .availableSeat(trip.getCurrentAvailableSeats())
             .seatPrice(trip.getSeatPrice())
             .build();
     }
