@@ -13,6 +13,7 @@ import lombok.Getter;
 @Builder
 public class TripSearchResponseDTO {
 
+    private Long tripId;
     private DriverSearchResponseDTO driverInfo;
     private LocalDateTime startDateTime;
     private List<TripStopSearchResponseDTO> tripStops;

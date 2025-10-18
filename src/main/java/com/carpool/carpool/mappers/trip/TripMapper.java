@@ -168,6 +168,7 @@ public class TripMapper {
             .tripStops(tripStopSearchResponseDTOs) 
             .availableSeat(trip.getCurrentAvailableSeats())
             .seatPrice(trip.getSeatPrice())
+            .tripId(trip.getId())
             .build();
     }
 }
