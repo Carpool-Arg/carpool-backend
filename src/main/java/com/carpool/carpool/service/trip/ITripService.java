@@ -7,6 +7,8 @@ import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
 import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
 import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
+import com.carpool.carpool.exception.ConflictException;
+import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.response.Response;
 
 public interface ITripService {
@@ -14,6 +16,8 @@ public interface ITripService {
     /**
      * Metodo para crear y publicar un nuevo viaje.
      * @return Response<Void> devolviendo el mensaje si el viaje fue creado
+     * @throws ConflictException si alguna de las validaciones falla
+     * @throws ResourceNotFoundException si el vehiculo o el estado no existen 
      */
     Response<Void> createTrip(TripRequestDTO tripRequestDTO);
 
@@ -21,6 +25,7 @@ public interface ITripService {
      * Metodo para obtener los detalles de un viaje específico por su ID.
      * @param id identificador del viaje a solicitar
      * @return Response<TripResponseDTO> devolviendo el viaje solicitado
+     * @throws ResourceNotFoundException si el viaje no existe
      */
     Response<TripResponseDTO> getTripDetails(Long id);
 
@@ -28,7 +33,7 @@ public interface ITripService {
      * Metodo para verificar la disponibilidad de un viaje.
      * @param startDateTime La fecha y hora a partir de la cual verificar.
      * @return Response<Void> devolviendo el mensaje si el viaje es posible o no.
-     * 
+     * @throws ConflictException si el chofer ya tiene un viaje planificado en la fecha y hora dadas.
      */
     Response<Void> checkTripAvailability(LocalDateTime startDateTime);
 
@@ -49,6 +54,7 @@ public interface ITripService {
      * @param limit
      * @param offset
      * @return Response<List<TripSearchResponseDTO>> devolviendo la lista de viajes encontrados
+     * @throws ConflictException si no se completan los campos de origen y destino en la busqueda de viajes
      */
     Response<List<TripSearchResponseDTO>> searchTrips(TripSearchRequestDTO request, int limit);
 }
