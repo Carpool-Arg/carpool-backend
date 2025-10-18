@@ -150,7 +150,7 @@ public class TripImplementation implements ITripService{
         return ResponseUtils.buildOKResponse(messages, responseDTOs);
 
     }
-
+    
     @Override
     public Response<List<TripSearchResponseDTO>> searchTrips(TripSearchRequestDTO request, int limit) {
         
@@ -195,6 +195,7 @@ public class TripImplementation implements ITripService{
      * - Que el equipaje ingresado este dentro de los posibles valores (ENUM)
      * @param vehicle El vehiculo obtenido con el ID ingresado en la request
      * @param tripRequestDTO la request para cargar el viaje
+     * @throws ConflictException si alguna de las validaciones falla
      */
     private void tripValidations(Vehicle vehicle, TripRequestDTO tripRequestDTO){
 
@@ -221,6 +222,7 @@ public class TripImplementation implements ITripService{
      * -Que hay un solo origen y un solo destino en toda la lista de paradas
      * -Que cada ciudad esta solo una vez en la lista de paradas
      * @param tripStops la lista de paradas de un viaje
+     * @throws ConflictException si alguna de las validaciones falla
      */
     private void startDestinationValidation(List<TripStopRequestDTO> tripStops){
 
@@ -255,6 +257,7 @@ public class TripImplementation implements ITripService{
     /**
      * Realizamos una validacion para comporbar que el orden de las paradas no se repite
      * @param tripStops la lista de paradas del viaje
+     * @throws ConflictException si la validacion falla
      */
     private void validateTripStopsOrder(List<TripStopRequestDTO> tripStops){
         //Validacion para controlar que los numeros de orden no se respitan en la lista de paradas
@@ -268,6 +271,7 @@ public class TripImplementation implements ITripService{
     /**
      * Obtiene el chofer autenticado en el contexto de seguridad.
      * @return El chofer autenticado en el contexto de seguridad.
+     * @throws ConflictException si el usuario autenticado no se encuentra o no tiene un perfil de chofer asociado.
      */
     private Driver getAuthenticatedDriver() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -285,6 +289,7 @@ public class TripImplementation implements ITripService{
      * @param driverId El ID del chofer.
      * @param startDateTime La fecha y hora a partir de la cual verificar.
      * @return true si el chofer tiene un viaje planificado después de la fecha y hora dadas, false en caso contrario.
+     * @throws ConflictException si el chofer ya tiene un viaje planificado en la fecha y hora dadas.
      */
     private boolean hasATripPlanned (LocalDateTime startDateTime){
         Driver driver = getAuthenticatedDriver();
