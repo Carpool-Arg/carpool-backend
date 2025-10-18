@@ -1,10 +1,10 @@
 package com.carpool.carpool.service.trip;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
-
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,6 +26,7 @@ import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.model.vehicle.Vehicle;
+import com.carpool.carpool.repository.city.CityRepository;
 import com.carpool.carpool.repository.driver.DriverRepository;
 import com.carpool.carpool.repository.state.StateRepository;
 import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
@@ -33,6 +34,7 @@ import com.carpool.carpool.repository.trip.TripRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.vehicle.VehicleRepository;
 import com.carpool.carpool.response.Response;
+import com.carpool.carpool.service.setting.IConfigService;
 import com.carpool.carpool.utils.ResponseUtils;
 
 import jakarta.transaction.Transactional;
@@ -49,9 +51,9 @@ public class TripImplementation implements ITripService{
     private final DriverRepository driverRepository;
     private final StateRepository stateRepository;
     private final StateHistoryRepository stateHistoryRepository;
+    private final CityRepository cityRepository;
+    private final IConfigService configService;
 
-    //ID por defecto de la ciudad de Cordoba, se utiliza cuando el usuario no envia su ciudad actual en el feed inicial
-    public static final Long DEFAULT_CITY_ID = 232L;
     
     @Override
     @Transactional
@@ -85,7 +87,7 @@ public class TripImplementation implements ITripService{
         StateHistory stateHistory = StateHistory.builder()
             .state(stateCreate)
         .build();
-        
+
         stateHistory.setTripState(newTrip);
         
         tripRepository.save(newTrip);
@@ -114,16 +116,18 @@ public class TripImplementation implements ITripService{
     @Override
     public Response<List<TripSearchResponseDTO>> getInitialFeed(Long userCityId, int limit) {
 
-        String message;
+        Long userId = getAuthenticatedUserId();
+
+        String infoMessage = null;
 
         if (userCityId == null) {
-            userCityId = DEFAULT_CITY_ID;
-            message = "No se proporcionó una ciudad actual. Se muestran viajes desde Córdoba por defecto.";
+            userCityId = configService.getDefaultCityId();
+            infoMessage = "No se proporcionó la ubicación actual del usuario, por lo que se cargaron los viajes que salen o pasan por " + cityRepository.findById(userCityId).get().getName();
         }
                 
-        List<Trip> trips = tripRepository.findTripsForInitialFeed(userCityId);
+        List<Trip> trips = tripRepository.findTripsForInitialFeed(userCityId, userId);
 
-         if (trips.size() > limit) {
+        if (trips.size() > limit) {
             trips = trips.subList(0, limit);
         }
 
@@ -131,19 +135,26 @@ public class TripImplementation implements ITripService{
             .map(tripMapper::converTripToTripSearchResponseDTO)
             .collect(Collectors.toList());
         
+        List<String> messages = new ArrayList<>();
         
         if (responseDTOs.isEmpty()) {
-            message = "No se encontraron viajes para tu ubicación actual.";
+            messages.add("No se encontraron viajes que coincidan con los criterios.");
         } else {
-            message = String.format("Se cargaron los siguientes viajes.", responseDTOs.size());
+            if (infoMessage != null) {
+                messages.add(infoMessage);
+            }
+            messages.add(String.format("Se cargaron %d viajes.", responseDTOs.size()));
         }
 
-        return ResponseUtils.buildOKResponse(List.of(message), responseDTOs);
+
+        return ResponseUtils.buildOKResponse(messages, responseDTOs);
 
     }
     
     @Override
     public Response<List<TripSearchResponseDTO>> searchTrips(TripSearchRequestDTO request, int limit) {
+        
+        Long userId = getAuthenticatedUserId(); 
         
         if (request.getOriginCityId() == null || request.getDestinationCityId() == null) {
             throw new ConflictException("Los campos de origen y destino son obligatorios para la búsqueda de viajes.");
@@ -155,7 +166,8 @@ public class TripImplementation implements ITripService{
             request.getDepartureDate(),
             request.getMinPrice(),
             request.getMaxPrice(),
-            request.getDriverRating()
+            userId,
+            request.getOrderByDriverRating()
         );
 
         if (trips.size() > limit) {
@@ -283,5 +295,18 @@ public class TripImplementation implements ITripService{
         Driver driver = getAuthenticatedDriver();
 
         return tripRepository.existsByVehicleDriverIdAndStartTripDateTime(driver.getId(), startDateTime);
+    }
+
+    /**
+     * Obtiene el ID del usuario autenticado en el contexto de seguridad. Sirve para excluir al usuario de los resultados en las busquedas de viajes.
+     * @return El ID del usuario autenticado en el contexto de seguridad.
+     */
+    private Long getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        return userRepository.findByUsernameAndDeletedAtIsNull(username)
+            .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."))
+            .getId();
     }
 }

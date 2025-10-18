@@ -70,6 +70,7 @@ public class SpringSecurityConfig {
         .requestMatchers(HttpMethod.POST, "/auth-google/**").permitAll()
         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
         
+        
         // Endpoints para roles específicos
         .requestMatchers(HttpMethod.GET, "/vehicle-types").hasAnyRole("DRIVER", "ADMIN")
         .requestMatchers("/vehicles", "/vehicles/**").hasRole("DRIVER")
