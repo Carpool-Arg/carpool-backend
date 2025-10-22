@@ -5,7 +5,7 @@ Script para desencriptar archivos usando GPG y Bitwarden.
 .USAGE
 .\decrypt.ps1 <Item-Bitwarden> <Archivo-encriptado> [Out-File]
 Ejemplo:
-.\decrypt.ps1 APP_CONFIG_ENCRYPTION_KEY application.properties.gpg
+.\decrypt.ps1 KEY application.properties.gpg
 #>
 
 param(

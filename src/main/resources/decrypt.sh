@@ -5,7 +5,7 @@ set -euo pipefail
 # Uso:
 # Para realizar el desencriptado correspondiente se debe ejecutar la siguiente linea:
 # ./desencrypt.sh <archivo-con-password> <archivo-encriptar> [out-file]
-# Ejemplo: ./encrypt.sh APP_CONFIG_ENCRYPTION_KEY application.properties
+# Ejemplo: ./encrypt.sh KEY application.properties
 
 ITEM="$1"
 INFILE="$2"

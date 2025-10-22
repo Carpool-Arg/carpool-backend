@@ -5,7 +5,7 @@ Script para encriptar archivos usando GPG y Bitwarden.
 .USAGE
 .\encrypt.ps1 <Item-Bitwarden> <Archivo-a-encriptar> [Out-File]
 Ejemplo:
-.\encrypt.ps1 APP_CONFIG_ENCRYPTION_KEY application.properties
+.\encrypt.ps1 KEY application.properties
 #>
 
 param(
