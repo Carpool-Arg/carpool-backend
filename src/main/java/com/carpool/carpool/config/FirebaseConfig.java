@@ -14,7 +14,7 @@ public class FirebaseConfig {
     @PostConstruct
     public void initFirebase() throws IOException {
         FileInputStream serviceAccount =
-                new FileInputStream("src/main/resources/carpool-app-2025-firebase-adminsdk-fbsvc-f5ae5278c3.json");
+                new FileInputStream("src/main/resources/firebase/carpool-app-2025-firebase-adminsdk-fbsvc-f5ae5278c3.json");
 
         FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(GoogleCredentials.fromStream(serviceAccount))
