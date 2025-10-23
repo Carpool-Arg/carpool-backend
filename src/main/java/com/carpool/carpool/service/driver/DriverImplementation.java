@@ -81,6 +81,10 @@ public class DriverImplementation implements IDriverService {
         
         Driver driver = driverMapper.convertDriverRequestDTOToDriver(driverRequestDTO, user, city);
 
+        if (driver.getRating() == null) {
+            driver.setRating(5.0); 
+        }
+
         assignDriverRoleToUser(user);
         normalizedDriverFields(driver);
         driverRepository.save(driver);

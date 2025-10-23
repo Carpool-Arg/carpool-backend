@@ -1,6 +1,7 @@
 package com.carpool.carpool.model.trip.tripStop;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.trip.Trip;
@@ -40,6 +41,10 @@ public class TripStop implements Serializable{
     private String observation;
 
     private int stopOrder;
+
+    private double distanceFromPrevious;
+
+    private LocalDateTime estimatedArrivalDateTime;
 
     @ManyToOne
     @JoinColumn(name="city_id",nullable = false)

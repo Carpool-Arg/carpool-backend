@@ -43,6 +43,20 @@ public class CityController {
 
 
     @Operation(
+        summary = "Obtener una ciudad por su nombre"
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200",description = "Localidad obtenida con éxito"),
+        @ApiResponse(responseCode = "400", description = "No existe una localidad con el nombre ingresado"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
+    @GetMapping("/name/{name}")
+    public ResponseEntity<Response<CityResponseDTO>> getCityByName(@PathVariable String name){
+        return new ResponseEntity<>(cityService.getCityByName(name), HttpStatus.OK);
+    }
+
+
+    @Operation(
         summary = "Obtener localidades para autocompletar"
     
     )

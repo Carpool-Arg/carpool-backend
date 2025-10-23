@@ -1,8 +1,10 @@
 package com.carpool.carpool.service.trip;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -10,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
+import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
+import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.enums.trip.BaggageEnum;
@@ -22,6 +26,7 @@ import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.model.vehicle.Vehicle;
+import com.carpool.carpool.repository.city.CityRepository;
 import com.carpool.carpool.repository.driver.DriverRepository;
 import com.carpool.carpool.repository.state.StateRepository;
 import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
@@ -29,6 +34,7 @@ import com.carpool.carpool.repository.trip.TripRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.vehicle.VehicleRepository;
 import com.carpool.carpool.response.Response;
+import com.carpool.carpool.service.setting.IConfigService;
 import com.carpool.carpool.utils.ResponseUtils;
 
 import jakarta.transaction.Transactional;
@@ -45,7 +51,10 @@ public class TripImplementation implements ITripService{
     private final DriverRepository driverRepository;
     private final StateRepository stateRepository;
     private final StateHistoryRepository stateHistoryRepository;
-    
+    private final CityRepository cityRepository;
+    private final IConfigService configService;
+
+
     @Override
     @Transactional
     public Response<Void> createTrip(TripRequestDTO tripRequestDTO) {
@@ -78,9 +87,9 @@ public class TripImplementation implements ITripService{
         StateHistory stateHistory = StateHistory.builder()
             .state(stateCreate)
         .build();
-        
+
         stateHistory.setTrip(newTrip);
-        
+
         tripRepository.save(newTrip);
         stateHistoryRepository.save(stateHistory);
         return ResponseUtils.buildOKResponse(List.of("Viaje creado con éxito") , null);
@@ -91,13 +100,7 @@ public class TripImplementation implements ITripService{
         Trip trip = tripRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("El viaje no existe."));
 
-        User user = trip.getVehicle().getDriver().getUser();
-
-        String driverFullName = user.getName() +
-                " " + user.getLastname();
-
-
-        TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip, driverFullName);
+        TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip);
         return ResponseUtils.buildOKResponse(List.of("Viaje encontrado con éxito"), tripResponseDTO);
     }
 
@@ -110,6 +113,81 @@ public class TripImplementation implements ITripService{
         }
     }
 
+    @Override
+    public Response<List<TripSearchResponseDTO>> getInitialFeed(Long userCityId, int limit) {
+
+        Long userId = getAuthenticatedUserId();
+
+        String infoMessage = null;
+
+        if (userCityId == null) {
+            userCityId = configService.getDefaultCityId();
+            infoMessage = "No se proporcionó la ubicación actual del usuario, por lo que se cargaron los viajes que salen o pasan por " + cityRepository.findById(userCityId).get().getName();
+        }
+
+        List<Trip> trips = tripRepository.findTripsForInitialFeed(userCityId, userId);
+
+        if (trips.size() > limit) {
+            trips = trips.subList(0, limit);
+        }
+
+        List<TripSearchResponseDTO> responseDTOs = trips.stream()
+            .map(tripMapper::converTripToTripSearchResponseDTO)
+            .collect(Collectors.toList());
+
+        List<String> messages = new ArrayList<>();
+
+        if (responseDTOs.isEmpty()) {
+            messages.add("No se encontraron viajes que coincidan con los criterios.");
+        } else {
+            if (infoMessage != null) {
+                messages.add(infoMessage);
+            }
+            messages.add(String.format("Se cargaron %d viajes.", responseDTOs.size()));
+        }
+
+
+        return ResponseUtils.buildOKResponse(messages, responseDTOs);
+
+    }
+
+    @Override
+    public Response<List<TripSearchResponseDTO>> searchTrips(TripSearchRequestDTO request, int limit) {
+
+        Long userId = getAuthenticatedUserId();
+
+        if (request.getOriginCityId() == null || request.getDestinationCityId() == null) {
+            throw new ConflictException("Los campos de origen y destino son obligatorios para la búsqueda de viajes.");
+        }
+
+        List<Trip> trips = tripRepository.findFilteredTrips(
+            request.getOriginCityId(),
+            request.getDestinationCityId(),
+            request.getDepartureDate(),
+            request.getMinPrice(),
+            request.getMaxPrice(),
+            userId,
+            request.getOrderByDriverRating()
+        );
+
+        if (trips.size() > limit) {
+            trips = trips.subList(0, limit);
+        }
+
+        List<TripSearchResponseDTO> responseDTOs = trips.stream()
+            .map(tripMapper::converTripToTripSearchResponseDTO)
+            .collect(Collectors.toList());
+
+        String message;
+        if (responseDTOs.isEmpty()) {
+            message = "No se encontraron más viajes que coincidan con los criterios.";
+        } else {
+            message = String.format("Se cargaron %d viajes.", responseDTOs.size());
+        }
+
+        return ResponseUtils.buildOKResponse(List.of(message), responseDTOs);
+    }
+
     /**
      * Validaciones del viaje en general. Comprobamos aspectos como:
      * - Que el vehiculo con el id ingresado sea del chofer que inicio el viaje (usuario en sesion)
@@ -117,6 +195,7 @@ public class TripImplementation implements ITripService{
      * - Que el equipaje ingresado este dentro de los posibles valores (ENUM)
      * @param vehicle El vehiculo obtenido con el ID ingresado en la request
      * @param tripRequestDTO la request para cargar el viaje
+     * @throws ConflictException si alguna de las validaciones falla
      */
     private void tripValidations(Vehicle vehicle, TripRequestDTO tripRequestDTO){
 
@@ -143,6 +222,7 @@ public class TripImplementation implements ITripService{
      * -Que hay un solo origen y un solo destino en toda la lista de paradas
      * -Que cada ciudad esta solo una vez en la lista de paradas
      * @param tripStops la lista de paradas de un viaje
+     * @throws ConflictException si alguna de las validaciones falla
      */
     private void startDestinationValidation(List<TripStopRequestDTO> tripStops){
 
@@ -177,6 +257,7 @@ public class TripImplementation implements ITripService{
     /**
      * Realizamos una validacion para comporbar que el orden de las paradas no se repite
      * @param tripStops la lista de paradas del viaje
+     * @throws ConflictException si la validacion falla
      */
     private void validateTripStopsOrder(List<TripStopRequestDTO> tripStops){
         //Validacion para controlar que los numeros de orden no se respitan en la lista de paradas
@@ -190,6 +271,7 @@ public class TripImplementation implements ITripService{
     /**
      * Obtiene el chofer autenticado en el contexto de seguridad.
      * @return El chofer autenticado en el contexto de seguridad.
+     * @throws ConflictException si el usuario autenticado no se encuentra o no tiene un perfil de chofer asociado.
      */
     private Driver getAuthenticatedDriver() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -207,6 +289,7 @@ public class TripImplementation implements ITripService{
      * @param driverId El ID del chofer.
      * @param startDateTime La fecha y hora a partir de la cual verificar.
      * @return true si el chofer tiene un viaje planificado después de la fecha y hora dadas, false en caso contrario.
+     * @throws ConflictException si el chofer ya tiene un viaje planificado en la fecha y hora dadas.
      */
     private boolean hasATripPlanned (LocalDateTime startDateTime){
         Driver driver = getAuthenticatedDriver();
@@ -214,5 +297,16 @@ public class TripImplementation implements ITripService{
         return tripRepository.existsByVehicleDriverIdAndStartTripDateTime(driver.getId(), startDateTime);
     }
 
-   
+    /**
+     * Obtiene el ID del usuario autenticado en el contexto de seguridad. Sirve para excluir al usuario de los resultados en las busquedas de viajes.
+     * @return El ID del usuario autenticado en el contexto de seguridad.
+     */
+    private Long getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        return userRepository.findByUsernameAndDeletedAtIsNull(username)
+            .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."))
+            .getId();
+    }
 }

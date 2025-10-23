@@ -2,6 +2,8 @@ package com.carpool.carpool.controller.trip;
 
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
+import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
+import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.trip.ITripService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +15,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -54,6 +57,40 @@ public class TripController {
         return tripService.checkTripAvailability(LocalDateTime.parse(startDateTime));
     }
     
+    @Operation(
+            summary = "Obtener el feed inicial de viajes"
+    
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista de viajes obtenida con éxito"),
+            @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado para ver los viajes"),
+            @ApiResponse(responseCode = "404", description = "Recurso no encontrado", content = @Content),
+    })
+    @GetMapping("/feed")
+    public ResponseEntity<Response<List<TripSearchResponseDTO>>> getInitialFeed(
+            @RequestParam(name = "cityId", required = false) Long userCityId,
+            @RequestParam(defaultValue = "10") int limit) {
+        return new ResponseEntity<>(tripService.getInitialFeed(userCityId, limit), HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Buscar viajes con filtros aplicados"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista de viajes obtenida con éxito"),
+            @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado para ver los viajes"),
+            @ApiResponse(responseCode = "404", description = "Recurso no encontrado", content = @Content),
+    })
+    @PostMapping("/search")
+    public ResponseEntity<Response<List<TripSearchResponseDTO>>> searchTrips(
+            @RequestBody TripSearchRequestDTO request,
+            @RequestParam(defaultValue = "10") int limit) {
+        return new ResponseEntity<>(tripService.searchTrips(request, limit), HttpStatus.OK);
+    }
 
     @Operation(
             summary = "Crear y publicar un viaje"
