@@ -42,7 +42,6 @@ public class FirebaseNotificationImplementation implements IFirebaseNotification
 
     @Override
     public boolean sendSilentPush(String token) {
-
         try {
             Message message = Message.builder()
                     .setToken(token)

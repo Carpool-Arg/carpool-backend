@@ -20,7 +20,7 @@ public class NotificationDispatcherImplementation implements INotificationDispat
 
     @Autowired
     public  NotificationDispatcherImplementation(List<INotificationDispatchPolicyService> strategies) {
-        // Inyección de todas las estrategias de canal en un mapa para acceso O(1)
+        // Inyección de todas las estrategias de canal en un mapa para acceso
         this.policyStrategies = strategies.stream()
                 .collect(Collectors.toMap(INotificationDispatchPolicyService::getPolicy, Function.identity()));
     }

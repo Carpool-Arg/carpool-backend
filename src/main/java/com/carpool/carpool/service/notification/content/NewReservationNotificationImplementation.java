@@ -4,15 +4,12 @@ import com.carpool.carpool.dto.notificationPayload.NotificationPayloadDTO;
 import com.carpool.carpool.enums.dispatchPolicy.DispatchPolicyEnum;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.model.reservation.Reservation;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import static com.carpool.carpool.utils.EmailMessageUtils.*;
 
 @Component
 public class NewReservationNotificationImplementation implements INotificationContentService<Reservation> {
-    @Value("${redirect.validate.email}")
-    private String urlValidateEmail;
 
     @Override
     public NotificationEventEnum getEvent() {
@@ -35,7 +32,7 @@ public class NewReservationNotificationImplementation implements INotificationCo
                 .emailTitle(TITLE_NEW_RESERVATION.replace("{name}", reservation.getTrip().getVehicle().getDriver().getUser().getName()))
                 .emailMessage(MESSAGE_NEW_RESERVATION.replace("{passengerName}", passengerName))
                 .emailOptionalMessage(null)
-                .emailButtonUrl(urlValidateEmail)
+                .emailButtonUrl("")
                 .emailButtonText(BUTTON_NEW_RESERVATION)
                 .emailMessageFooter(MESSAGE_FOOTER_NEW_RESERVATION)
                 .build();

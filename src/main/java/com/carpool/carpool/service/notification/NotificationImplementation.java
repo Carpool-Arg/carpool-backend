@@ -20,7 +20,7 @@ public class NotificationImplementation implements INotificationService {
 
     public NotificationImplementation(
             INotificationDispatcherService dispatcher,
-            List<INotificationContentService> strategies // Spring inyecta TODAS las estrategias de contenido
+            List<INotificationContentService> strategies
     ) {
         this.dispatcher = dispatcher;
         this.contentStrategies = strategies.stream()
@@ -29,7 +29,7 @@ public class NotificationImplementation implements INotificationService {
 
     @Override
     public <T> void send(User userToNotify, NotificationEventEnum event, T context) {
-        // 1. Encontrar la estrategia de CONTENIDO
+        // 1. Encontrar la estrategia
         @SuppressWarnings("unchecked")
         INotificationContentService<T> contentStrategy =
                 (INotificationContentService<T>) contentStrategies.get(event);
