@@ -1,15 +1,18 @@
 package com.carpool.carpool.service.firebase.notification;
 
 import com.carpool.carpool.model.user.User;
+import com.carpool.carpool.model.user.token.UserToken;
+
+import java.util.List;
 
 public interface IFirebaseNotificationService {    /**
      * Envía una notificación push a todos los dispositivos del usuario.
      *
-     * @param user  Usuario destinatario.
+     * @param List<UserToken> tokens dispositivos registrados del usuario
      * @param title Título de la notificación.
      * @param body  Mensaje de la notificación.
      */
-    void sendPushNotification(User user, String title, String body);
+    void sendPushNotification(List<UserToken> tokens, String title, String body);
 
     /**
      * Envía una notificación push silenciosa a todos los dispositivos del usuario.

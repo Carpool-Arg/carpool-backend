@@ -45,4 +45,15 @@ public class EmailMessageUtils {
             "Si no realizaste esta solicitud, podés ignorar este mensaje.";
     public static final String CONFIRM_EMAIL_CHANGE = "Confirmar nuevo correo";
     public static final String MESSAGE_FOOTER_EMAIL_CHANGE = "Este enlace estará disponible por <strong>48 horas</strong>. Después de ese tiempo, deberás solicitar nuevamente el cambio si aún lo deseás.";
+
+    //RESERVATION
+    public static final String SUBJECT_EMAIL_NEW_RESERVATION = "¡Nueva solicitud de reserva en tu viaje!";
+    public static final String TITLE_NEW_RESERVATION = "¡Hola, {name}!";
+    public static final String MESSAGE_NEW_RESERVATION = "¡Buenas noticias! Recibiste una nueva solicitud de reserva.<br>" +
+            "El pasajero <strong>{passengerName}</strong> quiere unirse a tu viaje!<br><br>" +
+            "Para gestionarla, por favor hacé clic en el botón de abajo.";
+    public static final String BUTTON_NEW_RESERVATION = "Ver Solicitud";
+    public static final String MESSAGE_FOOTER_NEW_RESERVATION = "Te recomendamos responder a la brevedad para asegurar la reserva del pasajero.<br>Gracias por utilizar <strong>Carpool</strong>.";
+
+
 }

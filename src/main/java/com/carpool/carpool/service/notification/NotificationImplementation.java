@@ -1,57 +1,50 @@
 package com.carpool.carpool.service.notification;
 
-import com.carpool.carpool.enums.token.TokenStateEnum;
-import com.carpool.carpool.enums.token.TokenTypeEnum;
+import com.carpool.carpool.dto.notificationPayload.NotificationPayloadDTO;
+import com.carpool.carpool.enums.dispatchPolicy.DispatchPolicyEnum;
+import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.model.user.User;
-import com.carpool.carpool.model.user.token.UserToken;
-import com.carpool.carpool.repository.user.UserRepository;
-import com.carpool.carpool.repository.user.token.UserTokenRepository;
-import com.carpool.carpool.service.email.IEmailService;
-import com.carpool.carpool.service.firebase.notification.IFirebaseNotificationService;
-import lombok.RequiredArgsConstructor;
+import com.carpool.carpool.service.notification.content.INotificationContentService;
+import com.carpool.carpool.service.notification.dispatcher.INotificationDispatcherService;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class NotificationImplementation implements INotificationService {
-    private final UserTokenRepository userTokenRepository;
-    private final IFirebaseNotificationService firebaseNotificationService;
-    private final IEmailService emailService;
+    private final INotificationDispatcherService dispatcher;
+    private final Map<NotificationEventEnum, INotificationContentService> contentStrategies;
+
+    public NotificationImplementation(
+            INotificationDispatcherService dispatcher,
+            List<INotificationContentService> strategies // Spring inyecta TODAS las estrategias de contenido
+    ) {
+        this.dispatcher = dispatcher;
+        this.contentStrategies = strategies.stream()
+                .collect(Collectors.toMap(INotificationContentService::getEvent, Function.identity()));
+    }
 
     @Override
-    public void notifyUser(User user, String title, String body) {
-        // Buscar tokens activos
-        List<UserToken> tokens = userTokenRepository.findByUserAndTypeAndState(
-                user, TokenTypeEnum.PUSH_NOTIFICATION, TokenStateEnum.ACTIVE
-        );
+    public <T> void send(User userToNotify, NotificationEventEnum event, T context) {
+        // 1. Encontrar la estrategia de CONTENIDO
+        @SuppressWarnings("unchecked")
+        INotificationContentService<T> contentStrategy =
+                (INotificationContentService<T>) contentStrategies.get(event);
 
-        if (!tokens.isEmpty()) {
-            // Enviar notificación push a cada token
-            for (UserToken token : tokens) {
-                firebaseNotificationService.sendPushNotification(user,title,body);
-            }
-        } else {
-            // Enviar correo electrónico si no hay tokens activos
-            String subject = "Tienes una nueva reserva pendiente";
-            String optionalMessage = "Por favor, revisá la sección de viajes en tu cuenta de Carpool para aceptarla o rechazarla.";
-            String buttonUrl = "https://carpool.com.ar/trips"; // 🔧 cambiá por tu dominio real
-            String buttonText = "Ver viaje";
-            String messageFooter = "Gracias por utilizar Carpool.";
-
-            emailService.sendEmail(
-                    user.getEmail(),
-                    subject,
-                    title,
-                    body,
-                    optionalMessage,
-                    buttonUrl,
-                    buttonText,
-                    messageFooter
-            );
+        if (contentStrategy == null) {
+            throw new UnsupportedOperationException("Estrategia de contenido no encontrada: " + event);
         }
+
+        // 2. Construir el PAYLOAD
+        NotificationPayloadDTO payload = contentStrategy.build(context);
+
+        // 3. Obtener la POLÍTICA de canal
+        DispatchPolicyEnum policy = contentStrategy.getPolicy();
+
+        // 4. Enviar al DESPACHADOR de canal
+        dispatcher.dispatch(userToNotify, payload, policy);
     }
 }

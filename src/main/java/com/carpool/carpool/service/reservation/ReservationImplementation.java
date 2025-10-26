@@ -1,6 +1,7 @@
 package com.carpool.carpool.service.reservation;
 
 import com.carpool.carpool.dto.reservation.ReservationRequestDTO;
+import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
@@ -19,6 +20,7 @@ import com.carpool.carpool.repository.trip.TripRepository;
 import com.carpool.carpool.repository.trip.stop.TripStopRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
+import com.carpool.carpool.service.notification.INotificationService;
 import com.carpool.carpool.service.user.IUserService;
 import com.carpool.carpool.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +42,7 @@ public class ReservationImplementation implements  IReservationService{
     private final TripStopRepository  tripStopRepository;
     private final ReservationMapper reservationMapper;
     private final StateRepository stateRepository;
+    private final INotificationService notificationService;
 
     @Override
     public Response<Void> createReservation(ReservationRequestDTO reservationRequestDTO) {
@@ -54,6 +57,10 @@ public class ReservationImplementation implements  IReservationService{
 
         //Validaciones de usuario
         User userAuth = this.getAuthenticatedActiveUser();
+
+        if (userAuth.getId().equals(trip.getVehicle().getDriver().getId())) {
+            throw new ConflictException("Este viaje te pertenece, no podés realizar una reserva en él.");
+        }
 
         Optional<Reservation> existingReservation = reservationRepository.findByUserId(userAuth.getId());
 
@@ -82,6 +89,12 @@ public class ReservationImplementation implements  IReservationService{
         reservationRepository.save(newReservation);
 
         stateHistoryRepository.save(stateHistory);
+
+        this.notificationService.send(
+                trip.getVehicle().getDriver().getUser(),
+                NotificationEventEnum.RESERVATION_CREATED,
+                newReservation
+        );
 
         return ResponseUtils.buildOKResponse(List.of("Reserva registrada éxito, se encuentra pendiente a confirmación.") , null);
     }
@@ -113,7 +126,7 @@ public class ReservationImplementation implements  IReservationService{
         State currentState = stateHistory.getState();
 
         // 4. validar estados
-        if (!currentState.getName().equals("CREATE")){
+        if (!currentState.getName().equals("CREATED")){
             throw new ConflictException("No es posible reservar el viaje, debido a su estado actual.");
         }
     }

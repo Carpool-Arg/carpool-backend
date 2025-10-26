@@ -62,7 +62,7 @@ public class TripImplementation implements ITripService{
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())
         .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe."));
 
-        State stateCreate = stateRepository.findByNameAndScope("CREATE", ScopeEnum.TRIP)
+        State stateCreate = stateRepository.findByNameAndScope("CREATED", ScopeEnum.TRIP)
         .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para crear el viaje."));
 
         //Validaciones del viaje en general 

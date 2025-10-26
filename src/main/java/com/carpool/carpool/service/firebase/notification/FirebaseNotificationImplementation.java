@@ -20,9 +20,7 @@ public class FirebaseNotificationImplementation implements IFirebaseNotification
 
     @Override
     @Async
-    public void sendPushNotification(User user, String title, String body) {
-        List<UserToken> tokens = userTokenRepository.findByUserAndTypeAndState(
-                user, TokenTypeEnum.PUSH_NOTIFICATION, TokenStateEnum.ACTIVE);
+    public void sendPushNotification(List<UserToken> tokens, String title, String body) {
 
         for (UserToken token : tokens) {
             try {
