@@ -10,7 +10,7 @@ import com.carpool.carpool.mappers.user.UserMapper;
 import com.carpool.carpool.model.media.Media;
 import com.carpool.carpool.model.role.Role;
 import com.carpool.carpool.model.user.User;
-import com.carpool.carpool.model.user.UserToken;
+import com.carpool.carpool.model.user.token.UserToken;
 import com.carpool.carpool.repository.media.MediaRepository;
 import com.carpool.carpool.repository.role.RoleRepository;
 import com.carpool.carpool.repository.user.UserRepository;

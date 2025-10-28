@@ -53,5 +53,4 @@ public class TripStop implements Serializable{
     @ManyToOne
     @JoinColumn(name="trip_id", referencedColumnName = "id",nullable = false)
     private Trip trip;
-
 }
