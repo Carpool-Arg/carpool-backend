@@ -6,7 +6,6 @@ import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.reservation.ReservationMapper;
-import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.state.State;
 import com.carpool.carpool.model.stateHistory.StateHistory;
@@ -21,13 +20,13 @@ import com.carpool.carpool.repository.trip.stop.TripStopRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.notification.INotificationService;
-import com.carpool.carpool.service.user.IUserService;
 import com.carpool.carpool.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -62,14 +61,24 @@ public class ReservationImplementation implements  IReservationService{
             throw new ConflictException("Este viaje te pertenece, no podés realizar una reserva en él.");
         }
 
-        Optional<Reservation> existingReservation = reservationRepository.findByUserId(userAuth.getId());
+        Optional<Reservation> existingReservation = reservationRepository.findReservationByUserAndTrip(userAuth.getId(), trip.getId() );
 
         if (existingReservation.isPresent()) {
-            throw new ConflictException("Ya tenés una reserva asociada, no se permiten múltiples solicitudes.");
+            throw new ConflictException("Ya tenés una reserva asociada para este viaje, no se permiten múltiples solicitudes.");
         }
 
         // Validaciones de las ciudades
         TripStop[] tripStops =  cityValidations(reservationRequestDTO.getStartCity(), reservationRequestDTO.getDestinationCity(), trip);
+
+        //Validacion superposiciones de reservas
+        LocalDateTime departureTime = tripStops[0].getEstimatedArrivalDateTime();
+        LocalDateTime arrivalTime = tripStops[0].getEstimatedArrivalDateTime();
+
+        List<Reservation> overlappingReservation = reservationRepository.findOverlappingAcceptedReservations(userAuth.getId(),departureTime, arrivalTime);
+
+        if (!overlappingReservation.isEmpty()) {
+            throw new ConflictException("Ya tenés una reserva aceptada para este rango horario, no se permiten múltiples solicitudes.");
+        }
 
         Reservation newReservation = reservationMapper.convertReservationRequestDTOToReservation(
                 reservationRequestDTO,

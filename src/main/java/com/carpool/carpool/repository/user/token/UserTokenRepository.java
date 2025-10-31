@@ -12,6 +12,5 @@ import java.util.Optional;
 
 public interface UserTokenRepository extends JpaRepository<UserToken,Long> {
     Optional<UserToken> findByToken(String token);
-    List<UserToken> findByTypeAndExpiresAtBeforeAndState(TokenTypeEnum type, LocalDateTime dateTime, TokenStateEnum state);
     List<UserToken> findByUserAndTypeAndState(User user, TokenTypeEnum type, TokenStateEnum state);
 }

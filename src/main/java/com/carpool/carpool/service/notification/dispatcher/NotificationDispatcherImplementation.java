@@ -31,6 +31,7 @@ public class NotificationDispatcherImplementation implements INotificationDispat
         if (strategy == null) {
             throw new UnsupportedOperationException("Política de despacho no soportada: " + policy);
         }
+
         // Delega a la estrategia de canal correcta
         strategy.execute(user, payload);
     }

@@ -12,17 +12,10 @@ import com.carpool.carpool.repository.user.token.UserTokenRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.firebase.notification.IFirebaseNotificationService;
 import com.carpool.carpool.utils.ResponseUtils;
-import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.Message;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Optional;
@@ -56,7 +49,7 @@ public class UserNotificationImplementation implements IUserNotificationService 
         UserToken userToken = UserToken.builder()
                 .token(userTokenRequestDTO.getToken())
                 .type(TokenTypeEnum.PUSH_NOTIFICATION)
-                .state(TokenStateEnum.PENDING)
+                .state(TokenStateEnum.ACTIVE)
                 .user(userAuth)
                 .build();
 
