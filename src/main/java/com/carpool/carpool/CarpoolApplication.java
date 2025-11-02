@@ -1,6 +1,9 @@
 package com.carpool.carpool;
 
 import com.carpool.carpool.security.config.RecaptchaConfig;
+
+import java.util.TimeZone;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -15,6 +18,8 @@ import org.springframework.web.client.RestTemplate;
 public class CarpoolApplication {
 
 	public static void main(String[] args) {
+		TimeZone.setDefault(TimeZone.getTimeZone("America/Argentina/Buenos_Aires"));
+
 		SpringApplication.run(CarpoolApplication.class, args);
 	}
 
