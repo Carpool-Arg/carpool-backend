@@ -1,4 +1,4 @@
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk-jammy
 ARG JAR_FILE=target/carpool-0.0.1-SNAPSHOT.jar
 COPY ${JAR_FILE} app_carpool.jar
 EXPOSE 8080
