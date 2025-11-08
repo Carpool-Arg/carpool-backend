@@ -1,10 +1,11 @@
-package com.carpool.carpool.model.user;
+package com.carpool.carpool.model.user.token;
 
 import java.time.LocalDateTime;
 
 import com.carpool.carpool.enums.token.TokenStateEnum;
 import com.carpool.carpool.enums.token.TokenTypeEnum;
 
+import com.carpool.carpool.model.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -28,7 +29,6 @@ import lombok.NoArgsConstructor;
 @Builder
 @Table(name = "user_token")
 public class UserToken {
-
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,7 +48,7 @@ public class UserToken {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "expires_at", nullable = false, updatable = false)
+    @Column(name = "expires_at", updatable = false)
     private LocalDateTime expiresAt;
 
     @Column(name = "metadata")
@@ -72,6 +72,8 @@ public class UserToken {
     }
 
     public boolean isExpired(){
+        if (this.expiresAt == null) return false;
+
         return LocalDateTime.now().isAfter(this.expiresAt);
     }
 }
