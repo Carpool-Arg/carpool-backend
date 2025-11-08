@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<Response<Void>> handleUsernameNotFound(UsernameNotFoundException ex) {
         return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(ex.getMessage())), HttpStatus.UNAUTHORIZED);
-    }   
+    }
 
     /**
      * Excepcion utilizada cuando se viola alguna validación definida en la clase model. Ej: @NotNull
@@ -51,7 +51,7 @@ public class GlobalExceptionHandler {
         List<String> errors = ex.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .toList();
-        
+
         return new ResponseEntity<>(ResponseUtils.buildErrorResponse(errors), HttpStatus.BAD_REQUEST);
     }
 
@@ -140,12 +140,12 @@ public class GlobalExceptionHandler {
 
     /**
      * Excepción utilizada para cuando no hay contenido que devolver.
-     * 
+     *
      * @param ex Excepción
      * @return {@link ResponseEntity} que contiene {@link Response} con data {@link Void}
      */
    @ExceptionHandler(NoContentException.class)
-    public ResponseEntity<Void> handleNoContent(NoContentException ex) {
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Response<Void>> handleNoContent(NoContentException ex) {
+       return new ResponseEntity<>(ResponseUtils.buildOKResponse(List.of(ex.getMessage()), null), HttpStatus.NO_CONTENT);
     }
 }

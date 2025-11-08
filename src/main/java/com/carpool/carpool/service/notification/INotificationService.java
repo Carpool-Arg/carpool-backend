@@ -13,7 +13,7 @@ public interface INotificationService {
      * @param userToNotify El usuario que debe recibir la notificación.
      * @param event        El {@link NotificationEventEnum} que describe que tipo de notificacion se envía
      * @param context      Entidad (p.ej., la entidad {@code Reservation})
-     * que se pasará al {@link INotificationContentService}
+     * que se pasará al {@link INotificationService}
      * para construir el mensaje.
      */
     <T> void send(User userToNotify, NotificationEventEnum event, T context);

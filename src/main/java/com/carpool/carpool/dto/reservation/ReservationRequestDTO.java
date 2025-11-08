@@ -1,20 +1,19 @@
 package com.carpool.carpool.dto.reservation;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 
 @Getter
 public class ReservationRequestDTO {
 
-    @NotNull(message = "El viaje es un dato obligatorio")
-    private Long trip;
+    @Positive(message = "El id del viaje debe ser mayor a 0")
+    private Long idTrip;
 
-    @NotNull(message = "Debe indicar la localidad origen")
-    private Long startCity;
+    private Long idStartCity;
 
-    @NotNull(message = "Debe indicar la localidad destino")
-    private Long destinationCity;
+    private Long idDestinationCity;
 
-    @NotNull(message = "El equipaje es un dato obligatorio.")
-    private boolean baggage;
+    private Boolean baggage;
+
+    private String nameState;
 }

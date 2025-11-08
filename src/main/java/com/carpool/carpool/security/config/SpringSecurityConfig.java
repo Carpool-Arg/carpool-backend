@@ -76,13 +76,15 @@ public class SpringSecurityConfig {
         .requestMatchers("/vehicles", "/vehicles/**").hasRole("DRIVER")
         .requestMatchers("/trip", "/trip/check-trip-availability").hasRole("DRIVER")
         .requestMatchers(HttpMethod.GET, "/trip/{id}").hasRole("USER")
+        .requestMatchers(HttpMethod.GET, "/trip").hasAnyRole("DRIVER", "ADMIN")
+        .requestMatchers(HttpMethod.POST, "/trip/filter").hasAnyRole("DRIVER", "ADMIN")
         
         // Todos los demas endpoints que solamente necesitan autenticación
         .anyRequest().authenticated())
         .exceptionHandling(config -> config
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         )
-        //.addFilterBefore(new RecaptchaFilter(authRecaptchaService), UsernamePasswordAuthenticationFilter.class)
+        .addFilterBefore(new RecaptchaFilter(authRecaptchaService), UsernamePasswordAuthenticationFilter.class)
         .addFilter(new JwtAuthenticationFilter(authenticationManager(),userRepository, userAccountService, emailImplementation, supportEmail, userTokenRepository, urlUnlockAccount))
         .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService, userRepository))
         .csrf(config-> config.disable())

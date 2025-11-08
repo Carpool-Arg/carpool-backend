@@ -77,4 +77,20 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         @Param("userId") Long userId,
         @Param("orderByRating") Boolean orderByRating 
     );
+
+    @Query(value = """
+        SELECT t.* 
+        FROM trip t
+        JOIN state_history sh ON sh.trip_id = t.id
+        JOIN state s ON s.id = sh.state_id
+        WHERE t.driver_id = :driverId
+          AND s.name = 'CREATE'
+          AND s.scope = 'TRIP'
+          AND sh.start_datetime = (
+              SELECT MAX(sh2.start_datetime)
+              FROM state_history sh2
+              WHERE sh2.trip_id = t.id
+          )
+        """, nativeQuery = true)
+    List<Trip> findTripsByDriverIdWithCurrentStateCreateTrip(@Param("driverId") Long driverId);
 }
