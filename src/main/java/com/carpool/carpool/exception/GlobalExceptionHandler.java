@@ -1,5 +1,6 @@
 package com.carpool.carpool.exception;
 
+import java.io.FileNotFoundException;
 import java.util.List;
 
 import org.springframework.data.redis.RedisConnectionFailureException;
@@ -147,5 +148,15 @@ public class GlobalExceptionHandler {
    @ExceptionHandler(NoContentException.class)
     public ResponseEntity<Void> handleNoContent(NoContentException ex) {
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Excepcion utilizada para cuando un archivo no se encuentra.
+     * @param ex Excepción
+     * @return {@link ResponseEntity} que contiene {@link Response} con data {@link Void}
+     */
+    @ExceptionHandler(FileNotFoundException.class)
+    public ResponseEntity<Response<Void>> handleFileNotFound(FileNotFoundException ex) {
+        return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(ex.getMessage())), HttpStatus.NOT_FOUND);
     }
 }
