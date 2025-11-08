@@ -22,7 +22,7 @@ import com.carpool.carpool.enums.token.TokenTypeEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.model.user.User;
-import com.carpool.carpool.model.user.UserToken;
+import com.carpool.carpool.model.user.token.UserToken;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.user.token.UserTokenRepository;
 import com.carpool.carpool.response.Response;

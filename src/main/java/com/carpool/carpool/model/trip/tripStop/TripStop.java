@@ -27,7 +27,6 @@ import lombok.ToString;
 @ToString
 @Entity
 @Table(name="trip_stop")
-
 public class TripStop implements Serializable{
     @Id
     @Column(name="id")
@@ -53,5 +52,4 @@ public class TripStop implements Serializable{
     @ManyToOne
     @JoinColumn(name="trip_id", referencedColumnName = "id",nullable = false)
     private Trip trip;
-
 }

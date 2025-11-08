@@ -54,7 +54,7 @@ public class TripImplementation implements ITripService{
     private final CityRepository cityRepository;
     private final IConfigService configService;
 
-    
+
     @Override
     @Transactional
     public Response<Void> createTrip(TripRequestDTO tripRequestDTO) {
@@ -62,7 +62,7 @@ public class TripImplementation implements ITripService{
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())
         .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe."));
 
-        State stateCreate = stateRepository.findByNameAndScope("CREATE", ScopeEnum.TRIP)
+        State stateCreate = stateRepository.findByNameAndScope("CREATED", ScopeEnum.TRIP)
         .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para crear el viaje."));
 
         //Validaciones del viaje en general 
@@ -88,8 +88,8 @@ public class TripImplementation implements ITripService{
             .state(stateCreate)
         .build();
 
-        stateHistory.setTripState(newTrip);
-        
+        stateHistory.setTrip(newTrip);
+
         tripRepository.save(newTrip);
         stateHistoryRepository.save(stateHistory);
         return ResponseUtils.buildOKResponse(List.of("Viaje creado con éxito") , null);
@@ -100,7 +100,7 @@ public class TripImplementation implements ITripService{
         Trip trip = tripRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("El viaje no existe."));
 
-        TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip); 
+        TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip);
         return ResponseUtils.buildOKResponse(List.of("Viaje encontrado con éxito"), tripResponseDTO);
     }
 
@@ -124,7 +124,7 @@ public class TripImplementation implements ITripService{
             userCityId = configService.getDefaultCityId();
             infoMessage = "No se proporcionó la ubicación actual del usuario, por lo que se cargaron los viajes que salen o pasan por " + cityRepository.findById(userCityId).get().getName();
         }
-                
+
         List<Trip> trips = tripRepository.findTripsForInitialFeed(userCityId, userId);
 
         if (trips.size() > limit) {
@@ -134,9 +134,9 @@ public class TripImplementation implements ITripService{
         List<TripSearchResponseDTO> responseDTOs = trips.stream()
             .map(tripMapper::converTripToTripSearchResponseDTO)
             .collect(Collectors.toList());
-        
+
         List<String> messages = new ArrayList<>();
-        
+
         if (responseDTOs.isEmpty()) {
             messages.add("No se encontraron viajes que coincidan con los criterios.");
         } else {
@@ -150,16 +150,16 @@ public class TripImplementation implements ITripService{
         return ResponseUtils.buildOKResponse(messages, responseDTOs);
 
     }
-    
+
     @Override
     public Response<List<TripSearchResponseDTO>> searchTrips(TripSearchRequestDTO request, int limit) {
-        
-        Long userId = getAuthenticatedUserId(); 
-        
+
+        Long userId = getAuthenticatedUserId();
+
         if (request.getOriginCityId() == null || request.getDestinationCityId() == null) {
             throw new ConflictException("Los campos de origen y destino son obligatorios para la búsqueda de viajes.");
         }
-        
+
         List<Trip> trips = tripRepository.findFilteredTrips(
             request.getOriginCityId(),
             request.getDestinationCityId(),
@@ -173,7 +173,7 @@ public class TripImplementation implements ITripService{
         if (trips.size() > limit) {
             trips = trips.subList(0, limit);
         }
-        
+
         List<TripSearchResponseDTO> responseDTOs = trips.stream()
             .map(tripMapper::converTripToTripSearchResponseDTO)
             .collect(Collectors.toList());
@@ -184,7 +184,7 @@ public class TripImplementation implements ITripService{
         } else {
             message = String.format("Se cargaron %d viajes.", responseDTOs.size());
         }
- 
+
         return ResponseUtils.buildOKResponse(List.of(message), responseDTOs);
     }
 
