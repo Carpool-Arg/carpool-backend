@@ -23,7 +23,6 @@ import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.notification.INotificationService;
 import com.carpool.carpool.utils.ResponseUtils;
-import com.google.api.gax.rpc.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
@@ -64,10 +63,10 @@ public class ReservationImplementation implements IReservationService{
             throw new ConflictException("Este viaje te pertenece, no podés realizar una reserva en él.");
         }
 
-        Optional<Reservation> existingReservation = reservationRepository.findByUserId(userAuth.getId());
+        Optional<Reservation> existingReservation = reservationRepository.findReservationByUserAndTrip(userAuth.getId(), trip.getId() );
 
         if (existingReservation.isPresent()) {
-            throw new ConflictException("Ya tenés una reserva asociada, no se permiten múltiples solicitudes.");
+            throw new ConflictException("Ya tenés una reserva asociada para este viaje, no se permiten múltiples solicitudes.");
         }
 
         // Validaciones de las ciudades

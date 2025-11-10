@@ -91,7 +91,6 @@ public class SpringSecurityConfig {
         .cors(cors-> cors.configurationSource(corsConfigurationSource()))
         .sessionManagement(managment->managment.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .build();
-        
     }
 
     @Bean

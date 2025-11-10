@@ -16,4 +16,5 @@ public class ReservationRequestDTO {
     private Boolean baggage;
 
     private String nameState;
+
 }

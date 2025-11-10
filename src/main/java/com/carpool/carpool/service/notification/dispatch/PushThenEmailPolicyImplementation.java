@@ -10,7 +10,6 @@ import com.carpool.carpool.repository.user.token.UserTokenRepository;
 import com.carpool.carpool.service.email.IEmailService;
 import com.carpool.carpool.service.firebase.notification.IFirebaseNotificationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
