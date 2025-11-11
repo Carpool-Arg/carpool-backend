@@ -105,9 +105,6 @@ public class TripImplementation implements ITripService{
     @Override
     public Response<TripDriverResponseDTO> getTrips() {
         User driver = getAuthenticatedActiveUser();
-        if(driver == null || (driver.getId() == null || driver.getId() == 0)){
-            throw new UnauthorizedException("Debes iniciar sesión para obtener los viajes");
-        }
 
         List<Trip> trips = tripRepository.findTripsByDriverIdWithCurrentStateCreateTrip(driver.getId());
         if(trips.isEmpty()){

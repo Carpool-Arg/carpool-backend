@@ -104,9 +104,6 @@ public class ReservationImplementation implements IReservationService{
     @Override
     public Response<ReservationResponseDTO> getReservation(ReservationRequestDTO reservationRequestDTO) {
         User driver = getAuthenticatedActiveUser();
-        if(driver == null || (driver.getId() == null || driver.getId() == 0)){
-            throw new UnauthorizedException("Debes iniciar sesión para obtener las reservas");
-        }
 
         Specification<Reservation> filter = ReservationSpecification.byFilter(reservationRequestDTO, driver.getId());
         List<Reservation> reservations = reservationRepository.findAll(filter);
@@ -124,9 +121,7 @@ public class ReservationImplementation implements IReservationService{
     @Override
     public Response<Void> updateStateReservation(ReservationUpdateRequestDTO reservationUpdateRequestDTO) {
         User driver = getAuthenticatedActiveUser();
-        if(driver == null || (driver.getId() == null || driver.getId() == 0)){
-            throw new UnauthorizedException("Debes iniciar sesión para obtener las reservas");
-        }
+
         Reservation reservation = reservationRepository.getReferenceById(reservationUpdateRequestDTO.getIdReservation());
         if(reservation == null){
             throw new ResourceNotFoundException("La reserva no existe");
