@@ -15,6 +15,7 @@ import com.carpool.carpool.utils.ResponseUtils;
 import static com.carpool.carpool.utils.TextUtils.normalize;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @Service
 @RequiredArgsConstructor
@@ -22,8 +23,6 @@ public class CityImplementation implements ICityService {
     
     private final CityRepository cityRepository;
     private final CityMapper cityMapper;
-
-   
 
     @Override
     public Response<CityResponseDTO> getCityById(Long id) {
@@ -71,5 +70,17 @@ public class CityImplementation implements ICityService {
             
         return ResponseUtils.buildOKResponse(List.of("Localidades obtenidas con éxito."), cityResponseDTO);
     }
-        
+
+    @Override
+    public Response<CityResponseDTO> getCityByCoordinates(String latitude, String longitude) {
+        double lat = Double.parseDouble(latitude);
+        double lng = Double.parseDouble(longitude);
+
+        City city = cityRepository.findCityByCoordinates(lat, lng)
+                .orElseThrow(() -> new RuntimeException("La localidad no existe."));
+
+        CityResponseDTO cityResponseDTO = cityMapper.convertCityToCityResponseDTO(city);
+
+        return ResponseUtils.buildOKResponse(List.of("Localidad obtenida con éxito."), cityResponseDTO);
+    }
 }

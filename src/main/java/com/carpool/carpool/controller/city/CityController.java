@@ -41,7 +41,6 @@ public class CityController {
         return new ResponseEntity<>(cityService.getCityById(id), HttpStatus.OK);
     }
 
-
     @Operation(
         summary = "Obtener una ciudad por su nombre"
     )
@@ -73,5 +72,16 @@ public class CityController {
         Response<List<CityResponseDTO>> response = cityService.getCitiesForAutocomplete(name, 10);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-    
+
+    @Operation(
+            summary = "Obtener una localidad por coordenadas"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Localidad obtenida con éxito"),
+            @ApiResponse(responseCode = "401", description = "No autorizado"),
+    })
+    @GetMapping("/coordinates")
+    public ResponseEntity<Response<CityResponseDTO>> getCityByCoordinates( @RequestParam String lat,  @RequestParam String lng) {
+        return new ResponseEntity<>(cityService.getCityByCoordinates(lat, lng), HttpStatus.OK);
+    }
 }

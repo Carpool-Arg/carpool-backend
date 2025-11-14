@@ -26,4 +26,12 @@ public interface ICityService {
      * @return Response<CityResponseDTO> devolviendo la localidad buscada por nombre
      */
      Response<List<CityResponseDTO>> getCitiesForAutocomplete(String name, int limit);
+
+    /**
+     * Metodo para obtener una localidad mediante sus coordenada
+     * @param String latitude: latitud de la ciudad
+     * @param String longitude: longitud de la ciudad
+     * @return CityResponseDTO la ciudad convertida a un objeto DTO
+     */
+    Response<CityResponseDTO> getCityByCoordinates(String latitude, String longitude);
 }
