@@ -102,10 +102,10 @@ public class ReservationImplementation implements IReservationService{
     }
 
     @Override
-    public Response<ReservationResponseDTO> getReservation(ReservationRequestDTO reservationRequestDTO) {
+    public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, boolean baggage, String nameState) {
         User driver = getAuthenticatedActiveUser();
 
-        Specification<Reservation> filter = ReservationSpecification.byFilter(reservationRequestDTO, driver.getId());
+        Specification<Reservation> filter = ReservationSpecification.byFilter(idTrip, idStartCity, idDestinationCity, baggage, nameState, driver.getId());
         List<Reservation> reservations = reservationRepository.findAll(filter);
         if(reservations == null || reservations.isEmpty()){
             return ResponseUtils.buildOKResponse(List.of("No existen reservas para el viaje correspondiente"), null);

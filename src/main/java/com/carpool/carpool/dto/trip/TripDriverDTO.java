@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 public class TripDriverDTO {
     private Long id;
     private VehicleResponseTripDTO vehicle;
+    private String startCity;
+    private String destinationCity;
     private LocalDateTime startDateTime;
     private int availableSeat;
     private int currentAvailableSeats;

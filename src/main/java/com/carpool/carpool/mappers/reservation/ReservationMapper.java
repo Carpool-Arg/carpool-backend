@@ -58,7 +58,6 @@ public class ReservationMapper {
                         .baggage(reservation.isBaggage())
                         .nameUser(reservation.getUser().getName())
                         .lastNameUser(reservation.getUser().getLastname())
-                        .username(reservation.getUser().getUsername())
                         .build())
                 .collect(Collectors.toList());
     }

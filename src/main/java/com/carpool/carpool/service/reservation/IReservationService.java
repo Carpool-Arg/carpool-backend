@@ -1,12 +1,10 @@
 package com.carpool.carpool.service.reservation;
 
 import com.carpool.carpool.dto.reservation.CreateReservationRequestDTO;
-import com.carpool.carpool.dto.reservation.ReservationRequestDTO;
 import com.carpool.carpool.dto.reservation.ReservationResponseDTO;
 import com.carpool.carpool.dto.reservation.ReservationUpdateRequestDTO;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.UnauthorizedException;
-import com.carpool.carpool.dto.reservation.ReservationRequestDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 
@@ -21,11 +19,15 @@ public interface IReservationService {
     /**
      * Metodo encargado de obtener las reservas realizadas a un viaje. Solamente es accesible por aquellos usuarios que poseen el rol
      * CHOFER o ADMIN.
-     * @param reservationRequestDTO Request que contiene la informacion necesaria para filtrar
+     * @param idTrip                Id del viaje
+     * @param idStartCity           Id de la ciudad origen
+     * @param idDestinationCity     Id de la ciudad destino
+     * @param baggage               Si requiere o no equipaje
+     * @param nameState             Nombre del estado del viaje
      * @return Response<ReservationResponseDTO> devolviendo el mensaje con las reservas de un viaje o sin ellas
      * @throws UnauthorizedException
      */
-    Response<ReservationResponseDTO> getReservation(ReservationRequestDTO reservationRequestDTO);
+    Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, boolean baggage, String nameState);
 
     /**
      * Metodo encargado para aceptar o rechazar una reserva.

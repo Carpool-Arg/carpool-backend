@@ -159,11 +159,25 @@ public class TripMapper {
                             .color(vehicle.getColor())
                             .build();
 
+                    String startCity = trip.getTripStops().stream()
+                            .filter(TripStop::isStart)
+                            .findFirst()
+                            .map(ts -> ts.getCity().getName())
+                            .orElse("");
+
+                    String destinationCity = trip.getTripStops().stream()
+                            .filter(TripStop::isDestination)
+                            .findFirst()
+                            .map(ts -> ts.getCity().getName())
+                            .orElse("");
+
                     return TripDriverDTO.builder()
                             .id(trip.getId())
                             .vehicle(vehicleDTO)
                             .startDateTime(trip.getStartTripDateTime())
                             .availableSeat(trip.getAvailableSeat())
+                            .startCity(startCity)
+                            .destinationCity(destinationCity)
                             .currentAvailableSeats(trip.getCurrentAvailableSeats())
                             .availableBaggage(trip.getAvailableBaggage().getTypeBaggage())
                             .seatPrice(trip.getSeatPrice())

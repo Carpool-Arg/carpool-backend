@@ -107,14 +107,15 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         FROM trip t
         JOIN state_history sh ON sh.trip_id = t.id
         JOIN state s ON s.id = sh.state_id
-        WHERE t.driver_id = :driverId
-          AND s.name = 'CREATE'
+        JOIN vehicles v ON v.id = t.vehicle_id
+        WHERE v.driver_id = :driverId
+          AND s.name = 'CREATED'
           AND s.scope = 'TRIP'
           AND sh.start_datetime = (
               SELECT MAX(sh2.start_datetime)
               FROM state_history sh2
               WHERE sh2.trip_id = t.id
           )
-        """, nativeQuery = true)
+    """, nativeQuery = true)
     List<Trip> findTripsByDriverIdWithCurrentStateCreateTrip(@Param("driverId") Long driverId);
 }

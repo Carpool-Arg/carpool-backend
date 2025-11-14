@@ -1,7 +1,6 @@
 package com.carpool.carpool.controller.reservation;
 
 import com.carpool.carpool.dto.reservation.CreateReservationRequestDTO;
-import com.carpool.carpool.dto.reservation.ReservationRequestDTO;
 import com.carpool.carpool.dto.reservation.ReservationResponseDTO;
 import com.carpool.carpool.dto.reservation.ReservationUpdateRequestDTO;
 import com.carpool.carpool.response.Response;
@@ -12,13 +11,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @Tag(name="Reservation", description = "Operaciones relacionadas con la reserva de viajes")
@@ -45,17 +42,6 @@ public class ReservationController {
     }
 
     @Operation(
-            summary = "Obtener la reservas de un viaje"
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Reservas obtenidas con éxito", content = @Content),
-    })
-    @PostMapping("/filter")
-    public ResponseEntity<Response<ReservationResponseDTO>> getReservations(@Valid @RequestBody ReservationRequestDTO reservationRequestDTO){
-        return new ResponseEntity<>(reservationService.getReservation(reservationRequestDTO), HttpStatus.OK);
-    }
-
-    @Operation(
             summary = "Aceptar-Rechazar una reserva de un viaje"
     )
     @ApiResponses({
@@ -66,5 +52,18 @@ public class ReservationController {
     @PostMapping("/update-reservation")
     public ResponseEntity<Response<Void>> updateReservation(@Valid @RequestBody ReservationUpdateRequestDTO reservationUpdateRequestDTO){
         return new ResponseEntity<>(reservationService.updateStateReservation(reservationUpdateRequestDTO), HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Obtener la reservas de un viaje"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reservas obtenidas con éxito", content = @Content),
+    })
+    @GetMapping("/filter")
+    public ResponseEntity<Response<ReservationResponseDTO>> getReservations(@RequestParam(required = false) @Positive(message = "El id del viaje debe ser mayor a 0") Long idTrip,
+    @RequestParam(required = false) Long idStartCity, @RequestParam(required = false) Long idDestinationCity,
+    @RequestParam(required = false) boolean baggage, @RequestParam(required = false) String nameState){
+        return new ResponseEntity<>(reservationService.getReservation(idTrip, idStartCity, idDestinationCity, baggage, nameState), HttpStatus.OK);
     }
 }
