@@ -33,7 +33,7 @@ import com.carpool.carpool.repository.trip.TripRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.vehicle.VehicleRepository;
 import com.carpool.carpool.response.Response;
-import com.carpool.carpool.service.setting.IConfigService;
+import com.carpool.carpool.service.setting.ISettingService;
 import com.carpool.carpool.utils.ResponseUtils;
 
 import jakarta.transaction.Transactional;
@@ -51,7 +51,7 @@ public class TripImplementation implements ITripService{
     private final StateRepository stateRepository;
     private final StateHistoryRepository stateHistoryRepository;
     private final CityRepository cityRepository;
-    private final IConfigService configService;
+    private final ISettingService settingService;
 
     @Override
     @Transactional
@@ -135,7 +135,7 @@ public class TripImplementation implements ITripService{
         String infoMessage = null;
 
         if (userCityId == null) {
-            userCityId = configService.getDefaultCityId();
+            userCityId = settingService.getDefaultCityId();
             infoMessage = "No se proporcionó la ubicación actual del usuario, por lo que se cargaron los viajes que salen o pasan por " + cityRepository.findById(userCityId).get().getName();
         }
 
