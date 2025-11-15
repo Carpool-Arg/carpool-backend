@@ -36,7 +36,7 @@ public class CityController {
         @ApiResponse(responseCode = "200", description = "Localidad obtenida con éxito"),
         @ApiResponse(responseCode = "401", description = "No autorizado"),
     })
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     public ResponseEntity<Response<CityResponseDTO>> getCityById(@PathVariable Long id) {
         return new ResponseEntity<>(cityService.getCityById(id), HttpStatus.OK);
     }

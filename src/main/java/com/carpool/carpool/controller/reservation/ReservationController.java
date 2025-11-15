@@ -26,6 +26,19 @@ public class ReservationController {
     private final IReservationService reservationService;
 
     @Operation(
+            summary = "Obtener la reservas de un viaje"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reservas obtenidas con éxito", content = @Content),
+    })
+    @GetMapping("/filter")
+    public ResponseEntity<Response<ReservationResponseDTO>> getReservations(@RequestParam(required = false) @Positive(message = "El id del viaje debe ser mayor a 0") Long idTrip,
+                                                                            @RequestParam(required = false) Long idStartCity, @RequestParam(required = false) Long idDestinationCity,
+                                                                            @RequestParam(required = false) boolean baggage, @RequestParam(required = false) String nameState){
+        return new ResponseEntity<>(reservationService.getReservation(idTrip, idStartCity, idDestinationCity, baggage, nameState), HttpStatus.OK);
+    }
+
+    @Operation(
             summary = "Solicitar una reserva de un viaje"
     )
     @ApiResponses({
@@ -49,21 +62,8 @@ public class ReservationController {
             @ApiResponse(responseCode = "404", description = "Recurso no encontrado"),
             @ApiResponse(responseCode = "409", description = "Cupo de asientos ocupados", content = @Content),
     })
-    @PostMapping("/update-reservation")
+    @PutMapping
     public ResponseEntity<Response<Void>> updateReservation(@Valid @RequestBody ReservationUpdateRequestDTO reservationUpdateRequestDTO){
         return new ResponseEntity<>(reservationService.updateStateReservation(reservationUpdateRequestDTO), HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Obtener la reservas de un viaje"
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Reservas obtenidas con éxito", content = @Content),
-    })
-    @GetMapping("/filter")
-    public ResponseEntity<Response<ReservationResponseDTO>> getReservations(@RequestParam(required = false) @Positive(message = "El id del viaje debe ser mayor a 0") Long idTrip,
-    @RequestParam(required = false) Long idStartCity, @RequestParam(required = false) Long idDestinationCity,
-    @RequestParam(required = false) boolean baggage, @RequestParam(required = false) String nameState){
-        return new ResponseEntity<>(reservationService.getReservation(idTrip, idStartCity, idDestinationCity, baggage, nameState), HttpStatus.OK);
     }
 }
