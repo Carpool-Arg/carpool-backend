@@ -9,6 +9,7 @@ public interface ICityService {
     /**
      * Metodo para obtener una localidad por su ID.
      * @return Response<List<CityResponseDTO>> devolviendo la lista de todas las localidades
+     * @throws com.carpool.carpool.exception.ResourceNotFoundException si no se encuentra una ciudad
      */
     Response<CityResponseDTO> getCityById(Long id);
 
@@ -16,6 +17,7 @@ public interface ICityService {
      * Metodo para obtener una localidad por su nombre.
      * @param cityNameRequestDTO una request con el nombre de la ciudad 
      * @return  la ciudad convertida a un objeto DTO
+     * @throws com.carpool.carpool.exception.ResourceNotFoundException si no se encuentra una ciudad
      */
     Response<CityResponseDTO> getCityByName(String name);
 
@@ -33,6 +35,7 @@ public interface ICityService {
      * @param latitude  latitud de la ciudad
      * @param longitude longitud de la ciudad
      * @return un objeto Response que envuelve el CityResponseDTO correspondiente a la ciudad encontrada
+     * @throws com.carpool.carpool.exception.ResourceNotFoundException si no se encuentra una ciudad con las coordenadas proporcionadas
      */
     Response<CityResponseDTO> getCityByCoordinates(String latitude, String longitude);
 }

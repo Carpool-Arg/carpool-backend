@@ -2,6 +2,7 @@ package com.carpool.carpool.service.city;
 
 import java.util.List;
 
+import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.service.setting.ISettingService;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +30,7 @@ public class CityImplementation implements ICityService {
     @Override
     public Response<CityResponseDTO> getCityById(Long id) {
         City city = cityRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("La localidad no existe."));
+                .orElseThrow(() -> new ResourceNotFoundException("La localidad no existe."));
         
         CityResponseDTO cityResponseDTO = cityMapper.convertCityToCityResponseDTO(city);
 
@@ -39,7 +40,7 @@ public class CityImplementation implements ICityService {
     @Override
     public Response<CityResponseDTO> getCityByName(String name) {
         City city = cityRepository.findByName(normalize(name))
-            .orElseThrow(()-> new IllegalArgumentException("No existe una localidad con el nombre ingresado"));
+            .orElseThrow(()-> new ResourceNotFoundException("No existe una localidad con el nombre ingresado"));
         CityResponseDTO cityResponseDTO = cityMapper.convertCityToCityResponseDTO(city);
         return ResponseUtils.buildOKResponse(List.of("Localidad obtenida con éxito."), cityResponseDTO);
     }  
@@ -80,7 +81,7 @@ public class CityImplementation implements ICityService {
         int minimumCityDistance = settingService.getMinimumCityDistance();
 
         City city = cityRepository.findCityByCoordinates(lat, lng, minimumCityDistance)
-                .orElseThrow(() -> new RuntimeException("La localidad no existe."));
+                .orElseThrow(() -> new ResourceNotFoundException("La localidad no existe."));
 
         CityResponseDTO cityResponseDTO = cityMapper.convertCityToCityResponseDTO(city);
 
