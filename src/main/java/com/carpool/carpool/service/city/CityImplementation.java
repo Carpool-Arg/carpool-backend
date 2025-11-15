@@ -2,6 +2,7 @@ package com.carpool.carpool.service.city;
 
 import java.util.List;
 
+import com.carpool.carpool.service.setting.ISettingService;
 import org.springframework.stereotype.Service;
 
 import com.carpool.carpool.dto.city.CityResponseDTO;
@@ -23,6 +24,7 @@ public class CityImplementation implements ICityService {
     
     private final CityRepository cityRepository;
     private final CityMapper cityMapper;
+    private final ISettingService settingService;
 
     @Override
     public Response<CityResponseDTO> getCityById(Long id) {
@@ -41,7 +43,6 @@ public class CityImplementation implements ICityService {
         CityResponseDTO cityResponseDTO = cityMapper.convertCityToCityResponseDTO(city);
         return ResponseUtils.buildOKResponse(List.of("Localidad obtenida con éxito."), cityResponseDTO);
     }  
-
 
     @Override
     public Response<List<CityResponseDTO>> getCitiesForAutocomplete(String name, int limit) {
@@ -76,7 +77,9 @@ public class CityImplementation implements ICityService {
         double lat = Double.parseDouble(latitude);
         double lng = Double.parseDouble(longitude);
 
-        City city = cityRepository.findCityByCoordinates(lat, lng)
+        int minimumCityDistance = settingService.getMinimumCityDistance();
+
+        City city = cityRepository.findCityByCoordinates(lat, lng, minimumCityDistance)
                 .orElseThrow(() -> new RuntimeException("La localidad no existe."));
 
         CityResponseDTO cityResponseDTO = cityMapper.convertCityToCityResponseDTO(city);

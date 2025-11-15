@@ -54,7 +54,6 @@ public class CityController {
         return new ResponseEntity<>(cityService.getCityByName(name), HttpStatus.OK);
     }
 
-
     @Operation(
         summary = "Obtener localidades para autocompletar"
     

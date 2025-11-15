@@ -27,7 +27,7 @@ public interface CityRepository extends JpaRepository<City, Long> {
                 sin(radians(:lat)) *
                 sin(radians(c.latitude))
             )
-        ) <= 20
+        ) <= :minimumCityDistance
         ORDER BY (
             6371 * acos(
                 cos(radians(:lat)) *
@@ -39,5 +39,5 @@ public interface CityRepository extends JpaRepository<City, Long> {
         )
         LIMIT 1
     """, nativeQuery = true)
-    Optional<City> findCityByCoordinates(@Param("lat") double latitude, @Param("lng") double longitude);
+    Optional<City> findCityByCoordinates(@Param("lat") double latitude, @Param("lng") double longitude, @Param("minimumCityDistance") int minimumCityDistance);
 }   
