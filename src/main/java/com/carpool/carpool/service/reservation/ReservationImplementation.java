@@ -49,6 +49,8 @@ public class ReservationImplementation implements IReservationService{
     private final INotificationService notificationService;
     private final IMediaService mediaService;
 
+    private final String STATE_PENDING = "PENDING";
+
     @Override
     public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, Boolean baggage, String nameState) {
         User driver = getAuthenticatedActiveUser();
@@ -135,6 +137,10 @@ public class ReservationImplementation implements IReservationService{
         Reservation reservation = reservationRepository.getReferenceById(reservationUpdateRequestDTO.getIdReservation());
         if(reservation == null){
             throw new ResourceNotFoundException("La reserva no existe");
+        }
+
+        if(reservation.getState().getName() != STATE_PENDING){
+            throw new ConflictException("No se puede realizar acciones a la reserva ya que se encuentra en un estado final");
         }
 
         Trip trip = reservation.getTrip();
