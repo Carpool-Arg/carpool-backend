@@ -10,6 +10,7 @@ import com.carpool.carpool.model.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
@@ -44,11 +45,11 @@ public class ReservationMapper {
     }
 
     /**
-     *
-     * @param listReservation
-     * @return
+     * Metodo encargado de convertir un objeto {@link Reservation} en {@link ReservationDTO} y almacenarlo en una lista
+     * @param listReservation   Lista de reservas
+     * @return Lista con objetos {@link ReservationDTO}
      */
-    public static List<ReservationDTO> convertReservationToReservationDTO(List<Reservation> listReservation){
+    public static List<ReservationDTO> convertReservationToReservationDTO(List<Reservation> listReservation, Map<Long, String> urlImagesUsers){
         return listReservation.stream()
                 .map(reservation -> ReservationDTO.builder()
                         .id(reservation.getId())
@@ -58,6 +59,7 @@ public class ReservationMapper {
                         .baggage(reservation.isBaggage())
                         .nameUser(reservation.getUser().getName())
                         .lastNameUser(reservation.getUser().getLastname())
+                        .urlImage(urlImagesUsers.get(reservation.getUser().getId()))
                         .build())
                 .collect(Collectors.toList());
     }

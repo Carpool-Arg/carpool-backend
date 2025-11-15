@@ -17,4 +17,5 @@ public class ReservationDTO {
     private boolean baggage;
     private String nameUser;
     private String lastNameUser;
+    private String urlImage;
 }

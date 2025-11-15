@@ -21,6 +21,7 @@ import com.carpool.carpool.repository.trip.TripRepository;
 import com.carpool.carpool.repository.trip.stop.TripStopRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
+import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.notification.INotificationService;
 import com.carpool.carpool.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -30,8 +31,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +47,7 @@ public class ReservationImplementation implements IReservationService{
     private final ReservationMapper reservationMapper;
     private final StateRepository stateRepository;
     private final INotificationService notificationService;
+    private final IMediaService mediaService;
 
     @Override
     public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, Boolean baggage, String nameState) {
@@ -55,7 +59,13 @@ public class ReservationImplementation implements IReservationService{
             return ResponseUtils.buildOKResponse(List.of("No existen reservas para el viaje correspondiente"), null);
         }
 
-        List<ReservationDTO> listReservation = reservationMapper.convertReservationToReservationDTO(reservations);
+        Map<Long, String> urlImagesUsers = reservations.stream()
+                .collect(Collectors.toMap(
+                    reservation -> reservation.getUser().getId(),
+                        reservation -> mediaService.getProfilePictureUrlByUserId(reservation.getUser().getId())
+                ));
+
+        List<ReservationDTO> listReservation = reservationMapper.convertReservationToReservationDTO(reservations, urlImagesUsers);
         ReservationResponseDTO responseReservation = new ReservationResponseDTO();
         responseReservation.setReservation(listReservation);
 
