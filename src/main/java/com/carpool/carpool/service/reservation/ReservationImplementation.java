@@ -46,6 +46,23 @@ public class ReservationImplementation implements IReservationService{
     private final INotificationService notificationService;
 
     @Override
+    public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, boolean baggage, String nameState) {
+        User driver = getAuthenticatedActiveUser();
+
+        Specification<Reservation> filter = ReservationSpecification.byFilter(idTrip, idStartCity, idDestinationCity, baggage, nameState, driver.getId());
+        List<Reservation> reservations = reservationRepository.findAll(filter);
+        if(reservations == null || reservations.isEmpty()){
+            return ResponseUtils.buildOKResponse(List.of("No existen reservas para el viaje correspondiente"), null);
+        }
+
+        List<ReservationDTO> listReservation = reservationMapper.convertReservationToReservationDTO(reservations);
+        ReservationResponseDTO responseReservation = new ReservationResponseDTO();
+        responseReservation.setReservation(listReservation);
+
+        return ResponseUtils.buildOKResponse(List.of("Reservas realizadas al viaje obtenido con éxito"), responseReservation);
+    }
+
+    @Override
     public Response<Void> createReservation(CreateReservationRequestDTO createReservationRequestDTO) {
         State statePending = stateRepository.findByNameAndScope("PENDING", ScopeEnum.RESERVATION)
                 .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para crear la reserva."));
@@ -99,23 +116,6 @@ public class ReservationImplementation implements IReservationService{
         );
 
         return ResponseUtils.buildOKResponse(List.of("Reserva registrada éxito, se encuentra pendiente a confirmación.") , null);
-    }
-
-    @Override
-    public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, boolean baggage, String nameState) {
-        User driver = getAuthenticatedActiveUser();
-
-        Specification<Reservation> filter = ReservationSpecification.byFilter(idTrip, idStartCity, idDestinationCity, baggage, nameState, driver.getId());
-        List<Reservation> reservations = reservationRepository.findAll(filter);
-        if(reservations == null || reservations.isEmpty()){
-            return ResponseUtils.buildOKResponse(List.of("No existen reservas para el viaje correspondiente"), null);
-        }
-
-        List<ReservationDTO> listReservation = reservationMapper.convertReservationToReservationDTO(reservations);
-        ReservationResponseDTO responseReservation = new ReservationResponseDTO();
-        responseReservation.setReservation(listReservation);
-
-        return ResponseUtils.buildOKResponse(List.of("Reservas realizadas al viaje obtenido con éxito"), responseReservation);
     }
 
     @Override
