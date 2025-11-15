@@ -108,6 +108,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         JOIN state_history sh ON sh.trip_id = t.id
         JOIN state s ON s.id = sh.state_id
         JOIN vehicles v ON v.id = t.vehicle_id
+        JOIN trip_stop ts ON ts.trip_id = t.id
         WHERE v.driver_id = :driverId
           AND s.name = 'CREATED'
           AND s.scope = 'TRIP'

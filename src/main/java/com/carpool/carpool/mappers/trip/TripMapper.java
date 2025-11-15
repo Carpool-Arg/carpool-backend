@@ -171,6 +171,12 @@ public class TripMapper {
                             .map(ts -> ts.getCity().getName())
                             .orElse("");
 
+                    LocalDateTime estimatedArrivalDate = trip.getTripStops().stream()
+                            .filter(TripStop::isDestination)
+                            .findFirst()
+                            .map(ts -> ts.getEstimatedArrivalDateTime())
+                            .orElse(null);
+
                     return TripDriverDTO.builder()
                             .id(trip.getId())
                             .vehicle(vehicleDTO)
@@ -181,6 +187,7 @@ public class TripMapper {
                             .currentAvailableSeats(trip.getCurrentAvailableSeats())
                             .availableBaggage(trip.getAvailableBaggage().getTypeBaggage())
                             .seatPrice(trip.getSeatPrice())
+                            .estimatedArrivalDateTime(estimatedArrivalDate)
                             .build();
                 }).toList();
     }
