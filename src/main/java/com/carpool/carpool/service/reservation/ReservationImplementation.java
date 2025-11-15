@@ -46,7 +46,7 @@ public class ReservationImplementation implements IReservationService{
     private final INotificationService notificationService;
 
     @Override
-    public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, boolean baggage, String nameState) {
+    public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, Boolean baggage, String nameState) {
         User driver = getAuthenticatedActiveUser();
 
         Specification<Reservation> filter = ReservationSpecification.byFilter(idTrip, idStartCity, idDestinationCity, baggage, nameState, driver.getId());

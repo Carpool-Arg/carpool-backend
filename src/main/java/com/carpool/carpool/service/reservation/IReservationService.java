@@ -27,7 +27,7 @@ public interface IReservationService {
      * @return Response<ReservationResponseDTO> devolviendo el mensaje con las reservas de un viaje o sin ellas
      * @throws UnauthorizedException
      */
-    Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, boolean baggage, String nameState);
+    Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, Boolean baggage, String nameState);
 
     /**
      * Metodo encargado para aceptar o rechazar una reserva.
