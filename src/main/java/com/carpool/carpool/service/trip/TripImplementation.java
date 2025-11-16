@@ -104,7 +104,7 @@ public class TripImplementation implements ITripService{
 
     @Override
     public Response<TripDriverResponseDTO> getTrips() {
-        User driver = getAuthenticatedActiveUser();
+        Driver driver = getAuthenticatedDriver();
 
         List<Trip> trips = tripRepository.findTripsByDriverIdWithCurrentStateCreateTrip(driver.getId());
         if(trips.isEmpty()){

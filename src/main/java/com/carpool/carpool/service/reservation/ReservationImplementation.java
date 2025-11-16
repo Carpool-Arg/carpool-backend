@@ -132,14 +132,12 @@ public class ReservationImplementation implements IReservationService{
 
     @Override
     public Response<Void> updateStateReservation(ReservationUpdateRequestDTO reservationUpdateRequestDTO) {
-        User driver = getAuthenticatedActiveUser();
-
         Reservation reservation = reservationRepository.getReferenceById(reservationUpdateRequestDTO.getIdReservation());
         if(reservation == null){
             throw new ResourceNotFoundException("La reserva no existe");
         }
         
-        if(!reservation.getState().getName().equals("PENDING")){
+        if(!reservation.getState().getName().equals(STATE_PENDING)){
             throw new ConflictException("No se puede realizar acciones a la reserva ya que se encuentra en un estado final");
         }
 
@@ -159,7 +157,7 @@ public class ReservationImplementation implements IReservationService{
             if(currentAvailableSeat-1 < 0){
                 throw new ConflictException("Se alcanzó el cupo disponible, no se puede aceptar la reserva.");
             }
-            trip.setAvailableSeat(currentAvailableSeat);
+            trip.setCurrentAvailableSeats(--currentAvailableSeat);
             tripRepository.save(trip);
             notification = NotificationEventEnum.RESERVATION_ACCEPTED;
         }
