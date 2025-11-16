@@ -5,13 +5,10 @@ import java.time.LocalDate;
 import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.user.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @Builder
 @NoArgsConstructor

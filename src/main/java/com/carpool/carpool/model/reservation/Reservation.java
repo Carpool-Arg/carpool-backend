@@ -5,14 +5,12 @@ import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.user.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name="reservation")
 @AllArgsConstructor
