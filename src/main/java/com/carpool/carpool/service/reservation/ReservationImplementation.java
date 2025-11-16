@@ -21,10 +21,13 @@ import com.carpool.carpool.repository.trip.TripRepository;
 import com.carpool.carpool.repository.trip.stop.TripStopRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
+import com.carpool.carpool.security.filter.RecaptchaFilter;
 import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.notification.INotificationService;
 import com.carpool.carpool.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -50,13 +53,21 @@ public class ReservationImplementation implements IReservationService{
     private final IMediaService mediaService;
 
     private final String STATE_PENDING = "PENDING";
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReservationImplementation.class);
 
     @Override
     public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, Boolean baggage, String nameState) {
+        this.LOGGER.info("ENTRA AL METODO PARA OBTENR UNA RESERVA idTrip: {} \nidStartCity{} \nidDestinationCity{} \nbaggage{} \nnameState{}", idTrip, idStartCity, idDestinationCity, baggage, nameState);
         User driver = getAuthenticatedActiveUser();
 
         Specification<Reservation> filter = ReservationSpecification.byFilter(idTrip, idStartCity, idDestinationCity, baggage, nameState, driver.getId());
+
+        this.LOGGER.info("EJECUTO EL FILTER {}", filter);
+
         List<Reservation> reservations = reservationRepository.findAll(filter);
+
+        this.LOGGER.info("ENCONTRO LAS RESERVAS {}", reservations);
+
         if(reservations == null || reservations.isEmpty()){
             return ResponseUtils.buildOKResponse(List.of("No existen reservas para el viaje correspondiente"), null);
         }
@@ -66,6 +77,8 @@ public class ReservationImplementation implements IReservationService{
                     reservation -> reservation.getUser().getId(),
                         reservation -> mediaService.getProfilePictureUrlByUserId(reservation.getUser().getId())
                 ));
+
+        this.LOGGER.info("IMAGENES {}", urlImagesUsers);
 
         List<ReservationDTO> listReservation = reservationMapper.convertReservationToReservationDTO(reservations, urlImagesUsers);
         ReservationResponseDTO responseReservation = new ReservationResponseDTO();
