@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 
 @Getter
-public class ReservationRequestDTO {
+public class CreateReservationRequestDTO {
 
     @NotNull(message = "El viaje es un dato obligatorio")
     private Long trip;

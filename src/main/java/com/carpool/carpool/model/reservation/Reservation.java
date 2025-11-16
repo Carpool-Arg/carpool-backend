@@ -1,5 +1,6 @@
 package com.carpool.carpool.model.reservation;
 
+import com.carpool.carpool.model.state.State;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.user.User;
@@ -64,4 +65,8 @@ public class Reservation {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+
+    @ManyToOne
+    @JoinColumn(name = "state_id", referencedColumnName = "id", nullable = false)
+    private State state;
 }

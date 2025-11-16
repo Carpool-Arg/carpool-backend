@@ -55,5 +55,19 @@ public class EmailMessageUtils {
     public static final String BUTTON_NEW_RESERVATION = "Ver Solicitud";
     public static final String MESSAGE_FOOTER_NEW_RESERVATION = "Te recomendamos responder a la brevedad para asegurar la reserva del pasajero.<br>Gracias por utilizar <strong>Carpool</strong>.";
 
+    //RESERVATION ACCEPTED
+    public static final String SUBJECT_EMAIL_RESERVATION_ACCEPTED = "¡Tu solicitud de reserva ha sido aceptada!";
+    public static final String TITLE_RESERVATION_ACCEPTED = "¡Hola, {name}!";
+    public static final String MESSAGE_RESERVATION_ACCEPTED ="\uD83E\uDD73 ¡Buenas noticias! Tu reserva para el viaje <strong>{origin}</strong> → <strong>{destination}</strong> fue aceptada por <strong>{driverName}</strong>.<br><br>" +
+            "Ya tenés tu lugar confirmado. ¡Gracias por elegir <strong>Carpool</strong> y buen viaje!";
+    public static final String MESSAGE_FOOTER_RESERVATION_ACCEPTED = "El equipo de Carpool";
+
+    //RESERVATION REJECTED
+    public static final String SUBJECT_EMAIL_RESERVATION_REJECTED = "Tu solicitud de reserva ha sido rechazada";
+    public static final String TITLE_RESERVATION_REJECTED = "¡Hola, {name}!";
+    public static final String MESSAGE_RESERVATION_REJECTED ="Lamentablemente, tu solicitud de reserva para el viaje <strong>{origin}</strong> → <strong>{destination}</strong> fue rechazada por <strong>{driverName}</strong>.<br><br>" +
+            "Gracias por tu comprensión.<br>" +
+           "Esperamos que pronto encuentres otro viaje que se adapte a vos \uD83D\uDE4C";
+    public static final String MESSAGE_FOOTER_RESERVATION_REJECTED = "El equipo de Carpool";
 
 }

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.carpool.carpool.dto.trip.TripDriverDTO;
 import org.springframework.stereotype.Component;
 
 import com.carpool.carpool.dto.driver.DriverSearchResponseDTO;
@@ -137,6 +138,58 @@ public class TripMapper {
             .availableBaggage(trip.getAvailableBaggage().toString())
             .seatPrice(trip.getSeatPrice())
             .build();
+    }
+
+    /**
+     * Este metodo obtiene un listado de viajes y los convierte en un listado de objetos {@link TripDriverDTO}
+     * @param listTrips Listado de viajes
+     * @return Lista que contiene objetos {@link TripDriverDTO}
+     */
+    public List<TripDriverDTO> convertTripToTripDriverResponseDTO(List<Trip> listTrips) {
+
+        return listTrips.stream()
+                .map(trip -> {
+                    Vehicle vehicle = trip.getVehicle();
+
+                    VehicleResponseTripDTO vehicleDTO = VehicleResponseTripDTO.builder()
+                            .domain(vehicle.getDomain())
+                            .vehicleTypeName(vehicle.getVehicleType().getName())
+                            .brand(vehicle.getBrand())
+                            .model(vehicle.getModel())
+                            .color(vehicle.getColor())
+                            .build();
+
+                    String startCity = trip.getTripStops().stream()
+                            .filter(TripStop::isStart)
+                            .findFirst()
+                            .map(ts -> ts.getCity().getName())
+                            .orElse("");
+
+                    String destinationCity = trip.getTripStops().stream()
+                            .filter(TripStop::isDestination)
+                            .findFirst()
+                            .map(ts -> ts.getCity().getName())
+                            .orElse("");
+
+                    LocalDateTime estimatedArrivalDate = trip.getTripStops().stream()
+                            .filter(TripStop::isDestination)
+                            .findFirst()
+                            .map(ts -> ts.getEstimatedArrivalDateTime())
+                            .orElse(null);
+
+                    return TripDriverDTO.builder()
+                            .id(trip.getId())
+                            .vehicle(vehicleDTO)
+                            .startDateTime(trip.getStartTripDateTime())
+                            .availableSeat(trip.getAvailableSeat())
+                            .startCity(startCity)
+                            .destinationCity(destinationCity)
+                            .currentAvailableSeats(trip.getCurrentAvailableSeats())
+                            .availableBaggage(trip.getAvailableBaggage().getTypeBaggage())
+                            .seatPrice(trip.getSeatPrice())
+                            .estimatedArrivalDateTime(estimatedArrivalDate)
+                            .build();
+                }).toList();
     }
 
     public TripSearchResponseDTO converTripToTripSearchResponseDTO(Trip trip) {

@@ -1,9 +1,6 @@
 package com.carpool.carpool.controller.trip;
 
-import com.carpool.carpool.dto.trip.TripRequestDTO;
-import com.carpool.carpool.dto.trip.TripResponseDTO;
-import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
-import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
+import com.carpool.carpool.dto.trip.*;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.trip.ITripService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +26,18 @@ import org.springframework.web.bind.annotation.*;
 public class TripController {
 
     private final ITripService tripService;
+
+    @Operation(
+            summary = "Obtener viajes creados por un chofer"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Listado de viajes obtenidos con éxito"),
+            @ApiResponse(responseCode = "401", description = "El usuario no inició sesión", content = @Content),
+    })
+    @GetMapping
+    public ResponseEntity<Response<TripDriverResponseDTO>> getTrips(){
+        return new ResponseEntity<>(tripService.getTrips(), HttpStatus.OK);
+    }
 
     @Operation(
             summary = "Visualizar los detalles de un viaje específico"
@@ -96,7 +105,7 @@ public class TripController {
             summary = "Crear y publicar un viaje"
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Viaje creado y publicado con exito"),
+            @ApiResponse(responseCode = "201", description = "Viaje creado y publicado con exito"),
             @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
             @ApiResponse(responseCode = "401", description = "No autenticado"),
             @ApiResponse(responseCode = "403", description = "No autorizado para crear un viaje"),

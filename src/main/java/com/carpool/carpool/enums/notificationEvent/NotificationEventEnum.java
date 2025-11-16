@@ -8,4 +8,6 @@ package com.carpool.carpool.enums.notificationEvent;
  */
 public enum NotificationEventEnum {
     RESERVATION_CREATED,
+    RESERVATION_ACCEPTED,
+    RESERVATION_REJECTED
 }
