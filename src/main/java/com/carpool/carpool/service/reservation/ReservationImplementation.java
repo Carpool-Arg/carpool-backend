@@ -138,7 +138,7 @@ public class ReservationImplementation implements IReservationService{
         if(reservation == null){
             throw new ResourceNotFoundException("La reserva no existe");
         }
-        System.out.println(reservation.getState().getName());
+        
         if(!reservation.getState().getName().equals("PENDING")){
             throw new ConflictException("No se puede realizar acciones a la reserva ya que se encuentra en un estado final");
         }
