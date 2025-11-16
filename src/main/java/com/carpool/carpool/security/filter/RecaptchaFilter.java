@@ -59,6 +59,8 @@ public class RecaptchaFilter extends OncePerRequestFilter {
                 }
             }
 
+            LOGGER.info("NO ENTRA AL IF \nrequest:{} \nresponse:{}",request.getServletPath(), response.getStatus());
+            
             //Pasar al siguiente filtro
             filterChain.doFilter(request,response);
         } catch (BadCredentialsException ex) {
