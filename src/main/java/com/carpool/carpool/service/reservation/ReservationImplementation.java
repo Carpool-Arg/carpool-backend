@@ -66,22 +66,23 @@ public class ReservationImplementation implements IReservationService{
 
         List<Reservation> reservations = reservationRepository.findAll(filter);
 
-        this.LOGGER.info("ENCONTRO LAS RESERVAS {}", reservations);
+        this.LOGGER.info("ENCONTRO LAS RESERVAS {}", reservations.size());
 
         if(reservations == null || reservations.isEmpty()){
             return ResponseUtils.buildOKResponse(List.of("No existen reservas para el viaje correspondiente"), null);
         }
+        this.LOGGER.info("PASA EL IF");
+//        Map<Long, String> urlImagesUsers = reservations.stream()
+//                .collect(Collectors.toMap(
+//                    reservation -> reservation.getUser().getId(),
+//                        reservation -> mediaService.getProfilePictureUrlByUserId(reservation.getUser().getId())
+//                ));
+//
+//        this.LOGGER.info("IMAGENES {}", urlImagesUsers);
 
-        Map<Long, String> urlImagesUsers = reservations.stream()
-                .collect(Collectors.toMap(
-                    reservation -> reservation.getUser().getId(),
-                        reservation -> mediaService.getProfilePictureUrlByUserId(reservation.getUser().getId())
-                ));
-
-        this.LOGGER.info("IMAGENES {}", urlImagesUsers);
-
-        List<ReservationDTO> listReservation = reservationMapper.convertReservationToReservationDTO(reservations, urlImagesUsers);
+        List<ReservationDTO> listReservation = reservationMapper.convertReservationToReservationDTO(reservations, null);
         ReservationResponseDTO responseReservation = new ReservationResponseDTO();
+        this.LOGGER.info("response RESERVAS {}", responseReservation);
         responseReservation.setReservation(listReservation);
 
         return ResponseUtils.buildOKResponse(List.of("Reservas realizadas al viaje obtenido con éxito"), responseReservation);

@@ -59,7 +59,7 @@ public class ReservationMapper {
                         .baggage(reservation.isBaggage())
                         .nameUser(reservation.getUser().getName())
                         .lastNameUser(reservation.getUser().getLastname())
-                        .urlImage(urlImagesUsers.get(reservation.getUser().getId()))
+                        //.urlImage(urlImagesUsers.get(reservation.getUser().getId()))
                         .build())
                 .collect(Collectors.toList());
     }
