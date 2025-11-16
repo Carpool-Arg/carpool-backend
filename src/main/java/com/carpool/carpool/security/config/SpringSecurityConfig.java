@@ -76,6 +76,8 @@ public class SpringSecurityConfig {
         .requestMatchers("/vehicles", "/vehicles/**").hasRole("DRIVER")
         .requestMatchers("/trip", "/trip/check-trip-availability").hasRole("DRIVER")
         .requestMatchers(HttpMethod.GET, "/trip/{id}").hasRole("USER")
+        .requestMatchers(HttpMethod.GET, "/trip").hasAnyRole("DRIVER", "ADMIN")
+        .requestMatchers(HttpMethod.POST, "/trip/filter").hasAnyRole("DRIVER", "ADMIN")
         
         // Todos los demas endpoints que solamente necesitan autenticación
         .anyRequest().authenticated())

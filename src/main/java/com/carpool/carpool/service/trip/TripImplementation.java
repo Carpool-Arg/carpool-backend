@@ -6,14 +6,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.carpool.carpool.dto.trip.*;
+import com.carpool.carpool.exception.NoContentException;
+import com.carpool.carpool.exception.UnauthorizedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import com.carpool.carpool.dto.trip.TripRequestDTO;
-import com.carpool.carpool.dto.trip.TripResponseDTO;
-import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
-import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.enums.trip.BaggageEnum;
@@ -53,7 +52,6 @@ public class TripImplementation implements ITripService{
     private final StateHistoryRepository stateHistoryRepository;
     private final CityRepository cityRepository;
     private final ISettingService settingService;
-
 
     @Override
     @Transactional
@@ -102,6 +100,22 @@ public class TripImplementation implements ITripService{
 
         TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip);
         return ResponseUtils.buildOKResponse(List.of("Viaje encontrado con éxito"), tripResponseDTO);
+    }
+
+    @Override
+    public Response<TripDriverResponseDTO> getTrips() {
+        User driver = getAuthenticatedActiveUser();
+
+        List<Trip> trips = tripRepository.findTripsByDriverIdWithCurrentStateCreateTrip(driver.getId());
+        if(trips.isEmpty()){
+            return ResponseUtils.buildOKResponse(List.of("No existen viajes publicados por el chofer"), null);
+        }
+
+        List<TripDriverDTO> listTripDriver = tripMapper.convertTripToTripDriverResponseDTO(trips);
+        TripDriverResponseDTO response = new TripDriverResponseDTO();
+        response.setTrips(listTripDriver);
+
+        return ResponseUtils.buildOKResponse(List.of("Listado de viajes obtenido con éxito"), response);
     }
 
     @Override
@@ -286,7 +300,6 @@ public class TripImplementation implements ITripService{
 
     /**
      * Verifica si un chofer tiene un viaje planificado en una fecha y hora determinadas.
-     * @param driverId El ID del chofer.
      * @param startDateTime La fecha y hora a partir de la cual verificar.
      * @return true si el chofer tiene un viaje planificado después de la fecha y hora dadas, false en caso contrario.
      * @throws ConflictException si el chofer ya tiene un viaje planificado en la fecha y hora dadas.
@@ -308,5 +321,13 @@ public class TripImplementation implements ITripService{
         return userRepository.findByUsernameAndDeletedAtIsNull(username)
             .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."))
             .getId();
+    }
+
+    // TODO: pasar este metodo a utils y que todas las invocaciones anteriores apunten a este
+    private User getAuthenticatedActiveUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        return userRepository.findByUsernameAndDeletedAtIsNull(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
     }
 }

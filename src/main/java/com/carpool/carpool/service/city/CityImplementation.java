@@ -1,5 +1,6 @@
 package com.carpool.carpool.service.city;
 
+import java.text.Normalizer;
 import java.util.List;
 
 import com.carpool.carpool.exception.ResourceNotFoundException;
@@ -52,8 +53,11 @@ public class CityImplementation implements ICityService {
             throw new BadRequestException("Se requieren al menos 2 caracteres para la búsqueda.");
         }
 
+        String normalized = Normalizer.normalize(name, Normalizer.Form.NFD);
+        String nameNormalized = normalized.replaceAll("\\p{M}", "").toLowerCase();
+
         // Dividir el nombre en palabras y crear un patrón de búsqueda
-        String[] searchWords = name.trim().toLowerCase().split("\\s+");
+        String[] searchWords = nameNormalized.trim().toLowerCase().split("\\s+");
         String pattern = "%" + String.join("%", searchWords) + "%";
         
         List<City> cities = cityRepository.findCitiesByPattern(pattern);
