@@ -7,6 +7,7 @@ import com.carpool.carpool.model.state.State;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.user.User;
+import com.carpool.carpool.service.media.IMediaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import java.util.List;
@@ -16,6 +17,8 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class ReservationMapper {
+    private final IMediaService mediaService;
+
     /**
      * Convierte un DTO de reserva en una entidad Reservation.
      *
@@ -49,7 +52,7 @@ public class ReservationMapper {
      * @param listReservation   Lista de reservas
      * @return Lista con objetos {@link ReservationDTO}
      */
-    public static List<ReservationDTO> convertReservationToReservationDTO(List<Reservation> listReservation, Map<Long, String> urlImagesUsers){
+    public List<ReservationDTO> convertReservationToReservationDTO(List<Reservation> listReservation){
         return listReservation.stream()
                 .map(reservation -> ReservationDTO.builder()
                         .id(reservation.getId())
@@ -59,7 +62,7 @@ public class ReservationMapper {
                         .baggage(reservation.isBaggage())
                         .nameUser(reservation.getUser().getName())
                         .lastNameUser(reservation.getUser().getLastname())
-                        .urlImage(urlImagesUsers.get(reservation.getUser().getId()))
+                        .urlImage(mediaService.getProfilePictureUrlByUserId(reservation.getUser().getId()))
                         .build())
                 .collect(Collectors.toList());
     }

@@ -50,7 +50,6 @@ public class ReservationImplementation implements IReservationService{
     private final ReservationMapper reservationMapper;
     private final StateRepository stateRepository;
     private final INotificationService notificationService;
-    private final IMediaService mediaService;
 
     private final String STATE_PENDING = "PENDING";
     private static final Logger LOGGER = LoggerFactory.getLogger(ReservationImplementation.class);
@@ -71,17 +70,8 @@ public class ReservationImplementation implements IReservationService{
         if(reservations == null || reservations.isEmpty()){
             return ResponseUtils.buildOKResponse(List.of("No existen reservas para el viaje correspondiente"), null);
         }
-        this.LOGGER.info("PASA EL IF");
 
-        Map<Long, String> urlImagesUsers = reservations.stream()
-                .collect(Collectors.toMap(
-                        r -> r.getUser().getId(),
-                        r -> mediaService.getProfilePictureUrlByUserId(r.getUser().getId()),
-                        (existing, replacement) -> existing
-                ));
-        this.LOGGER.info("IMAGENES {}", urlImagesUsers);
-
-        List<ReservationDTO> listReservation = reservationMapper.convertReservationToReservationDTO(reservations, urlImagesUsers);
+        List<ReservationDTO> listReservation = reservationMapper.convertReservationToReservationDTO(reservations);
         ReservationResponseDTO responseReservation = new ReservationResponseDTO();
         this.LOGGER.info("response RESERVAS {}", responseReservation);
         responseReservation.setReservation(listReservation);
