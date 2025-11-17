@@ -59,8 +59,6 @@ public class RecaptchaFilter extends OncePerRequestFilter {
                 }
             }
 
-            LOGGER.info("NO ENTRA AL IF \nrequest:{} \nresponse:{}",request.getServletPath(), response.getStatus());
-            
             //Pasar al siguiente filtro
             filterChain.doFilter(request,response);
         } catch (BadCredentialsException ex) {
@@ -71,8 +69,6 @@ public class RecaptchaFilter extends OncePerRequestFilter {
 
             ResponseUtils.writeResponse(response, entity, "application/json");
         } catch (Exception ex) {
-            LOGGER.info("ERROR INTERNO EN LA VALIDACION DEL RECAPTCHA \nrequest:{}",request.getServletPath());
-
             // Manejar errores inesperados con 500
             ResponseEntity<Response<Void>> entity = new ResponseEntity<>(
                     ResponseUtils.buildErrorResponse(List.of("Error interno en la validación de Recaptcha", ex.getMessage() != null ? ex.getMessage() : "Error interno")),

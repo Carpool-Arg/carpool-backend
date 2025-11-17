@@ -56,16 +56,12 @@ public class ReservationImplementation implements IReservationService{
 
     @Override
     public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, Boolean baggage, String nameState) {
-        this.LOGGER.info("ENTRA AL METODO PARA OBTENR UNA RESERVA idTrip: {} \nidStartCity{} \nidDestinationCity{} \nbaggage{} \nnameState{}", idTrip, idStartCity, idDestinationCity, baggage, nameState);
+        this.LOGGER.info("INICIO DE OBTENCION UNA RESERVA idTrip: {} \nidStartCity{} \nidDestinationCity{} \nbaggage{} \nnameState{}", idTrip, idStartCity, idDestinationCity, baggage, nameState);
         User driver = getAuthenticatedActiveUser();
 
         Specification<Reservation> filter = ReservationSpecification.byFilter(idTrip, idStartCity, idDestinationCity, baggage, nameState, driver.getId());
 
-        this.LOGGER.info("EJECUTO EL FILTER {}", filter);
-
         List<Reservation> reservations = reservationRepository.findAll(filter);
-
-        this.LOGGER.info("ENCONTRO LAS RESERVAS {}", reservations.size());
 
         if(reservations == null || reservations.isEmpty()){
             return ResponseUtils.buildOKResponse(List.of("No existen reservas para el viaje correspondiente"), null);
@@ -73,7 +69,7 @@ public class ReservationImplementation implements IReservationService{
 
         List<ReservationDTO> listReservation = reservationMapper.convertReservationToReservationDTO(reservations);
         ReservationResponseDTO responseReservation = new ReservationResponseDTO();
-        this.LOGGER.info("response RESERVAS {}", responseReservation);
+
         responseReservation.setReservation(listReservation);
 
         return ResponseUtils.buildOKResponse(List.of("Reservas realizadas al viaje obtenido con éxito"), responseReservation);
@@ -137,8 +133,6 @@ public class ReservationImplementation implements IReservationService{
 
     @Override
     public Response<Void> updateStateReservation(ReservationUpdateRequestDTO reservationUpdateRequestDTO) {
-        User driver = getAuthenticatedActiveUser();
-
         Reservation reservation = reservationRepository.getReferenceById(reservationUpdateRequestDTO.getIdReservation());
         if(reservation == null){
             throw new ResourceNotFoundException("La reserva no existe");
