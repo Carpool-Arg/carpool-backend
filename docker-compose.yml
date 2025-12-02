@@ -12,5 +12,11 @@ services:
     ports:
       - "5433:5432"
 
+  redis:
+    image: redis:7
+    container_name: carpool-redis-container
+    ports:
+      - "6379:6379"
+    restart: on-failure
 volumes:
   carpool-db-data:
