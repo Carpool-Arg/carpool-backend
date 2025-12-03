@@ -26,7 +26,7 @@ public class AcceptReservationNotificationImplementation implements INotificatio
         String passengerName = reservation.getUser().getName();
         return NotificationPayloadDTO.builder()
                 .pushTitle("¡Reserva aceptada!")
-                .pushBody(String.format("%s, tenés tu lugar asegurado para el viaje de %s -> %s",
+                .pushBody(String.format("%s, tenés tu lugar asegurado para el viaje de %s > %s",
                         passengerName, reservation.getStartCity().getCity().getName(), reservation.getDestinationCity().getCity().getName()))
                 .emailSubject(SUBJECT_EMAIL_RESERVATION_ACCEPTED)
                 .emailTitle(TITLE_RESERVATION_ACCEPTED.replace("{name}", reservation.getUser().getName()))

@@ -1,11 +1,13 @@
 package com.carpool.carpool.service.reservation;
 
-import com.carpool.carpool.dto.reservation.*;
+import com.carpool.carpool.dto.reservation.CreateReservationRequestDTO;
+import com.carpool.carpool.dto.reservation.ReservationDTO;
+import com.carpool.carpool.dto.reservation.ReservationResponseDTO;
+import com.carpool.carpool.dto.reservation.ReservationUpdateRequestDTO;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
-import com.carpool.carpool.exception.UnauthorizedException;
 import com.carpool.carpool.mappers.reservation.ReservationMapper;
 import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.state.State;
@@ -30,6 +32,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -51,6 +54,7 @@ public class ReservationImplementation implements IReservationService{
 
     private final String STATE_PENDING = "PENDING";
 
+    // TODO: paginar
     @Override
     public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, Boolean baggage, String nameState) {
         User driver = getAuthenticatedActiveUser();
@@ -139,7 +143,7 @@ public class ReservationImplementation implements IReservationService{
             throw new ResourceNotFoundException("La reserva no existe");
         }
 
-        if(reservation.getState().getName() != STATE_PENDING){
+        if(!reservation.getState().getName().equals("PENDING")){
             throw new ConflictException("No se puede realizar acciones a la reserva ya que se encuentra en un estado final");
         }
 
