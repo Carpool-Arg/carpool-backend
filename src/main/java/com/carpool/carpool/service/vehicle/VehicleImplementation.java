@@ -83,6 +83,10 @@ public class VehicleImplementation implements IVehicleService {
             throw new ConflictException("No se puede editar un vehículo que ha sido dado de baja.");
         }
 
+        if(tripRepository.existsByVehicleIdAndStartTripDateTimeAfter(existingVehicle.getId(), LocalDateTime.now())) {
+            throw new ConflictException("No se puede editar el vehículo porque tiene un viaje programado.");
+        }
+
         VehicleType vehicleType = getVehicleTypeById(vehicleUpdateRequestDTO.getVehicleTypeId());
 
         vehicleMapper.convertVehicleUpdateRequestDTOToVehicle(vehicleUpdateRequestDTO, existingVehicle, vehicleType);
