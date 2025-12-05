@@ -97,6 +97,7 @@ public class ReservationImplementation implements IReservationService{
 
         //Validaciones de usuario
         User userAuth = this.getAuthenticatedActiveUser();
+
         if (userAuth.getId().equals(trip.getVehicle().getDriver().getUser().getId())) {
             throw new ConflictException("Este viaje te pertenece, no podés realizar una reserva en él.");
         }
