@@ -30,7 +30,6 @@ public class ReservationSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("baggage"), baggage));
             }
             if(nameState != null && !nameState.isBlank()){
-                predicates.add(criteriaBuilder.equal(root.get("state").get("name"), nameState.toUpperCase()));
                 predicates.add(criteriaBuilder.and(
                         criteriaBuilder.equal(root.get("state").get("name"), nameState.toUpperCase()),
                         criteriaBuilder.equal(root.get("state").get("scope"), ScopeEnum.RESERVATION.name())

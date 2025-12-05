@@ -66,7 +66,4 @@ public class Reservation {
         this.createdAt = LocalDateTime.now();
     }
 
-    @ManyToOne
-    @JoinColumn(name = "state_id", referencedColumnName = "id", nullable = false)
-    private State state;
 }
