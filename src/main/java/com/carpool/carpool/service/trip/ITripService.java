@@ -58,4 +58,12 @@ public interface ITripService {
      * @throws ConflictException si no se completan los campos de origen y destino en la busqueda de viajes
      */
     Response<List<TripSearchResponseDTO>> searchTrips(TripSearchRequestDTO request, int limit);
+
+    /**
+     * Metodo para determinar si un chofer es dueño de ese viaje o no 
+     * @param tripId Id del viaje que se quiere comprobar si el usuarios logeado es el dueño 
+     * @return Response<Boolean> devuelve un true o false
+     * @throws ResourceNotFoundException El viaje creado no existe
+     */
+    Response<Boolean> isTripCreator(Long tripId); 
 }
