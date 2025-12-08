@@ -77,7 +77,7 @@ public class UserRegisterImplementation {
         Media media = buildMedia(user, nameBucketPublic, CategoryMediaEnum.PROFILE, 
                 "default-profile.png", "default-profile.png", "image/png", 4720L);
         mediaRepository.save(media);
-         saveRequestActivationAccount(user);
+        saveRequestActivationAccount(user);
 
         return ResponseUtils.buildOKResponse(List.of("Usuario creado"), null);
     }
@@ -86,7 +86,7 @@ public class UserRegisterImplementation {
     public Response<Void> completeRegistration(UserUpdateRequestDTO userUpdateRequestDTO) {
         User user = userBaseImplementation.getUserByEmail(userUpdateRequestDTO.getEmail());
 
-        if (!user.getStatus().equals(UserStateEnum.PENDING_PROFILE)) {
+        if (!UserStateEnum.PENDING_PROFILE.equals(user.getStatus())) {
             throw new UnauthorizedException("El usuario no tiene un registro pendiente para completar.");
         }
         
@@ -99,13 +99,16 @@ public class UserRegisterImplementation {
         List<Role> roles = new ArrayList<>();
         optionalRoleUser.ifPresent(roles::add);
 
-        
         user = userMapper.convertUserUpdateRequestDTOToUser(
                 user, userUpdateRequestDTO,
                 passwordEncoder.encode(userUpdateRequestDTO.getPassword()),
                 roles);
 
         userRepository.save(user);
+
+        Media media = buildMedia(user, nameBucketPublic, CategoryMediaEnum.PROFILE,
+                "default-profile.png", "default-profile.png", "image/png", 4720L);
+        mediaRepository.save(media);
         saveRequestActivationAccount(user);
 
         return ResponseUtils.buildOKResponse(List.of("Usuario con registro parcial creado"), null);
