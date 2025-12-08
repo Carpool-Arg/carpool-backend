@@ -53,6 +53,7 @@ public class UserRegisterImplementation {
     private String nameBucketPublic;
 
     public static final String ROLE_USER = "ROLE_USER";
+    private static final String FILENAME_DEFAULT_PHOTO = "default-profile.png";
 
     @Transactional
     public Response<Void> saveUser(UserRequestDTO userRequestDTO) {
@@ -74,8 +75,8 @@ public class UserRegisterImplementation {
                 roles);
         userRepository.save(user);
 
-        Media media = buildMedia(user, nameBucketPublic, CategoryMediaEnum.PROFILE, 
-                "default-profile.png", "default-profile.png", "image/png", 4720L);
+        Media media = buildMedia(user, nameBucketPublic, CategoryMediaEnum.PROFILE,
+                FILENAME_DEFAULT_PHOTO, FILENAME_DEFAULT_PHOTO, "image/png", 4720L);
         mediaRepository.save(media);
         saveRequestActivationAccount(user);
 
@@ -107,7 +108,7 @@ public class UserRegisterImplementation {
         userRepository.save(user);
 
         Media media = buildMedia(user, nameBucketPublic, CategoryMediaEnum.PROFILE,
-                "default-profile.png", "default-profile.png", "image/png", 4720L);
+                FILENAME_DEFAULT_PHOTO, FILENAME_DEFAULT_PHOTO, "image/png", 4720L);
         mediaRepository.save(media);
         saveRequestActivationAccount(user);
 
