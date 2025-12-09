@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.carpool.carpool.model.licenseClass.LicenseClass;
+import com.carpool.carpool.repository.licenseClass.LicenseClassRepository;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -43,6 +45,7 @@ public class DriverImplementation implements IDriverService {
     private final DriverMapper driverMapper;
     private final UserRepository userRepository;
     private final CityRepository cityRepository;
+    private final LicenseClassRepository licenseClassRepository;
 
     //Para asignar roles a los choferes, se inyecta el RoleRepository
     private final RoleRepository roleRepository;
@@ -78,8 +81,11 @@ public class DriverImplementation implements IDriverService {
 
         City city = cityRepository.findById(driverRequestDTO.getCityId())
                 .orElseThrow(() -> new ConflictException("La ciudad no existe."));
-        
-        Driver driver = driverMapper.convertDriverRequestDTOToDriver(driverRequestDTO, user, city);
+
+        LicenseClass licenseClass = licenseClassRepository.findById(driverRequestDTO.getLicenseClassId())
+                .orElseThrow(() -> new ConflictException("La clase de licencia" + driverRequestDTO.getLicenseClassId() +" no existe."));
+
+        Driver driver = driverMapper.convertDriverRequestDTOToDriver(driverRequestDTO, user, city, licenseClass);
 
         if (driver.getRating() == null) {
             driver.setRating(5.0); 
@@ -216,7 +222,6 @@ public class DriverImplementation implements IDriverService {
      * @return void
      */
     private void normalizedDriverFields(Driver driver){
-        driver.setLicenseClass(driver.getLicenseClass().toUpperCase().trim());
         driver.setAddressStreet(driver.getAddressStreet().toUpperCase().trim());
     }
 }

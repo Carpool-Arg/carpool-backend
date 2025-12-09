@@ -1,5 +1,6 @@
 package com.carpool.carpool.mappers.driver;
 
+import com.carpool.carpool.model.licenseClass.LicenseClass;
 import org.springframework.stereotype.Component;
 
 import com.carpool.carpool.dto.driver.DriverRequestDTO;
@@ -7,17 +8,17 @@ import com.carpool.carpool.model.driver.Driver;
 import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.user.User;
 
-@Component 
+@Component
 public class DriverMapper {
-    public Driver convertDriverRequestDTOToDriver(DriverRequestDTO driverRequestDTO, User user, City city) {
+    public Driver convertDriverRequestDTOToDriver(DriverRequestDTO driverRequestDTO, User user, City city, LicenseClass licenseClass) {
         return Driver.builder()
-            .licenseClass(driverRequestDTO.getLicenseClass())
-            .licenseExpirationDate(driverRequestDTO.getLicenseExpirationDate())
-            .addressStreet(driverRequestDTO.getAddressStreet())
-            .addressNumber(driverRequestDTO.getAddressNumber())
-            .city(city)
-            .user(user)
-            .build();
-    } 
+                .licenseClass(licenseClass)
+                .licenseExpirationDate(driverRequestDTO.getLicenseExpirationDate())
+                .addressStreet(driverRequestDTO.getAddressStreet())
+                .addressNumber(driverRequestDTO.getAddressNumber())
+                .city(city)
+                .user(user)
+                .build();
+    }
 }
 
