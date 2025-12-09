@@ -120,7 +120,6 @@ public class ReservationImplementation implements IReservationService{
 
         //Creacion de reserva
         StateHistory stateHistory = StateHistory.builder()
-                .trip(trip)
                 .reservation(newReservation)
                 .state(statePending)
                 .build();
@@ -139,7 +138,6 @@ public class ReservationImplementation implements IReservationService{
 
     @Override
     public Response<Void> updateStateReservation(ReservationUpdateRequestDTO reservationUpdateRequestDTO) {
-        User driver = getAuthenticatedActiveUser();
 
         Reservation reservation = reservationRepository.getReferenceById(reservationUpdateRequestDTO.getIdReservation());
         if(reservation == null){
