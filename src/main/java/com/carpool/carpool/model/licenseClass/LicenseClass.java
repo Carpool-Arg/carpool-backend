@@ -20,6 +20,7 @@ public class LicenseClass {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 2, unique = true)
     private String name;
 
     private String description;

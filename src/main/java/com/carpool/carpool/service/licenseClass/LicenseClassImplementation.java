@@ -25,7 +25,7 @@ public class LicenseClassImplementation implements ILicenseClassService {
 
         List<LicenseClassResponseDTO> licenseClassResponseDTOs = licenseClasses.stream()
                 .map(licenseClassMapper::convertLicenseClassToLicenseClassResponseDTO)
-                .collect(Collectors.toList());
-        return ResponseUtils.buildOKResponse(List.of("Lista de clases de licencias de conducir traidas con exito"), licenseClassResponseDTOs );
+                .toList();
+        return ResponseUtils.buildOKResponse(List.of("Lista de clases de licencias de conducir obtenidas con exito"), licenseClassResponseDTOs );
     }
 }
