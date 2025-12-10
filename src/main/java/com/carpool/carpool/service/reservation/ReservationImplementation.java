@@ -172,7 +172,6 @@ public class ReservationImplementation implements IReservationService{
         }
 
         StateHistory stateHistory = StateHistory.builder()
-                .trip(trip)
                 .reservation(reservation)
                 .state(state)
                 .build();
