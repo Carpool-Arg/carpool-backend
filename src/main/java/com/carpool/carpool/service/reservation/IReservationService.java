@@ -24,10 +24,12 @@ public interface IReservationService {
      * @param idDestinationCity     Id de la ciudad destino
      * @param baggage               Si requiere o no equipaje
      * @param nameState             Nombre del estado del viaje
+     * @param page                  Numero de pagina
+     * @param size                  Cantidad de registros por pagina
      * @return Response<ReservationResponseDTO> devolviendo el mensaje con las reservas de un viaje o sin ellas
      * @throws UnauthorizedException
      */
-    Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, Boolean baggage, String nameState);
+    Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, Boolean baggage, String nameState, int page, int size);
 
     /**
      * Metodo encargado para aceptar o rechazar una reserva.
