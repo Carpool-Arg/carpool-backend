@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.carpool.carpool.exception.BadRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,6 +40,14 @@ public class MediaImplementation implements IMediaService{
     private final S3Presigner s3Presigner;
     private final UserRepository userRepository;
 
+    private final long MAX_FILE_SIZE = 2 * 1024 * 1024;
+    private static final List<String> ALLOWED_TYPES = List.of(
+            "image/png",
+            "image/jpeg",
+            "image/jpg",
+            "image/webp"
+    );
+
     @Value("${cloudflare.r2.bucket-private}")
     private String bucket;
 
@@ -53,6 +62,15 @@ public class MediaImplementation implements IMediaService{
     }
 
     public Response<Void> uploadAndSaveFileUser(MultipartFile file, Long idUser) {
+
+        if(file.getSize() > MAX_FILE_SIZE){
+            throw new BadRequestException("La imagen supera el tamaño máximo permitido de 2MB");
+        }
+
+        if(!ALLOWED_TYPES.contains(file.getContentType())){
+            throw new BadRequestException("Formato no permitido. Solo se aceptan PNG, JPG, JPEG, WEBP");
+        }
+
         User user = userRepository.findById(idUser)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
