@@ -40,7 +40,7 @@ public class MediaImplementation implements IMediaService{
     private final S3Presigner s3Presigner;
     private final UserRepository userRepository;
 
-    private final long MAX_FILE_SIZE = 2 * 1024 * 1024;
+    private static final long MAX_FILE_SIZE = 2L * 1024 * 1024;
     private static final List<String> ALLOWED_TYPES = List.of(
             "image/png",
             "image/jpeg",
