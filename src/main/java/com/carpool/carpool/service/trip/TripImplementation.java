@@ -223,6 +223,33 @@ public class TripImplementation implements ITripService{
         return ResponseUtils.buildOKResponse(List.of(message), responseDTOs);
     }
 
+    @Override
+    public Response<Double> calculatePublishSeatPrice(Double seatPrice, Integer availableCurrentSeats) {
+        
+        if (availableCurrentSeats == null || availableCurrentSeats <= 0) {
+            throw new ConflictException("La cantidad de asientos disponibles debe ser un número positivo.");
+        }
+
+        if (seatPrice == null || seatPrice <= 0) {
+            throw new ConflictException("El precio base del asiento debe ser un valor positivo mayor que cero.");
+        }
+
+        try {
+            
+            double publishSeatPrice = seatPrice + (settingService.getMinimunPriceValue() / availableCurrentSeats);
+
+            if (publishSeatPrice <= 0) {
+                
+                throw new ConflictException("El precio base calculado no puede ser negativo o cero.");
+            }
+
+            return ResponseUtils.buildOKResponse(List.of("Cálculo del precio publicado final realizado con éxito"),publishSeatPrice);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error interno al calcular el precio publicado.", e);
+        }
+    }
+
     /**
      * Validaciones del viaje en general. Comprobamos aspectos como:
      * - Que el vehiculo con el id ingresado sea del chofer que inicio el viaje (usuario en sesion)
@@ -343,4 +370,6 @@ public class TripImplementation implements ITripService{
             .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."))
             .getId();
     }
+
+    
 }
