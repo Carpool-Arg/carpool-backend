@@ -42,6 +42,9 @@ public class Trip {
     @Column(name="seat_price", nullable = false)
     private double seatPrice;
 
+    @Column(name="published_seat_price", nullable = false)
+    private double publishedSeatPrice;
+
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StateHistory> stateHistory;
 

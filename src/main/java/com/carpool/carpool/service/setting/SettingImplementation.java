@@ -53,4 +53,24 @@ public class SettingImplementation implements ISettingService {
             );
         }
     }
+
+    @Override
+    public int getMinimunPriceValue() {
+        // 1. Buscar el Setting en la DB por su clave
+        ConfigurationSetting config = configurationRepository.findByKeyName(SettingEnum.MINIMUN_PRICE_VALUE.getKey())
+                .orElseThrow(() -> new ResourceNotFoundException("Clave de configuración '" + SettingEnum.MINIMUN_PRICE_VALUE.getKey() + "' no encontrada en la base de datos."));
+
+        // 2. Obtener el valor (es un String)
+        String minimumPriceValue = config.getKeyValue();
+
+        // 3. Convertir el valor a int y manejar el error de formato
+        try {
+            return Integer.parseInt(minimumPriceValue);
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException(
+                    "El valor de configuración '" + SettingEnum.MINIMUN_PRICE_VALUE.getKey() +
+                            "' en la base de datos no es un número válido: " + minimumPriceValue, e
+            );
+        }
+    }
 }

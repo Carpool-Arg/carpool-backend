@@ -85,6 +85,10 @@ public class TripImplementation implements ITripService{
 
         Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, vehicle);
 
+        //Cargar el pubishedSeatPrice igual al seatPrice al momento de la creacion del viaje
+        double publishedSeatPrice = newTrip.getSeatPrice() + (settingService.getMinimunPriceValue() / newTrip.getCurrentAvailableSeats()); 
+        newTrip.setPublishedSeatPrice(publishedSeatPrice);
+
         StateHistory stateHistory = StateHistory.builder()
             .state(stateCreate)
         .build();

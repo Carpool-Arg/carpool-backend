@@ -19,5 +19,6 @@ public class TripSearchResponseDTO {
     private List<TripStopSearchResponseDTO> tripStops;
     private int availableSeat;
     private double seatPrice;
+    private double publishedSeatPrice;
     
 }

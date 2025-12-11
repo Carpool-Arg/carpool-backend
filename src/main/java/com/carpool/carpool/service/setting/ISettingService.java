@@ -15,4 +15,11 @@ public interface ISettingService {
      *
      */
     int getMinimumCityDistance();
+
+    /**
+     * Obtiene el valor minimo permitido para publicar un viaje
+     * @return El valor minimo en moneda local
+     *
+     */
+    int getMinimunPriceValue();
 }

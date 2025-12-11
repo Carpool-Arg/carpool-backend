@@ -15,6 +15,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum SettingEnum {
     DEFAULT_CITY_KEY("default-city-id"),
-    MINIMUM_CITY_DISTANCE("minimum-city-distance");
+    MINIMUM_CITY_DISTANCE("minimum-city-distance"),
+    MINIMUN_PRICE_VALUE("minimun-price-value");
     private final String key;
 }
