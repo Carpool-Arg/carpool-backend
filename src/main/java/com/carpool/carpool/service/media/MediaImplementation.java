@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,6 +43,11 @@ public class MediaImplementation implements IMediaService{
     @Value("${cloudflare.r2.bucket-private}")
     private String bucket;
 
+    @Value("${cloudflare.r2.bucket-public}")
+    private String nameBucketPublic;
+
+    private static final String FILENAME_DEFAULT_PHOTO = "default-profile.png";
+
     @Transactional
     public Response<String> getFileUser(Long idUser) {
         Media media = mediaRepository.findByUserId(idUser)
@@ -52,7 +58,12 @@ public class MediaImplementation implements IMediaService{
         return ResponseUtils.buildOKResponse(List.of("Url del archivo obtenida con éxito") , presignedUrl);
     }
 
+    @Transactional
     public Response<Void> uploadAndSaveFileUser(MultipartFile file, Long idUser) {
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("El archivo de imagen no puede estar vacío."); 
+        }
         User user = userRepository.findById(idUser)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
@@ -89,16 +100,17 @@ public class MediaImplementation implements IMediaService{
         return ResponseUtils.buildOKResponse(List.of("Archvo subido y almacenado con éxito") , null);
     }
 
+    @Transactional
     public Response<Void> deleteFileUser(Long idUser) {
         Media media = mediaRepository.findByUserId(idUser)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontró el archivo con el usuario indicado"));
-
+        
         try {
-            r2StorageImplementation.deleteFile(media.getObjectKey());
             mediaRepository.delete(media);
-
+            r2StorageImplementation.deleteFile(media.getObjectKey());
+    
             LOGGER.info("ARCHIVO ELIMINADO: ID {}, bucket: {}, key: {}",
-                    media.getId(), media.getBucket(), media.getObjectKey());
+                media.getId(), media.getBucket(), media.getObjectKey());
             return ResponseUtils.buildOKResponse(List.of("Archvo eliminado con éxito") , null);
         } catch (Exception e) {
             LOGGER.error("AL ELIMINAR EL ARCHIVO CON ID {}", media.getId(), e);
@@ -121,6 +133,29 @@ public class MediaImplementation implements IMediaService{
         } catch (Exception e) {
             LOGGER.error("Error al generar URL pre-firmada para el usuario {}", idUser, e);
             return null; 
+        }
+    }
+
+
+    @Transactional
+    public Response<Void> deleteAndRestoreProfile(Long idUser) {
+        User user = userRepository.findById(idUser)
+            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+        
+        try {
+            Media mediaToDelete = deleteCustomMedia(idUser);
+            saveDefaultMedia(user);
+            r2StorageImplementation.deleteFile(mediaToDelete.getObjectKey());
+            
+            LOGGER.info("ARCHIVO {} ELIMINADO DE R2. Perfil reestablecido a default.", mediaToDelete.getObjectKey());
+            return ResponseUtils.buildOKResponse(List.of("Foto de perfil eliminada y reestablecida con éxito"), null);
+            
+        } catch (DataIntegrityViolationException e) {
+            LOGGER.error("Error de DB al reestablecer perfil para User ID {}", idUser, e);
+            throw new RuntimeException("Error de base de datos al reestablecer el perfil.", e);
+        } catch (Exception e) {
+            LOGGER.error("Error inesperado en deleteAndRestoreProfile para User ID {}", idUser, e);
+            throw new RuntimeException("Error inesperado al reestablecer el perfil.", e);
         }
     }
 
@@ -149,4 +184,61 @@ public class MediaImplementation implements IMediaService{
             throw new RuntimeException("Error al generar URL de acceso");
         }
     }
+
+
+    
+    /**
+     * Metodo que se encarga de eliminar el media personalizado de un usuario.
+     * @param idUser Id del usuario del tipo {@link Long}
+     * @return El objeto {@link Media} eliminado.
+     */
+    private Media deleteCustomMedia(Long idUser) {
+        Media media = mediaRepository.findByUserId(idUser)
+            .orElseThrow(() -> new ResourceNotFoundException("No se encontró el archivo..."));
+            
+        mediaRepository.delete(media); 
+        mediaRepository.flush(); 
+        return media;
+    }
+
+    /**
+     * Metodo para guardar el media por defecto de un usuario.
+     * @param user Objeto {@link User}
+     * 
+     */
+    private void saveDefaultMedia(User user) {
+        Media defaultMedia = buildMedia(user, nameBucketPublic, CategoryMediaEnum.PROFILE,
+            FILENAME_DEFAULT_PHOTO, FILENAME_DEFAULT_PHOTO, "image/png", 4720L);
+        mediaRepository.save(defaultMedia);
+    }
+
+
+    /**
+     * Metodo para construir un objeto Media.
+     * 
+     * @param user
+     * @param bucket
+     * @param category
+     * @param objectKey
+     * @param filename
+     * @param contentType
+     * @param byteSize
+     * @return
+     */
+    private Media buildMedia(User user, String bucket, CategoryMediaEnum category, 
+                            String objectKey, String filename, String contentType, Long byteSize) {
+        Media media = new Media();
+        media.setUser(user);
+        media.setBucket(bucket);
+        media.setCategory(category);
+        media.setObjectKey(objectKey);
+        media.setFileName(filename);
+        media.setContentType(contentType);
+        media.setByteSize(byteSize);
+        media.setCreatedAt(LocalDateTime.now());
+        return media;
+    }
+
+    
+    
 }

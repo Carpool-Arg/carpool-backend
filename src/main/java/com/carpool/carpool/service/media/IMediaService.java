@@ -34,4 +34,11 @@ public interface IMediaService {
      * @return {@link String} con la URL del archivo.
      */
     String getProfilePictureUrlByUserId(Long idUser);
+
+    /**
+     * Elimina el perfil personalizado de un usuario y restaura la foto de perfil por defecto.
+     * @param idUser Id del usuario del tipo {@link Long}
+     * @return {@link Response} sin data.
+     */
+    Response<Void> deleteAndRestoreProfile(Long idUser);
 }

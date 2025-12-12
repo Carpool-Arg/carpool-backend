@@ -54,4 +54,15 @@ public class MediaController {
     public ResponseEntity<Response<Void>> deleteFileUser(@PathVariable Long idUser) {
         return new ResponseEntity<>(mediaService.deleteFileUser(idUser), HttpStatus.OK);
     }
+
+
+    @Operation(summary = "Eliminar un archivo en R2 y en la base de datos y restaurar el perfil por defecto")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Archivo eliminado con exito y perfil restaurado"),
+            @ApiResponse(responseCode = "404", description = "Recurso no encontrado", content = @Content)
+    })
+    @DeleteMapping("/delte-and-restore/{idUser}")
+    public ResponseEntity<Response<Void>> deleteFileAndRestoreUserProfile(@PathVariable Long idUser) {
+        return new ResponseEntity<>(mediaService.deleteAndRestoreProfile(idUser), HttpStatus.OK);
+    }
 }
