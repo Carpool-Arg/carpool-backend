@@ -27,9 +27,9 @@ public class MediaController {
             @ApiResponse(responseCode = "404", description = "Recurso no encontrado"),
             @ApiResponse(responseCode = "500", description = "Errores al intentar generar Url para acceder al recurso", content = @Content)
     })
-    @GetMapping("{idUser}")
-    public ResponseEntity<Response<String>> getUserFile(@PathVariable Long idUser) {
-        return new ResponseEntity<>(mediaService.getFileUser(idUser), HttpStatus.OK);
+    @GetMapping()
+    public ResponseEntity<Response<String>> getUserFile() {
+        return new ResponseEntity<>(mediaService.getFileUser(), HttpStatus.OK);
     }
 
     @Operation(
@@ -40,29 +40,18 @@ public class MediaController {
             @ApiResponse(responseCode = "409", description = "Errores de validaciones"),
             @ApiResponse(responseCode = "500", description = "Errores al intentar subir el archivo a R2", content = @Content)
     })
-    @PostMapping("{idUser}")
-    public ResponseEntity<Response<Void>> uploadFileUser(@PathVariable Long idUser, @RequestParam("file") MultipartFile file){
-        return new ResponseEntity<>(mediaService.uploadAndSaveFileUser(file, idUser), HttpStatus.OK);
+    @PostMapping()
+    public ResponseEntity<Response<Void>> uploadFileUser(@RequestParam("file") MultipartFile file){
+        return new ResponseEntity<>(mediaService.uploadAndSaveFileUser(file), HttpStatus.OK);
     }
 
-    @Operation(summary = "Eliminar un archivo en R2 y en la base de datos")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Archivo eliminado con exito"),
-            @ApiResponse(responseCode = "404", description = "Recurso no encontrado", content = @Content)
-    })
-    @DeleteMapping("{idUser}")
-    public ResponseEntity<Response<Void>> deleteFileUser(@PathVariable Long idUser) {
-        return new ResponseEntity<>(mediaService.deleteFileUser(idUser), HttpStatus.OK);
-    }
-
-
-    @Operation(summary = "Eliminar un archivo en R2 y en la base de datos y restaurar el perfil por defecto")
+     @Operation(summary = "Eliminar un archivo en R2 y en la base de datos y restaurar el perfil por defecto")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Archivo eliminado con exito y perfil restaurado"),
             @ApiResponse(responseCode = "404", description = "Recurso no encontrado", content = @Content)
     })
-    @DeleteMapping("/delte-and-restore/{idUser}")
-    public ResponseEntity<Response<Void>> deleteFileAndRestoreUserProfile(@PathVariable Long idUser) {
-        return new ResponseEntity<>(mediaService.deleteAndRestoreProfile(idUser), HttpStatus.OK);
+    @DeleteMapping()
+    public ResponseEntity<Response<Void>> deleteFileUser() {
+        return new ResponseEntity<>(mediaService.deleteFileUser(), HttpStatus.OK);
     }
 }
