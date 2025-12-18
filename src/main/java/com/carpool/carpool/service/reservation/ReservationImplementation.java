@@ -70,6 +70,13 @@ public class ReservationImplementation implements IReservationService{
             return ResponseUtils.buildOKResponse(List.of("No existen reservas para el viaje correspondiente"), null);
         }
 
+        Map<Long, StateHistory> stateHistoryMap = reservations.getContent().stream()
+                .collect(Collectors.toMap(
+                        Reservation::getId,
+                        reservation -> stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservation.getId())
+                                .orElse(null)
+                ));
+
         // Se procede a buscar las imagenes de perfil de cada pasajero que realizo la reserva al viaje
         Map<Long, String> urlImagesUsers = reservations.stream()
                 .collect(Collectors.toMap(
@@ -77,7 +84,7 @@ public class ReservationImplementation implements IReservationService{
                         reservation -> mediaService.getProfilePictureUrlByUserId(reservation.getUser().getId())
                 ));
 
-        List<ReservationDTO> listReservation = reservationMapper.convertReservationToReservationDTO(reservations, urlImagesUsers);
+        List<ReservationDTO> listReservation = ReservationMapper.convertReservationToReservationDTO(reservations, urlImagesUsers, stateHistoryMap);
         ReservationResponseDTO responseReservation = new ReservationResponseDTO();
         responseReservation.setReservation(listReservation);
 

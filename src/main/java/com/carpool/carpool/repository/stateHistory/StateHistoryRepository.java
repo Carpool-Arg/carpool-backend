@@ -12,4 +12,6 @@ public interface StateHistoryRepository extends JpaRepository<StateHistory, Long
     Optional<StateHistory> findTopByTripAndFinishDateTimeIsNotNullOrderByFinishDateTimeDesc(Trip trip);
 
     StateHistory findTopByReservationIdOrderByStartDateTimeDesc(Long idReservation);
+
+    Optional<StateHistory> findByReservationIdAndFinishDateTimeIsNull(Long idReservation);
 }
