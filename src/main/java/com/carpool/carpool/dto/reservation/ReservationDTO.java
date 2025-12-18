@@ -18,4 +18,5 @@ public class ReservationDTO {
     private String nameUser;
     private String lastNameUser;
     private String urlImage;
+    private String state;
 }
