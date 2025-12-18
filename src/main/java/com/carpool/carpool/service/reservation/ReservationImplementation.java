@@ -84,7 +84,7 @@ public class ReservationImplementation implements IReservationService{
                         reservation -> mediaService.getProfilePictureUrlByUserId(reservation.getUser().getId())
                 ));
 
-        List<ReservationDTO> listReservation = reservationMapper.convertReservationToReservationDTO(reservations, urlImagesUsers, stateHistoryMap);
+        List<ReservationDTO> listReservation = ReservationMapper.convertReservationToReservationDTO(reservations, urlImagesUsers, stateHistoryMap);
         ReservationResponseDTO responseReservation = new ReservationResponseDTO();
         responseReservation.setReservation(listReservation);
 
