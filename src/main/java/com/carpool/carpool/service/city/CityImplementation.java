@@ -18,7 +18,6 @@ import com.carpool.carpool.utils.ResponseUtils;
 import static com.carpool.carpool.utils.TextUtils.normalize;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PathVariable;
 
 @Service
 @RequiredArgsConstructor

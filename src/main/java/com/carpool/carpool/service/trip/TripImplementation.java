@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.carpool.carpool.dto.trip.*;
-import com.carpool.carpool.exception.NoContentException;
-import com.carpool.carpool.exception.UnauthorizedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -323,11 +321,11 @@ public class TripImplementation implements ITripService{
             .getId();
     }
 
-    // TODO: pasar este metodo a utils y que todas las invocaciones anteriores apunten a este
-    private User getAuthenticatedActiveUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        return userRepository.findByUsernameAndDeletedAtIsNull(username)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
-    }
+    // // TODO: pasar este metodo a utils y que todas las invocaciones anteriores apunten a este
+    // private User getAuthenticatedActiveUser() {
+    //     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    //     String username = authentication.getName();
+    //     return userRepository.findByUsernameAndDeletedAtIsNull(username)
+    //             .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+    // }
 }

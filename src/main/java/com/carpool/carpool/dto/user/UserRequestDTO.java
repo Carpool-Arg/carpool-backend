@@ -32,7 +32,7 @@ public class UserRequestDTO {
     private String lastname;
 
     @NotBlank(message = "El nombre de usuario no puede quedar en blanco.")
-    @Size(min = 3, max = 25, message = "El nombre de usuario debe tener entre 3 y 25 caracteres.")
+    @Size(min = 6, max = 25, message = "El nombre de usuario debe tener entre 6 y 25 caracteres.")
     @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "El nombre de usuario debe contener únicamente letras, números y guiones bajos.")
     private String username;
 
@@ -42,7 +42,7 @@ public class UserRequestDTO {
     private String email;
 
     @NotBlank(message = "La contraseña no puede quedar en blanco.")
-    @Size(min = 6, max = 255, message = "La contraseña debe tener entre 6 y 255 caracteres.")
+    @Size(min = 8, max = 255, message = "La contraseña debe tener entre 8 y 255 caracteres.")
     @Schema(example = "pJUan22")
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$", message = "La contraseña debe contener al menos una letra minúscula, una letra mayúscula y un número.")
     private String password;

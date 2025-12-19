@@ -18,7 +18,7 @@ public class UserPasswordChangeRequestDTO {
     private String oldPassword;
 
     @NotBlank(message = "La nueva contraseña no puede quedar en blanco.")
-    @Size(min = 6, max = 255, message = "La nueva contraseña debe tener entre 6 y 255 caracteres.")
+    @Size(min = 8, max = 255, message = "La nueva contraseña debe tener entre 6 y 255 caracteres.")
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$", message = "La nueva contraseña debe contener al menos una letra minúscula, una letra mayúscula y un número.")
     private String newPassword;
 

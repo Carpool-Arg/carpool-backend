@@ -14,7 +14,7 @@ public class State {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="name", nullable = false)
+    @Column(name="name", nullable = false, length = 20)
     private String name;
 
     @Enumerated(EnumType.STRING)

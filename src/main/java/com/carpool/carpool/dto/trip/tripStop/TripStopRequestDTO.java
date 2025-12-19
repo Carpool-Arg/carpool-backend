@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 
 @Getter
@@ -26,6 +27,7 @@ public class TripStopRequestDTO {
     private int order;
 
     @NotNull(message = "Debes especificar una observacion para cada parada.")
+    @Size(max = 100, message="La observación no puede superar los 100 caracteres.")
     private String observation;
 
 
