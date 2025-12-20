@@ -6,11 +6,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.carpool.carpool.dto.trip.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.carpool.carpool.dto.trip.TripDriverDTO;
+import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
+import com.carpool.carpool.dto.trip.TripRequestDTO;
+import com.carpool.carpool.dto.trip.TripResponseDTO;
+import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
+import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.enums.trip.BaggageEnum;
@@ -161,6 +166,20 @@ public class TripImplementation implements ITripService{
 
         return ResponseUtils.buildOKResponse(messages, responseDTOs);
 
+    }
+
+    @Override
+    public Response<Boolean> isTripCreator(Long tripId) {
+
+        Long authenticatedUserId = getAuthenticatedUserId();
+        Trip trip = tripRepository.findById(tripId)
+            .orElseThrow(() -> new ResourceNotFoundException("El viaje no existe."));
+
+        boolean isCreator = trip.getVehicle().getDriver().getUser().getId().equals(authenticatedUserId);
+        return ResponseUtils.buildOKResponse(
+            List.of("Verificación realizada con éxito"),
+            isCreator
+        );
     }
 
     @Override
@@ -320,12 +339,4 @@ public class TripImplementation implements ITripService{
             .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."))
             .getId();
     }
-
-    // // TODO: pasar este metodo a utils y que todas las invocaciones anteriores apunten a este
-    // private User getAuthenticatedActiveUser() {
-    //     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    //     String username = authentication.getName();
-    //     return userRepository.findByUsernameAndDeletedAtIsNull(username)
-    //             .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
-    // }
 }

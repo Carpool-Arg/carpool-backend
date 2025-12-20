@@ -2,7 +2,9 @@ package com.carpool.carpool.repository.reservation;
 
 import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.model.reservation.Reservation;
+import com.carpool.carpool.model.stateHistory.StateHistory;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
@@ -29,12 +31,17 @@ public class ReservationSpecification {
             if (baggage != null) {
                 predicates.add(criteriaBuilder.equal(root.get("baggage"), baggage));
             }
-            if(nameState != null && !nameState.isBlank()){
-                predicates.add(criteriaBuilder.equal(root.get("state").get("name"), nameState.toUpperCase()));
-                predicates.add(criteriaBuilder.and(
-                        criteriaBuilder.equal(root.get("state").get("name"), nameState.toUpperCase()),
-                        criteriaBuilder.equal(root.get("state").get("scope"), ScopeEnum.RESERVATION.name())
-                ));
+
+            if (nameState != null && !nameState.isEmpty()) {
+
+                Root<StateHistory> shRoot = query.from(StateHistory.class);
+
+                Predicate link = criteriaBuilder.equal(shRoot.get("reservation"), root);
+                Predicate stateFilter = criteriaBuilder.equal(shRoot.get("state").get("name"), nameState);
+                Predicate noFinishDate = criteriaBuilder.isNull(shRoot.get("finishDateTime"));
+
+                predicates.add(criteriaBuilder.and(link, stateFilter, noFinishDate));
+                query.distinct(true);
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

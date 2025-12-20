@@ -4,13 +4,16 @@ import com.carpool.carpool.dto.reservation.CreateReservationRequestDTO;
 import com.carpool.carpool.dto.reservation.ReservationDTO;
 import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.state.State;
+import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.user.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
@@ -31,8 +34,7 @@ public class ReservationMapper {
             User user,
             Trip trip,
             TripStop startCity,
-            TripStop destinationCity,
-            State state
+            TripStop destinationCity
     ) {
         return Reservation.builder()
                 .user(user)
@@ -40,7 +42,6 @@ public class ReservationMapper {
                 .startCity(startCity)
                 .destinationCity(destinationCity)
                 .baggage(createReservationRequestDTO.isBaggage())
-                .state(state)
                 .build();
     }
 
@@ -49,7 +50,7 @@ public class ReservationMapper {
      * @param listReservation   Lista de reservas
      * @return Lista con objetos {@link ReservationDTO}
      */
-    public static List<ReservationDTO> convertReservationToReservationDTO(List<Reservation> listReservation, Map<Long, String> urlImagesUsers){
+    public static List<ReservationDTO> convertReservationToReservationDTO(Page<Reservation> listReservation, Map<Long, String> urlImagesUsers, Map<Long, StateHistory> stateHistoryMap){
         return listReservation.stream()
                 .map(reservation -> ReservationDTO.builder()
                         .id(reservation.getId())
@@ -60,6 +61,9 @@ public class ReservationMapper {
                         .nameUser(reservation.getUser().getName())
                         .lastNameUser(reservation.getUser().getLastname())
                         .urlImage(urlImagesUsers.get(reservation.getUser().getId()))
+                        .state(Optional.ofNullable(stateHistoryMap.get(reservation.getId()))
+                                .map(sh -> sh.getState().getName())
+                                .orElse(null))
                         .build())
                 .collect(Collectors.toList());
     }
