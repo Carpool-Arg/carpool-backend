@@ -42,7 +42,7 @@ public class VehicleRequestDTO {
     private String color;
 
     @NotNull(message = "La cantidad de asientos disponibles no puede estar en blanco.")
-    @Min(value = 1, message = "La cantidad de asientos disponibles debe ser al menos 1.")
+    @Min(value = 2, message = "La cantidad de asientos disponibles debe ser al menos 2.")
     @Max(value = 40, message = "La cantidad de asientos disponibles no puede ser mayor a 40.")
     private Integer availableSeats;
 
