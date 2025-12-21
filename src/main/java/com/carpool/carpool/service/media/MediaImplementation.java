@@ -133,7 +133,7 @@ public class MediaImplementation implements IMediaService{
         
         try {
             Media mediaToDelete = deleteCustomMedia(idUser);
-            saveDefaultMedia(user);
+            saveDefaultProfilePicture(user);
             r2StorageImplementation.deleteFile(mediaToDelete.getObjectKey());
             
             LOGGER.info("ARCHIVO {} ELIMINADO DE R2. Perfil reestablecido a default.", mediaToDelete.getObjectKey());
@@ -173,6 +173,29 @@ public class MediaImplementation implements IMediaService{
         }
     }
 
+     @Override
+    public Media buildMedia(User user, String bucket, CategoryMediaEnum category, 
+                             String objectKey, String filename, String contentType, Long byteSize) {
+        Media media = new Media();
+        media.setUser(user);
+        media.setBucket(bucket);
+        media.setCategory(category);
+        media.setObjectKey(objectKey);
+        media.setFileName(filename);
+        media.setContentType(contentType);
+        media.setByteSize(byteSize);
+        media.setCreatedAt(LocalDateTime.now());
+        return media;
+    }
+
+    @Override
+    @Transactional
+    public void saveDefaultProfilePicture(User user) {
+        Media defaultMedia = buildMedia(user, nameBucketPublic, CategoryMediaEnum.PROFILE,
+                FILENAME_DEFAULT_PHOTO, FILENAME_DEFAULT_PHOTO, "image/png", 4720L);
+        mediaRepository.save(defaultMedia);
+    }
+
     /**
      * Obtiene el ID del usuario autenticado en el contexto de seguridad. 
      * @return El ID del usuario autenticado en el contexto de seguridad.
@@ -185,7 +208,6 @@ public class MediaImplementation implements IMediaService{
             .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."))
             .getId();
     }
-
 
     /**
      * Metodo encargado de generar la url del archivo para que pueda ser accedido
@@ -229,39 +251,4 @@ public class MediaImplementation implements IMediaService{
         return media;
     }
 
-    /**
-     * Metodo para guardar el media por defecto de un usuario.
-     * @param user Objeto {@link User}
-     * */
-    private void saveDefaultMedia(User user) {
-        Media defaultMedia = buildMedia(user, nameBucketPublic, CategoryMediaEnum.PROFILE,
-            FILENAME_DEFAULT_PHOTO, FILENAME_DEFAULT_PHOTO, "image/png", 4720L);
-        mediaRepository.save(defaultMedia);
-    }
-
-
-    /**
-     * Metodo utilizado para consitruir el objeto media para el usuario. 
-     * @param user 
-     * @param bucket
-     * @param category
-     * @param objectKey
-     * @param filename
-     * @param contentType
-     * @param byteSize
-     * @return 
-     */
-    private Media buildMedia(User user, String bucket, CategoryMediaEnum category, 
-                             String objectKey, String filename, String contentType, Long byteSize) {
-        Media media = new Media();
-        media.setUser(user);
-        media.setBucket(bucket);
-        media.setCategory(category);
-        media.setObjectKey(objectKey);
-        media.setFileName(filename);
-        media.setContentType(contentType);
-        media.setByteSize(byteSize);
-        media.setCreatedAt(LocalDateTime.now());
-        return media;
-    }
 }
