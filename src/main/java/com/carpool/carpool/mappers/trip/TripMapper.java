@@ -140,8 +140,7 @@ public class TripMapper {
             .availableSeat(trip.getAvailableSeat())
             .currentAvailableSeats(trip.getCurrentAvailableSeats())
             .availableBaggage(trip.getAvailableBaggage().toString())
-            .seatPrice(trip.getSeatPrice())
-            .publishedSeatPrice(trip.getPublishedSeatPrice())
+            .seatPrice(roundPrice(trip.getPublishedSeatPrice())) 
             .driverPriceDiscount(trip.getDriverPriceDiscount())
             .build();
     }
@@ -192,8 +191,7 @@ public class TripMapper {
                             .destinationCity(destinationCity)
                             .currentAvailableSeats(trip.getCurrentAvailableSeats())
                             .availableBaggage(trip.getAvailableBaggage().getTypeBaggage())
-                            .seatPrice(trip.getSeatPrice())
-                            .publishedSeatPrice(trip.getPublishedSeatPrice())
+                            .seatPrice(roundPrice(trip.getSeatPrice() - trip.getDriverPriceDiscount()))
                             .driverPriceDiscount(trip.getDriverPriceDiscount())
                             .estimatedArrivalDateTime(estimatedArrivalDate)
                             .build();

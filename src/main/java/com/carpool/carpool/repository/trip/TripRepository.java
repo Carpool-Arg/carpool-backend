@@ -111,8 +111,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         " AND t.id = ts1.trip_id " +
         " AND t.id = ts2.trip_id) " +
         // Filtros opcionales de precio 
-        "AND (:minPrice IS NULL OR t.seat_price >= :minPrice) " + 
-        "AND (:maxPrice IS NULL OR t.seat_price <= :maxPrice) " + 
+        "AND (:minPrice IS NULL OR t.published_seat_price >= :minPrice) " + 
+        "AND (:maxPrice IS NULL OR t.published_seat_price <= :maxPrice) " + 
 
 
         "ORDER BY " +
