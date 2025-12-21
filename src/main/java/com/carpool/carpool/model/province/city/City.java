@@ -28,10 +28,10 @@ public class City {
     @Column(name="zip_code", nullable = false)
     private int zipCode;
 
-    @Column(name="latitude", nullable = false)
+    @Column(name="latitude")
     private double latitude;
 
-    @Column(name="longitude", nullable = false)
+    @Column(name="longitude")
     private double longitude;
 
     @ManyToOne
