@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.carpool.carpool.dto.trip.TripDriverDTO;
 import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
+import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
 import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
@@ -84,6 +85,15 @@ public class TripImplementation implements ITripService{
         validateTripStopsOrder(tripRequestDTO.getTripStops());
 
         Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, vehicle);
+
+        // Calculo para obtener el extra que se debe de pagar
+        double totalCommissionPerSeat = settingService.getMinimunPriceValue() / newTrip.getCurrentAvailableSeats();
+
+        double splitCommission = totalCommissionPerSeat / 2;
+        double requestedPrice = newTrip.getSeatPrice(); 
+
+        newTrip.setPublishedSeatPrice(requestedPrice + splitCommission);
+        newTrip.setDriverPriceDiscount(splitCommission);
 
         StateHistory stateHistory = StateHistory.builder()
             .state(stateCreate)
@@ -219,6 +229,25 @@ public class TripImplementation implements ITripService{
         return ResponseUtils.buildOKResponse(List.of(message), responseDTOs);
     }
 
+    @Override
+    public Response<TripPriceCalculationResponseDTO> calculatePublishSeatPrice(Double seatPrice, Integer availableCurrentSeats) {
+        
+        if (availableCurrentSeats == null || availableCurrentSeats <= 0) {
+            throw new ConflictException("La cantidad de asientos disponibles debe ser un número positivo.");
+        }
+
+        if (seatPrice == null || seatPrice <= 0) {
+            throw new ConflictException("El precio base del asiento debe ser un valor positivo.");
+        }
+
+        double totalCommissionPerSeat = (double) settingService.getMinimunPriceValue() / availableCurrentSeats;
+        double splitCommission = totalCommissionPerSeat / 2;
+
+        TripPriceCalculationResponseDTO calculation = tripMapper.convertTriptoTripPriceCalculationResponseDTO(seatPrice, splitCommission);
+        
+        return ResponseUtils.buildOKResponse(List.of("Cálculo de precios realizado con éxito"), calculation);
+    }
+
     /**
      * Validaciones del viaje en general. Comprobamos aspectos como:
      * - Que el vehiculo con el id ingresado sea del chofer que inicio el viaje (usuario en sesion)
@@ -339,4 +368,6 @@ public class TripImplementation implements ITripService{
             .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."))
             .getId();
     }
+
+    
 }

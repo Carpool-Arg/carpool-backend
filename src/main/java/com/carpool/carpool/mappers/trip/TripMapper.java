@@ -1,11 +1,15 @@
 package com.carpool.carpool.mappers.trip;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import com.carpool.carpool.dto.trip.TripDriverDTO;
+import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
+
 import org.springframework.stereotype.Component;
 
 import com.carpool.carpool.dto.driver.DriverSearchResponseDTO;
@@ -137,6 +141,8 @@ public class TripMapper {
             .currentAvailableSeats(trip.getCurrentAvailableSeats())
             .availableBaggage(trip.getAvailableBaggage().toString())
             .seatPrice(trip.getSeatPrice())
+            .publishedSeatPrice(trip.getPublishedSeatPrice())
+            .driverPriceDiscount(trip.getDriverPriceDiscount())
             .build();
     }
 
@@ -187,6 +193,8 @@ public class TripMapper {
                             .currentAvailableSeats(trip.getCurrentAvailableSeats())
                             .availableBaggage(trip.getAvailableBaggage().getTypeBaggage())
                             .seatPrice(trip.getSeatPrice())
+                            .publishedSeatPrice(trip.getPublishedSeatPrice())
+                            .driverPriceDiscount(trip.getDriverPriceDiscount())
                             .estimatedArrivalDateTime(estimatedArrivalDate)
                             .build();
                 }).toList();
@@ -221,7 +229,23 @@ public class TripMapper {
             .tripStops(tripStopSearchResponseDTOs) 
             .availableSeat(trip.getCurrentAvailableSeats())
             .seatPrice(trip.getSeatPrice())
+            .publishedSeatPrice(trip.getPublishedSeatPrice())
             .tripId(trip.getId())
             .build();
+    }
+
+    public TripPriceCalculationResponseDTO convertTriptoTripPriceCalculationResponseDTO(double seatPrice, double splitCommission) { 
+        return TripPriceCalculationResponseDTO.builder()
+                .seatPrice(roundPrice(seatPrice))
+                .publishedSeatPrice(roundPrice(seatPrice + splitCommission))
+                .driverPriceDiscount(roundPrice(splitCommission))
+                .netEarningsPerSeat(roundPrice(seatPrice - splitCommission))
+                .build();
+    }
+
+    private double roundPrice(double value) {
+        return BigDecimal.valueOf(value)
+                .setScale(3, RoundingMode.HALF_UP) 
+                .doubleValue();
     }
 }

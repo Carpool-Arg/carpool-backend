@@ -23,7 +23,7 @@ public class TripRequestDTO {
     private String availableBaggage;
 
     @NotNull(message = "El precio de los asientos es un dato obligatorio.")
-    @DecimalMin(value = "0.0", message = "El precio tiene que tener un valor igual a 0 o superior.")
+    @DecimalMin(value = "1.0", message = "El precio debe tener un valor minimo de $ 1.0")
     private double seatPrice;
 
     @NotNull(message = "El vehiculo es un dato obligatorio.")

@@ -66,4 +66,13 @@ public interface ITripService {
      * @throws ResourceNotFoundException El viaje creado no existe
      */
     Response<Boolean> isTripCreator(Long tripId); 
+
+    /**
+     * Metodo para calcular el precio de publicacion de un asiento de un viaje
+     * @param publishedPrice El precio publicado total del viaje
+     * @param availableSeats La cantidad de asientos disponibles en el viaje
+     * @return Response<Double> devolviendo el precio base minimo por asiento
+     * @throws ConflictException si la cantidad de asientos es menor o igual a 0 o si el precio publicado es negativo
+     */
+    Response<TripPriceCalculationResponseDTO> calculatePublishSeatPrice(Double publishedPrice, Integer availableCurrentSeats);
 }
