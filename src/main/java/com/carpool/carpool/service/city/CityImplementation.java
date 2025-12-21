@@ -70,8 +70,8 @@ public class CityImplementation implements ICityService {
                 .map(cityMapper::convertCityToCityResponseDTO)
                 .toList();
             
-        if (cityResponseDTO.isEmpty()) {
-           throw new NoContentException("No se encontraron localidades que coincidan con la búsqueda.");
+        if(cityResponseDTO.isEmpty()){
+            return ResponseUtils.buildOKResponse(List.of("No se encontraron localidades que coincidan con la búsqueda."), cityResponseDTO);
         }
             
         return ResponseUtils.buildOKResponse(List.of("Localidades obtenidas con éxito."), cityResponseDTO);

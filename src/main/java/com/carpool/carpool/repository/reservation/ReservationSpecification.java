@@ -37,11 +37,10 @@ public class ReservationSpecification {
                 Root<StateHistory> shRoot = query.from(StateHistory.class);
 
                 Predicate link = criteriaBuilder.equal(shRoot.get("reservation"), root);
-
                 Predicate stateFilter = criteriaBuilder.equal(shRoot.get("state").get("name"), nameState);
+                Predicate noFinishDate = criteriaBuilder.isNull(shRoot.get("finishDateTime"));
 
-                predicates.add(criteriaBuilder.and(link, stateFilter));
-
+                predicates.add(criteriaBuilder.and(link, stateFilter, noFinishDate));
                 query.distinct(true);
             }
 
