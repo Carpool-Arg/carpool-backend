@@ -83,7 +83,7 @@ public class VehicleImplementation implements IVehicleService {
             throw new ConflictException("No se puede editar un vehículo que ha sido dado de baja.");
         }
 
-        vehicleHasPendingOrInProgressTrip(existingVehicle.getId());
+        vehicleHasPendingOrInProgressTrip(existingVehicle.getId(), true);
 
         VehicleType vehicleType = getVehicleTypeById(vehicleUpdateRequestDTO.getVehicleTypeId());
 
@@ -113,7 +113,7 @@ public class VehicleImplementation implements IVehicleService {
             throw new ConflictException("El vehículo con ID " + id + " ya se encuentra dado de baja.");
         }
 
-        vehicleHasPendingOrInProgressTrip(id);
+        vehicleHasPendingOrInProgressTrip(id, false);
 
         vehicleToDelete.setDeletedAt(LocalDateTime.now());
         vehicleToDelete.setDeleted_by(authenticatedDriver.getUser().getId());
@@ -220,13 +220,13 @@ public class VehicleImplementation implements IVehicleService {
      * Metodo para determinar si un vehiculo tiene un viaje pendiente o esta en un viaje en curso
      */
 
-    private void vehicleHasPendingOrInProgressTrip(Long vehicleId){
+    private void vehicleHasPendingOrInProgressTrip(Long vehicleId, boolean isEdit){
         if (tripRepository.vehicleHasInProgressTrip(vehicleId)){
-            throw new ConflictException("No se puede dar de baja el vehículo porque tiene un viaje en progreso.");
+            throw new ConflictException(isEdit ? "No se pueden modificar los datos del vehículo porque tiene un viaje en progreso." : "No se puede dar de baja el vehículo porque tiene un viaje en progreso.");
         };
 
         if(tripRepository.vehicleHasPendingTrip(vehicleId)){
-            throw new ConflictException("No se puede dar de baja el vehículo porque tiene un viaje programado.");
+            throw new ConflictException(isEdit ? "No se pueden modificar los datos del vehículo porque tiene un viaje programado." : "No se puede dar de baja el vehículo porque tiene un viaje programado.");
         };
     } 
 }
