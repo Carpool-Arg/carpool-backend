@@ -1,5 +1,7 @@
 package com.carpool.carpool.mappers.trip;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -234,10 +236,16 @@ public class TripMapper {
 
     public TripPriceCalculationResponseDTO convertTriptoTripPriceCalculationResponseDTO(double seatPrice, double splitCommission) { 
         return TripPriceCalculationResponseDTO.builder()
-                .seatPrice(seatPrice)
-                .publishedSeatPrice(seatPrice + splitCommission)
-                .driverPriceDiscount(splitCommission)
-                .netEarningsPerSeat(seatPrice - splitCommission)                
+                .seatPrice(roundPrice(seatPrice))
+                .publishedSeatPrice(roundPrice(seatPrice + splitCommission))
+                .driverPriceDiscount(roundPrice(splitCommission))
+                .netEarningsPerSeat(roundPrice(seatPrice - splitCommission))
                 .build();
+    }
+
+    private double roundPrice(double value) {
+        return BigDecimal.valueOf(value)
+                .setScale(3, RoundingMode.HALF_UP) 
+                .doubleValue();
     }
 }

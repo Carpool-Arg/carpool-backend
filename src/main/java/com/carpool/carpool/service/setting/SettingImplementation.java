@@ -15,13 +15,17 @@ public class SettingImplementation implements ISettingService {
 
     private final ConfigurationRepository configurationRepository;
 
+    private static final String CONFIG_NOT_FOUND = "Clave de configuración '%s' no encontrada en la base de datos.";
+    private static final String INVALID_NUMBER_FORMAT = "El valor de configuración '%s' en la base de datos no es un número válido: %s";
+
     @Override
     public Long getDefaultCityId() {
-        
+        String key = SettingEnum.DEFAULT_CITY_KEY.getKey();
+
         // 1. Buscar el Setting en la DB por su clave
         ConfigurationSetting config = configurationRepository.findByKeyName(SettingEnum.DEFAULT_CITY_KEY.getKey())
-            .orElseThrow(() -> new ResourceNotFoundException("Clave de configuración '" + SettingEnum.DEFAULT_CITY_KEY.getKey() + "' no encontrada en la base de datos."));
-            
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(CONFIG_NOT_FOUND, key)));
+
         // 2. Obtener el valor (es un String)
         String cityIdValue = config.getKeyValue();
         
@@ -30,15 +34,17 @@ public class SettingImplementation implements ISettingService {
             return Long.valueOf(cityIdValue);
         } catch (NumberFormatException e) {
             // Esto ocurre si el valor en la DB es 'abc' en lugar de '409'
-            throw new IllegalStateException("El valor de configuración '" + SettingEnum.DEFAULT_CITY_KEY.getKey() + "' en la base de datos no es un ID numérico válido: " + cityIdValue, e);
+            throw new IllegalStateException(String.format(INVALID_NUMBER_FORMAT, key, cityIdValue), e);        
         }
     }
 
     @Override
     public int getMinimumCityDistance() {
+        String key = SettingEnum.MINIMUM_CITY_DISTANCE.getKey();
+
         // 1. Buscar el Setting en la DB por su clave
         ConfigurationSetting config = configurationRepository.findByKeyName(SettingEnum.MINIMUM_CITY_DISTANCE.getKey())
-                .orElseThrow(() -> new ResourceNotFoundException("Clave de configuración '" + SettingEnum.MINIMUM_CITY_DISTANCE.getKey() + "' no encontrada en la base de datos."));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(CONFIG_NOT_FOUND, key)));
 
         // 2. Obtener el valor (es un String)
         String minimumDistance = config.getKeyValue();
@@ -47,19 +53,17 @@ public class SettingImplementation implements ISettingService {
         try {
             return Integer.parseInt(minimumDistance);
         } catch (NumberFormatException e) {
-            throw new IllegalStateException(
-                    "El valor de configuración '" + SettingEnum.DEFAULT_CITY_KEY.getKey() +
-                            "' en la base de datos no es un número válido: " + minimumDistance, e
-            );
+           throw new IllegalStateException(String.format(INVALID_NUMBER_FORMAT, key, minimumDistance), e);
         }
     }
 
     @Override
     public int getMinimunPriceValue() {
+        String key = SettingEnum.MINIMUN_PRICE_VALUE.getKey();
+
         // 1. Buscar el Setting en la DB por su clave
         ConfigurationSetting config = configurationRepository.findByKeyName(SettingEnum.MINIMUN_PRICE_VALUE.getKey())
-                .orElseThrow(() -> new ResourceNotFoundException("Clave de configuración '" + SettingEnum.MINIMUN_PRICE_VALUE.getKey() + "' no encontrada en la base de datos."));
-
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(CONFIG_NOT_FOUND, key)));
         // 2. Obtener el valor (es un String)
         String minimumPriceValue = config.getKeyValue();
 
@@ -67,10 +71,7 @@ public class SettingImplementation implements ISettingService {
         try {
             return Integer.parseInt(minimumPriceValue);
         } catch (NumberFormatException e) {
-            throw new IllegalStateException(
-                    "El valor de configuración '" + SettingEnum.MINIMUN_PRICE_VALUE.getKey() +
-                            "' en la base de datos no es un número válido: " + minimumPriceValue, e
-            );
+           throw new IllegalStateException(String.format(INVALID_NUMBER_FORMAT, key, minimumPriceValue), e);
         }
     }
 }

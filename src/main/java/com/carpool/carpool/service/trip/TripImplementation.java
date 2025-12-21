@@ -240,17 +240,12 @@ public class TripImplementation implements ITripService{
             throw new ConflictException("El precio base del asiento debe ser un valor positivo.");
         }
 
-       try {
-            double totalCommissionPerSeat = settingService.getMinimunPriceValue() / availableCurrentSeats;
-            double splitCommission = totalCommissionPerSeat / 2;
+        double totalCommissionPerSeat = (double) settingService.getMinimunPriceValue() / availableCurrentSeats;
+        double splitCommission = totalCommissionPerSeat / 2;
 
-            TripPriceCalculationResponseDTO calculation = tripMapper.convertTriptoTripPriceCalculationResponseDTO(seatPrice, splitCommission);
-            
-            return ResponseUtils.buildOKResponse(List.of("Cálculo de precios realizado con éxito"), calculation);
-
-        } catch (Exception e) {
-            throw new RuntimeException("Error al calcular el desglose de precios.", e);
-        }
+        TripPriceCalculationResponseDTO calculation = tripMapper.convertTriptoTripPriceCalculationResponseDTO(seatPrice, splitCommission);
+        
+        return ResponseUtils.buildOKResponse(List.of("Cálculo de precios realizado con éxito"), calculation);
     }
 
     /**
