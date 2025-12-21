@@ -1,37 +1,55 @@
 package com.carpool.carpool.service.media;
 
+import com.carpool.carpool.enums.media.CategoryMediaEnum;
 import com.carpool.carpool.model.media.Media;
+import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.response.Response;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface IMediaService {
 
-    /** TODO: se podria usar el mismo metodo para obtener recursos, habria que pasarle parametros y controlar en el service. Actualmente solo obtiene
-     * foto de perfil, pero el dia de mañana que se desee implementar para reseñas, autos, etc solamente bastaria con validarlo en la implementacion.
-     * Obtiene un archivo especifico, si es que existen
-     * @param idUser Id del usuario del tipo {@link Long}
-     * @return {@link Response} con data de la url del tipo {@link String}
-     */
-    Response<String> getFileUser(Long idUser);
+   /**
+    * Metodo encargado de realizar una peticion al R2 para obtener la URL de un archivo asociado a un usuario.
+    * @return URL de la imagen de perfil del usuario logeado en ese momento. 
+    */
+    Response<String> getFileUser();
 
     /**
-     * Metodo encargado de realizar una peticion al R2 para almacenar un archivo y crear un registro en la base de datos
-     * @param file Archivo del tipo {@link MultipartFile}
-     * @param idUser Id del usuario propietario del tipo {@link Long}.
-     * @return {@link Response} con data {@link Media}
+     * Se encarga de subir un archivo al R2 y guardar su referencia en la base de datos.
+     * @param file Archivo a subir del tipo {@link MultipartFile}
+     * @return {@link Response} sin data.
      */
-    Response<Void> uploadAndSaveFileUser(MultipartFile file, Long idUser);
+    Response<Void> uploadAndSaveFileUser(MultipartFile file);
 
     /**
-     * Se encarga de eliminar un archivo tanto en R2 como en la base de datos.
-     * @param idUser Id del usuario propietario del recurso del tipo {@link Long}
+     * Elimina el archivo de imagen de perfil del usuario autenticado y restaura la imagen por defecto.
+     * @return {@link Response}
      */
-    Response<Void> deleteFileUser(Long idUser);
+    Response<Void> deleteFileUser();
 
     /**
-     * Metodo encargado de obtener la URL de la foto de perfil de un usuario por su ID.
-     * @param idUser Id del usuario del tipo {@link Long}
-     * @return {@link String} con la URL del archivo.
+     * Obtiene la URL de la imagen de perfil por defecto de un usuario dado su ID.
+     * @param idUser ID del usuario del tipo {@link Long}
+     * @return URL de la imagen de perfil por defecto del tipo {@link String}       
      */
     String getProfilePictureUrlByUserId(Long idUser);
+
+    /**
+     * Construye el objeto media para la foto de perfil del usuario. 
+     * @param user
+     * @param bucket
+     * @param category
+     * @param objectKey
+     * @param filename
+     * @param contentType
+     * @param byteSize
+     * @return
+     */
+    Media buildMedia(User user, String bucket, CategoryMediaEnum category, 
+                     String objectKey, String filename, String contentType, Long byteSize);
+    /**
+     * Crea la imagen por defecto del usuario. 
+     * @param user
+     */             
+    void saveDefaultProfilePicture(User user);
 }

@@ -9,11 +9,15 @@ import com.carpool.carpool.exception.BadRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.carpool.carpool.enums.media.CategoryMediaEnum;
+import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.model.media.Media;
 import com.carpool.carpool.model.user.User;
@@ -51,8 +55,15 @@ public class MediaImplementation implements IMediaService{
     @Value("${cloudflare.r2.bucket-private}")
     private String bucket;
 
+    @Value("${cloudflare.r2.bucket-public}")
+    private String nameBucketPublic;
+
+    private static final String FILENAME_DEFAULT_PHOTO = "default-profile.png";
+
     @Transactional
-    public Response<String> getFileUser(Long idUser) {
+    public Response<String> getFileUser() {
+        Long idUser = getAuthenticatedUserId(); 
+        
         Media media = mediaRepository.findByUserId(idUser)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontró el archivo con el usuario indicado"));
 
@@ -61,7 +72,13 @@ public class MediaImplementation implements IMediaService{
         return ResponseUtils.buildOKResponse(List.of("Url del archivo obtenida con éxito") , presignedUrl);
     }
 
-    public Response<Void> uploadAndSaveFileUser(MultipartFile file, Long idUser) {
+    @Transactional
+    public Response<Void> uploadAndSaveFileUser(MultipartFile file) {
+        Long idUser = getAuthenticatedUserId();
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("El archivo de imagen no puede estar vacío."); 
+        }
 
         if(file.getSize() > MAX_FILE_SIZE){
             throw new BadRequestException("La imagen supera el tamaño máximo permitido de 2MB");
@@ -77,13 +94,13 @@ public class MediaImplementation implements IMediaService{
         Optional<Media> existMedia = mediaRepository.findByUserIdAndCategory(idUser, CategoryMediaEnum.PROFILE);
 
         Media media;
-        // Ya existe, por ende se actualiza la imagen
         if (existMedia.isPresent()) {
             Media mediaFound = existMedia.get();
             String oldObjectKey = mediaFound.getObjectKey();
 
             LOGGER.info("ACTUALIZANDO ARCHIVO EN LA BASE DE DATOS Y EN EL SERVIDOR, CON OBJECT KEY {}",mediaFound.getObjectKey());
             Media uploadMedia = r2StorageImplementation.uploadFile(file, user, CategoryMediaEnum.PROFILE);
+            
             mediaFound.setObjectKey(uploadMedia.getObjectKey());
             mediaFound.setBucket(bucket);
             mediaFound.setFileName(uploadMedia.getFileName());
@@ -107,28 +124,42 @@ public class MediaImplementation implements IMediaService{
         return ResponseUtils.buildOKResponse(List.of("Archvo subido y almacenado con éxito") , null);
     }
 
-    public Response<Void> deleteFileUser(Long idUser) {
-        Media media = mediaRepository.findByUserId(idUser)
-                .orElseThrow(() -> new ResourceNotFoundException("No se encontró el archivo con el usuario indicado"));
-
+    @Transactional
+    public Response<Void> deleteFileUser() {
+       Long idUser = getAuthenticatedUserId();
+        
+        User user = userRepository.findById(idUser)
+            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+        
         try {
-            r2StorageImplementation.deleteFile(media.getObjectKey());
-            mediaRepository.delete(media);
-
-            LOGGER.info("ARCHIVO ELIMINADO: ID {}, bucket: {}, key: {}",
-                    media.getId(), media.getBucket(), media.getObjectKey());
-            return ResponseUtils.buildOKResponse(List.of("Archvo eliminado con éxito") , null);
+            Media mediaToDelete = deleteCustomMedia(idUser);
+            saveDefaultProfilePicture(user);
+            r2StorageImplementation.deleteFile(mediaToDelete.getObjectKey());
+            
+            LOGGER.info("ARCHIVO {} ELIMINADO DE R2. Perfil reestablecido a default.", mediaToDelete.getObjectKey());
+            return ResponseUtils.buildOKResponse(List.of("Foto de perfil eliminada y reestablecida con éxito"), null);
+            
+        } catch (DataIntegrityViolationException e) {
+            LOGGER.error("Error de DB al reestablecer perfil para User ID {}", idUser, e);
+            throw new RuntimeException("Error de base de datos al reestablecer el perfil.", e);
         } catch (Exception e) {
-            LOGGER.error("AL ELIMINAR EL ARCHIVO CON ID {}", media.getId(), e);
-            throw new RuntimeException("Error al eliminar archivo");
+            LOGGER.error("Error inesperado en deleteAndRestoreProfile para User ID {}", idUser, e);
+            throw new RuntimeException("Error inesperado al reestablecer el perfil.", e);
         }
     }
     
     @Override
-    public String getProfilePictureUrlByUserId(Long idUser) {
+    public String getProfilePictureUrlByUserId(Long idUser) { 
+    
+        if (idUser == null) {
+            LOGGER.warn("El ID de usuario proporcionado es nulo.");
+            return null;
+        }
+
         Optional<Media> mediaOptional = mediaRepository.findByUserIdAndCategory(idUser, CategoryMediaEnum.PROFILE);
-                
+        
         if (mediaOptional.isEmpty()) {
+            LOGGER.warn("No se encontró foto de perfil personalizada para el usuario {}. Usando URL por defecto.", idUser);
             return null; 
         }
         
@@ -140,6 +171,42 @@ public class MediaImplementation implements IMediaService{
             LOGGER.error("Error al generar URL pre-firmada para el usuario {}", idUser, e);
             return null; 
         }
+    }
+
+     @Override
+    public Media buildMedia(User user, String bucket, CategoryMediaEnum category, 
+                             String objectKey, String filename, String contentType, Long byteSize) {
+        Media media = new Media();
+        media.setUser(user);
+        media.setBucket(bucket);
+        media.setCategory(category);
+        media.setObjectKey(objectKey);
+        media.setFileName(filename);
+        media.setContentType(contentType);
+        media.setByteSize(byteSize);
+        media.setCreatedAt(LocalDateTime.now());
+        return media;
+    }
+
+    @Override
+    @Transactional
+    public void saveDefaultProfilePicture(User user) {
+        Media defaultMedia = buildMedia(user, nameBucketPublic, CategoryMediaEnum.PROFILE,
+                FILENAME_DEFAULT_PHOTO, FILENAME_DEFAULT_PHOTO, "image/png", 4720L);
+        mediaRepository.save(defaultMedia);
+    }
+
+    /**
+     * Obtiene el ID del usuario autenticado en el contexto de seguridad. 
+     * @return El ID del usuario autenticado en el contexto de seguridad.
+     */
+    private Long getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        return userRepository.findByUsernameAndDeletedAtIsNull(username)
+            .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."))
+            .getId();
     }
 
     /**
@@ -167,4 +234,21 @@ public class MediaImplementation implements IMediaService{
             throw new RuntimeException("Error al generar URL de acceso");
         }
     }
+
+
+    
+    /**
+     * Metodo que se encarga de eliminar el media personalizado de un usuario.
+     * @param idUser Id del usuario del tipo {@link Long} (Se pasa internamente)
+     * @return El objeto {@link Media} eliminado.
+     */
+    private Media deleteCustomMedia(Long idUser) {
+        Media media = mediaRepository.findByUserId(idUser)
+            .orElseThrow(() -> new ResourceNotFoundException("No se encontró el archivo..."));
+            
+        mediaRepository.delete(media); 
+        mediaRepository.flush(); 
+        return media;
+    }
+
 }
