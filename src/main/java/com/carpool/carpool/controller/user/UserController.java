@@ -180,11 +180,10 @@ public class UserController {
         @ApiResponse(responseCode = "409", description = "Errores de validación o conflicto"),
         @ApiResponse(responseCode = "401", description = "No autorizado"),
     })
-    @PutMapping(value = "/update-profile") // Nuevo nombre de ruta para ser explícito
+    @PutMapping(value = "/update-profile")
     public ResponseEntity<Response<TokenResponseDTO>> updateProfile(
-        @Valid @RequestBody UserProfileUpdateRequestDTO userProfileUpdateRequestDTO) { // Solo el DTO en el cuerpo
+        @Valid @RequestBody UserProfileUpdateRequestDTO userProfileUpdateRequestDTO) { 
         
-        // El servicio llama al método que solo actualiza datos
         return new ResponseEntity<>(userService.updateUserProfile(userProfileUpdateRequestDTO), HttpStatus.OK);
     }
 

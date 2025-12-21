@@ -138,7 +138,6 @@ public class MediaImplementation implements IMediaService{
             return null;
         }
 
-        // Usar el 'idUser' pasado para buscar la Media.
         Optional<Media> mediaOptional = mediaRepository.findByUserIdAndCategory(idUser, CategoryMediaEnum.PROFILE);
         
         if (mediaOptional.isEmpty()) {
@@ -224,15 +223,15 @@ public class MediaImplementation implements IMediaService{
 
 
     /**
-     * Metodo para construir un objeto Media.
-     * * @param user
+     * Metodo utilizado para consitruir el objeto media para el usuario. 
+     * @param user 
      * @param bucket
      * @param category
      * @param objectKey
      * @param filename
      * @param contentType
      * @param byteSize
-     * @return
+     * @return 
      */
     private Media buildMedia(User user, String bucket, CategoryMediaEnum category, 
                              String objectKey, String filename, String contentType, Long byteSize) {

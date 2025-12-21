@@ -6,8 +6,8 @@ import org.springframework.web.multipart.MultipartFile;
 public interface IMediaService {
 
    /**
-    * Metodo encargado de realizar una peticion al R2 para obtener la URL de un archivo asociado a un usuario
-    * @return
+    * Metodo encargado de realizar una peticion al R2 para obtener la URL de un archivo asociado a un usuario.
+    * @return URL de la imagen de perfil del usuario logeado en ese momento. 
     */
     Response<String> getFileUser();
 
@@ -20,7 +20,7 @@ public interface IMediaService {
 
     /**
      * Elimina el archivo de imagen de perfil del usuario autenticado y restaura la imagen por defecto.
-     * @return {@link Response} sin data.
+     * @return {@link Response}
      */
     Response<Void> deleteFileUser();
 
