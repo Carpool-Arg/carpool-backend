@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.carpool.carpool.dto.trip.TripDriverDTO;
+import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
+
 import org.springframework.stereotype.Component;
 
 import com.carpool.carpool.dto.driver.DriverSearchResponseDTO;
@@ -138,6 +140,7 @@ public class TripMapper {
             .availableBaggage(trip.getAvailableBaggage().toString())
             .seatPrice(trip.getSeatPrice())
             .publishedSeatPrice(trip.getPublishedSeatPrice())
+            .driverPriceDiscount(trip.getDriverPriceDiscount())
             .build();
     }
 
@@ -189,6 +192,7 @@ public class TripMapper {
                             .availableBaggage(trip.getAvailableBaggage().getTypeBaggage())
                             .seatPrice(trip.getSeatPrice())
                             .publishedSeatPrice(trip.getPublishedSeatPrice())
+                            .driverPriceDiscount(trip.getDriverPriceDiscount())
                             .estimatedArrivalDateTime(estimatedArrivalDate)
                             .build();
                 }).toList();
@@ -226,5 +230,12 @@ public class TripMapper {
             .publishedSeatPrice(trip.getPublishedSeatPrice())
             .tripId(trip.getId())
             .build();
+    }
+
+    public TripPriceCalculationResponseDTO convertTriptoTripPriceCalculationResponseDTO(double seatPrice, double splitCommission) { 
+        return TripPriceCalculationResponseDTO.builder()
+                .publishedSeatPrice(seatPrice + splitCommission)
+                .netEarningsPerSeat(seatPrice - splitCommission)                
+                .build();
     }
 }

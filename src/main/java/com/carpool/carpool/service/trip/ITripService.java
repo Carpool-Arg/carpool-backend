@@ -74,5 +74,5 @@ public interface ITripService {
      * @return Response<Double> devolviendo el precio base minimo por asiento
      * @throws ConflictException si la cantidad de asientos es menor o igual a 0 o si el precio publicado es negativo
      */
-    Response<Double> calculatePublishSeatPrice(Double publishedPrice, Integer availableCurrentSeats);
+    Response<TripPriceCalculationResponseDTO> calculatePublishSeatPrice(Double publishedPrice, Integer availableCurrentSeats);
 }

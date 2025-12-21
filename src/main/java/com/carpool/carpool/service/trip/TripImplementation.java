@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.carpool.carpool.dto.trip.TripDriverDTO;
 import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
+import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
 import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
@@ -85,9 +86,14 @@ public class TripImplementation implements ITripService{
 
         Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, vehicle);
 
-        //Cargar el pubishedSeatPrice igual al seatPrice al momento de la creacion del viaje
-        double publishedSeatPrice = newTrip.getSeatPrice() + (settingService.getMinimunPriceValue() / newTrip.getCurrentAvailableSeats()); 
-        newTrip.setPublishedSeatPrice(publishedSeatPrice);
+        // Calculo para obtener el extra que se debe de pagar
+        double totalCommissionPerSeat = settingService.getMinimunPriceValue() / newTrip.getCurrentAvailableSeats();
+
+        double splitCommission = totalCommissionPerSeat / 2;
+        double requestedPrice = newTrip.getSeatPrice(); 
+
+        newTrip.setPublishedSeatPrice(requestedPrice + splitCommission);
+        newTrip.setDriverPriceDiscount(splitCommission);
 
         StateHistory stateHistory = StateHistory.builder()
             .state(stateCreate)
@@ -224,29 +230,26 @@ public class TripImplementation implements ITripService{
     }
 
     @Override
-    public Response<Double> calculatePublishSeatPrice(Double seatPrice, Integer availableCurrentSeats) {
+    public Response<TripPriceCalculationResponseDTO> calculatePublishSeatPrice(Double seatPrice, Integer availableCurrentSeats) {
         
         if (availableCurrentSeats == null || availableCurrentSeats <= 0) {
             throw new ConflictException("La cantidad de asientos disponibles debe ser un número positivo.");
         }
 
         if (seatPrice == null || seatPrice <= 0) {
-            throw new ConflictException("El precio base del asiento debe ser un valor positivo mayor que cero.");
+            throw new ConflictException("El precio base del asiento debe ser un valor positivo.");
         }
 
-        try {
+       try {
+            double totalCommissionPerSeat = settingService.getMinimunPriceValue() / availableCurrentSeats;
+            double splitCommission = totalCommissionPerSeat / 2;
+
+            TripPriceCalculationResponseDTO calculation = tripMapper.convertTriptoTripPriceCalculationResponseDTO(seatPrice, splitCommission);
             
-            double publishSeatPrice = seatPrice + (settingService.getMinimunPriceValue() / availableCurrentSeats);
-
-            if (publishSeatPrice <= 0) {
-                
-                throw new ConflictException("El precio base calculado no puede ser negativo o cero.");
-            }
-
-            return ResponseUtils.buildOKResponse(List.of("Cálculo del precio publicado final realizado con éxito"),publishSeatPrice);
+            return ResponseUtils.buildOKResponse(List.of("Cálculo de precios realizado con éxito"), calculation);
 
         } catch (Exception e) {
-            throw new RuntimeException("Error interno al calcular el precio publicado.", e);
+            throw new RuntimeException("Error al calcular el desglose de precios.", e);
         }
     }
 

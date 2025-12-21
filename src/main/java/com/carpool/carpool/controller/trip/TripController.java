@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
+import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
 import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
@@ -109,20 +110,18 @@ public class TripController {
     }
 
     @Operation(
-            summary = "Calcula el precio base mínimo (seatPrice) para alcanzar un precio publicado deseado",
-            description = "Utilidad para el autocompletado del formulario. Devuelve el valor mínimo que el conductor debe ingresar como 'seatPrice' para que el precio final con recargo sea igual al 'publishedPrice' deseado."
-    )
+            summary = "Calculos de los procios que se obtienen con el precio del asiento.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Cálculo realizado con éxito"),
             @ApiResponse(responseCode = "400", description = "Parámetros inválidos (precio o asientos no son positivos)", content = @Content),
             @ApiResponse(responseCode = "500", description = "Error interno del servidor en el cálculo", content = @Content),
     })
-    @GetMapping("/calculate-published-price")
-    public ResponseEntity<Response<Double>> calculateMinSeatPrice(
+    @GetMapping("/calculate-price-trip")
+    public ResponseEntity<Response<TripPriceCalculationResponseDTO>> calculatePriceTrip(
             @RequestParam("seatPrice") Double publishedPrice,
             @RequestParam("availableCurrentSeats") Integer availableSeats) {
-        Response<Double> response = tripService.calculatePublishSeatPrice(publishedPrice, availableSeats);
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        Response<TripPriceCalculationResponseDTO> response = tripService.calculatePublishSeatPrice(publishedPrice, availableSeats);
+        return new ResponseEntity<>(response, HttpStatus.OK); 
     }
 
     @Operation(

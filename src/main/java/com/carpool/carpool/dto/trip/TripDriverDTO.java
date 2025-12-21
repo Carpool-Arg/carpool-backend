@@ -19,5 +19,6 @@ public class TripDriverDTO {
     private String availableBaggage;
     private double seatPrice;
     private double publishedSeatPrice;
+    private double driverPriceDiscount;
     private LocalDateTime estimatedArrivalDateTime;
 }
