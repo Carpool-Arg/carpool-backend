@@ -36,13 +36,17 @@ public class TripStop implements Serializable{
     private boolean isStart;
 
     private boolean isDestination;
-
+    
+    @Column(nullable = false)
     private String observation;
 
+    @Column(nullable = false)
     private int stopOrder;
 
+    @Column(nullable = false)
     private double distanceFromPrevious;
 
+    @Column(nullable = false)
     private LocalDateTime estimatedArrivalDateTime;
 
     @ManyToOne

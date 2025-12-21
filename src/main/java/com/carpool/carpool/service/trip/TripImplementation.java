@@ -187,7 +187,7 @@ public class TripImplementation implements ITripService{
 
         boolean isCreator = trip.getVehicle().getDriver().getUser().getId().equals(authenticatedUserId);
         return ResponseUtils.buildOKResponse(
-            List.of("Verificación realizada con éxito"), 
+            List.of("Verificación realizada con éxito"),
             isCreator
         );
     }
