@@ -235,6 +235,7 @@ public class TripMapper {
     public TripPriceCalculationResponseDTO convertTriptoTripPriceCalculationResponseDTO(double seatPrice, double splitCommission) { 
         return TripPriceCalculationResponseDTO.builder()
                 .publishedSeatPrice(seatPrice + splitCommission)
+                .driverPriceDiscount(splitCommission)
                 .netEarningsPerSeat(seatPrice - splitCommission)                
                 .build();
     }
