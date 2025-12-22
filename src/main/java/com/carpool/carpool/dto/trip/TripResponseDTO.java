@@ -21,7 +21,5 @@ public class TripResponseDTO {
     private int availableSeat;
     private int currentAvailableSeats;
     private String availableBaggage;
-    private double seatPrice;           
-    private double driverPriceDiscount;
-
+    private double seatPrice;
 }
