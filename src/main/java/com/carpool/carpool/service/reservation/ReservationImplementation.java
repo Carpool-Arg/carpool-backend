@@ -55,6 +55,7 @@ public class ReservationImplementation implements IReservationService{
     private final ReservationMapper reservationMapper;
     private final StateRepository stateRepository;
     private final INotificationService notificationService;
+    private final IMediaService mediaService;
 
     private static final String STATE_PENDING = "PENDING";
 
