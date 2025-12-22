@@ -2,7 +2,6 @@ package com.carpool.carpool.service.user;
 
 import java.time.LocalDate;
 
-import org.springframework.web.multipart.MultipartFile;
 
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
 import com.carpool.carpool.dto.user.UserPasswordChangeRequestDTO;
@@ -76,12 +75,12 @@ public interface IUserService {
 
     /**
      * Metodo para actualizar el perfil del usuario.
-     * Este método recibe el nombre de usuario y un DTO con los datos a actualizar.
-     * Se espera que el DTO contenga los campos que se pueden modificar en el perfil del usuario,
-     * como nombre, apellido, género, teléfono e imagen de perfil.
+     * Este método recibe un DTO con los datos del perfil a actualizar.
+     * Se espera que el DTO contenga los campos necesarios para validar y actualizar el perfil del usuario.
      * @param userProfileUpdateRequestDTO
+     * @return 
      */
-    Response<TokenResponseDTO> updateUserProfile(UserProfileUpdateRequestDTO userProfileUpdateRequestDTO, MultipartFile profileImage);
+    Response<TokenResponseDTO> updateUserProfile(UserProfileUpdateRequestDTO userProfileUpdateRequestDTO);
 
     /**
      * Metodo para actualizar el email del usuario.

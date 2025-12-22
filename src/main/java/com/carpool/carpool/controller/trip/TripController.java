@@ -1,8 +1,27 @@
 package com.carpool.carpool.controller.trip;
 
-import com.carpool.carpool.dto.trip.*;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
+import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
+import com.carpool.carpool.dto.trip.TripRequestDTO;
+import com.carpool.carpool.dto.trip.TripResponseDTO;
+import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
+import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.trip.ITripService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -10,13 +29,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 
 @RestController
@@ -82,6 +94,34 @@ public class TripController {
             @RequestParam(name = "cityId", required = false) Long userCityId,
             @RequestParam(defaultValue = "10") int limit) {
         return new ResponseEntity<>(tripService.getInitialFeed(userCityId, limit), HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Verifica si el usuario autenticado es el conductor/creador del viaje"
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Estado de propiedad obtenido con éxito"),
+        @ApiResponse(responseCode = "401", description = "No autenticado"),
+        @ApiResponse(responseCode = "404", description = "El viaje no existe")
+    })
+    @GetMapping("/is-creator/{id}")
+    public ResponseEntity<Response<Boolean>> isTripCreator(@PathVariable("id") Long tripId) {
+        return new ResponseEntity<>(tripService.isTripCreator(tripId), HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Calculos de los procios que se obtienen con el precio del asiento.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Cálculo realizado con éxito"),
+            @ApiResponse(responseCode = "400", description = "Parámetros inválidos (precio o asientos no son positivos)", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor en el cálculo", content = @Content),
+    })
+    @GetMapping("/calculate-price-trip")
+    public ResponseEntity<Response<TripPriceCalculationResponseDTO>> calculatePriceTrip(
+            @RequestParam("seatPrice") Double publishedPrice,
+            @RequestParam("availableCurrentSeats") Integer availableSeats) {
+        Response<TripPriceCalculationResponseDTO> response = tripService.calculatePublishSeatPrice(publishedPrice, availableSeats);
+        return new ResponseEntity<>(response, HttpStatus.OK); 
     }
 
     @Operation(

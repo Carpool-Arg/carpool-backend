@@ -19,9 +19,36 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
            "WHERE t.id = :id")
     Optional<Trip> findTripWithAllDetails(@Param("id") Long id);
 
-    boolean existsByVehicleIdAndStartTripDateTimeAfter(Long vehicleId, LocalDateTime starTime);
+
+    /**
+     * Query para determinar si el vehiculo que se pasa por parametros tiene un viaje pendiente
+     */
+    @Query("""
+    SELECT COUNT(sh) > 0
+    FROM StateHistory sh
+    WHERE sh.state.scope = 'TRIP'
+      AND sh.state.name = 'CREATED'
+      AND sh.finishDateTime IS NULL
+      AND sh.trip.vehicle.id = :vehicleId
+    """)
+    boolean vehicleHasPendingTrip(@Param("vehicleId") Long vehicleId);
 
     boolean existsByVehicleDriverIdAndStartTripDateTime(Long driverId, LocalDateTime startTripDateTime);
+
+
+    /**
+     * Query para determinar si el vehiculo que se pasa por parametros tiene un viaje en curso
+     */
+    @Query("""
+    SELECT COUNT(sh) > 0
+    FROM StateHistory sh
+    WHERE sh.state.scope = 'TRIP'
+      AND sh.state.name = 'IN_PROGRESS'
+      AND sh.finishDateTime IS NULL
+      AND sh.trip.vehicle.id = :vehicleId
+    """)
+    boolean vehicleHasInProgressTrip(@Param("vehicleId") Long vehicleId);
+
 
     /*
      * Busca viajes para el caso del feed inicial (sin filtros aplicados)
@@ -84,8 +111,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         " AND t.id = ts1.trip_id " +
         " AND t.id = ts2.trip_id) " +
         // Filtros opcionales de precio 
-        "AND (:minPrice IS NULL OR t.seat_price >= :minPrice) " + 
-        "AND (:maxPrice IS NULL OR t.seat_price <= :maxPrice) " + 
+        "AND (:minPrice IS NULL OR t.published_seat_price >= :minPrice) " + 
+        "AND (:maxPrice IS NULL OR t.published_seat_price <= :maxPrice) " + 
 
 
         "ORDER BY " +

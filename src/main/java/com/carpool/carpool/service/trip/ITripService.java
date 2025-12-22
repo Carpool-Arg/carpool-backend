@@ -58,4 +58,21 @@ public interface ITripService {
      * @throws ConflictException si no se completan los campos de origen y destino en la busqueda de viajes
      */
     Response<List<TripSearchResponseDTO>> searchTrips(TripSearchRequestDTO request, int limit);
+
+    /**
+     * Metodo para determinar si un chofer es dueño de ese viaje o no 
+     * @param tripId Id del viaje que se quiere comprobar si el usuarios logeado es el dueño 
+     * @return Response<Boolean> devuelve un true o false
+     * @throws ResourceNotFoundException El viaje creado no existe
+     */
+    Response<Boolean> isTripCreator(Long tripId); 
+
+    /**
+     * Metodo para calcular el precio de publicacion de un asiento de un viaje
+     * @param publishedPrice El precio publicado total del viaje
+     * @param availableSeats La cantidad de asientos disponibles en el viaje
+     * @return Response<Double> devolviendo el precio base minimo por asiento
+     * @throws ConflictException si la cantidad de asientos es menor o igual a 0 o si el precio publicado es negativo
+     */
+    Response<TripPriceCalculationResponseDTO> calculatePublishSeatPrice(Double publishedPrice, Integer availableCurrentSeats);
 }

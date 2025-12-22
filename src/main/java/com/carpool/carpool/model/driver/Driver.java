@@ -2,6 +2,7 @@ package com.carpool.carpool.model.driver;
 
 import java.time.LocalDate;
 
+import com.carpool.carpool.model.licenseClass.LicenseClass;
 import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.user.User;
 import jakarta.persistence.*;
@@ -24,8 +25,6 @@ public class Driver {
 
     private Double rating;
 
-    private String licenseClass;
-
     private LocalDate licenseExpirationDate;
 
     private String addressStreet;
@@ -33,8 +32,12 @@ public class Driver {
     private String addressNumber;
 
     @ManyToOne
+    @JoinColumn(name = "license_class_id", nullable = false)
+    private LicenseClass licenseClass;
+
+    @ManyToOne
     @JoinColumn(name = "city_id", nullable = false)
-    private City city; 
+    private City city;
 
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, unique = true)

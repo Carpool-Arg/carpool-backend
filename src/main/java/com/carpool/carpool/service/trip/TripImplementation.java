@@ -6,13 +6,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.carpool.carpool.dto.trip.*;
-import com.carpool.carpool.exception.NoContentException;
-import com.carpool.carpool.exception.UnauthorizedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.carpool.carpool.dto.trip.TripDriverDTO;
+import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
+import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
+import com.carpool.carpool.dto.trip.TripRequestDTO;
+import com.carpool.carpool.dto.trip.TripResponseDTO;
+import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
+import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.enums.trip.BaggageEnum;
@@ -81,6 +85,15 @@ public class TripImplementation implements ITripService{
         validateTripStopsOrder(tripRequestDTO.getTripStops());
 
         Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, vehicle);
+
+        // Calculo para obtener el extra que se debe de pagar
+        double totalCommissionPerSeat = settingService.getMinimunPriceValue() / newTrip.getCurrentAvailableSeats();
+
+        double splitCommission = totalCommissionPerSeat / 2;
+        double requestedPrice = newTrip.getSeatPrice(); 
+
+        newTrip.setPublishedSeatPrice(requestedPrice + splitCommission);
+        newTrip.setDriverPriceDiscount(splitCommission);
 
         StateHistory stateHistory = StateHistory.builder()
             .state(stateCreate)
@@ -166,6 +179,20 @@ public class TripImplementation implements ITripService{
     }
 
     @Override
+    public Response<Boolean> isTripCreator(Long tripId) {
+
+        Long authenticatedUserId = getAuthenticatedUserId();
+        Trip trip = tripRepository.findById(tripId)
+            .orElseThrow(() -> new ResourceNotFoundException("El viaje no existe."));
+
+        boolean isCreator = trip.getVehicle().getDriver().getUser().getId().equals(authenticatedUserId);
+        return ResponseUtils.buildOKResponse(
+            List.of("Verificación realizada con éxito"),
+            isCreator
+        );
+    }
+
+    @Override
     public Response<List<TripSearchResponseDTO>> searchTrips(TripSearchRequestDTO request, int limit) {
 
         Long userId = getAuthenticatedUserId();
@@ -200,6 +227,25 @@ public class TripImplementation implements ITripService{
         }
 
         return ResponseUtils.buildOKResponse(List.of(message), responseDTOs);
+    }
+
+    @Override
+    public Response<TripPriceCalculationResponseDTO> calculatePublishSeatPrice(Double seatPrice, Integer availableCurrentSeats) {
+        
+        if (availableCurrentSeats == null || availableCurrentSeats <= 0) {
+            throw new ConflictException("La cantidad de asientos disponibles debe ser un número positivo.");
+        }
+
+        if (seatPrice == null || seatPrice <= 0) {
+            throw new ConflictException("El precio base del asiento debe ser un valor positivo.");
+        }
+
+        double totalCommissionPerSeat = (double) settingService.getMinimunPriceValue() / availableCurrentSeats;
+        double splitCommission = totalCommissionPerSeat / 2;
+
+        TripPriceCalculationResponseDTO calculation = tripMapper.convertTriptoTripPriceCalculationResponseDTO(seatPrice, splitCommission);
+        
+        return ResponseUtils.buildOKResponse(List.of("Cálculo de precios realizado con éxito"), calculation);
     }
 
     /**
@@ -323,11 +369,5 @@ public class TripImplementation implements ITripService{
             .getId();
     }
 
-    // TODO: pasar este metodo a utils y que todas las invocaciones anteriores apunten a este
-    private User getAuthenticatedActiveUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        return userRepository.findByUsernameAndDeletedAtIsNull(username)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
-    }
+    
 }

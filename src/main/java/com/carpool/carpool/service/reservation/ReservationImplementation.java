@@ -1,11 +1,13 @@
 package com.carpool.carpool.service.reservation;
 
-import com.carpool.carpool.dto.reservation.*;
+import com.carpool.carpool.dto.reservation.CreateReservationRequestDTO;
+import com.carpool.carpool.dto.reservation.ReservationDTO;
+import com.carpool.carpool.dto.reservation.ReservationResponseDTO;
+import com.carpool.carpool.dto.reservation.ReservationUpdateRequestDTO;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
-import com.carpool.carpool.exception.UnauthorizedException;
 import com.carpool.carpool.mappers.reservation.ReservationMapper;
 import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.state.State;
@@ -26,13 +28,16 @@ import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.notification.INotificationService;
 import com.carpool.carpool.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -51,23 +56,35 @@ public class ReservationImplementation implements IReservationService{
     private final StateRepository stateRepository;
     private final INotificationService notificationService;
 
-    private final String STATE_PENDING = "PENDING";
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReservationImplementation.class);
+    private static final String STATE_PENDING = "PENDING";
 
     @Override
-    public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, Boolean baggage, String nameState) {
-        this.LOGGER.info("INICIO DE OBTENCION UNA RESERVA idTrip: {} \nidStartCity{} \nidDestinationCity{} \nbaggage{} \nnameState{}", idTrip, idStartCity, idDestinationCity, baggage, nameState);
+    public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, Boolean baggage, String nameState, int page, int size) {
         User driver = getAuthenticatedActiveUser();
 
         Specification<Reservation> filter = ReservationSpecification.byFilter(idTrip, idStartCity, idDestinationCity, baggage, nameState, driver.getId());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        List<Reservation> reservations = reservationRepository.findAll(filter);
-
-        if(reservations == null || reservations.isEmpty()){
+        Page<Reservation> reservations = reservationRepository.findAll(filter, pageable);
+        if(reservations.getTotalElements() == 0){
             return ResponseUtils.buildOKResponse(List.of("No existen reservas para el viaje correspondiente"), null);
         }
 
-        List<ReservationDTO> listReservation = reservationMapper.convertReservationToReservationDTO(reservations);
+        Map<Long, StateHistory> stateHistoryMap = reservations.getContent().stream()
+                .collect(Collectors.toMap(
+                        Reservation::getId,
+                        reservation -> stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservation.getId())
+                                .orElse(null)
+                ));
+
+        // Se procede a buscar las imagenes de perfil de cada pasajero que realizo la reserva al viaje
+        Map<Long, String> urlImagesUsers = reservations.stream()
+                .collect(Collectors.toMap(
+                    reservation -> reservation.getUser().getId(),
+                        reservation -> mediaService.getProfilePictureUrlByUserId(reservation.getUser().getId())
+                ));
+
+        List<ReservationDTO> listReservation = ReservationMapper.convertReservationToReservationDTO(reservations, urlImagesUsers, stateHistoryMap);
         ReservationResponseDTO responseReservation = new ReservationResponseDTO();
 
         responseReservation.setReservation(listReservation);
@@ -93,8 +110,7 @@ public class ReservationImplementation implements IReservationService{
             throw new ConflictException("Este viaje te pertenece, no podés realizar una reserva en él.");
         }
 
-        Optional<Reservation> existingReservation = reservationRepository.findReservationByUserAndTrip(userAuth.getId(), trip.getId() );
-
+        Optional<Reservation> existingReservation = reservationRepository.findReservationByUserAndTrip(userAuth.getId(), trip.getId());
         if (existingReservation.isPresent()) {
             throw new ConflictException("Ya tenés una reserva asociada para este viaje, no se permiten múltiples solicitudes.");
         }
@@ -107,19 +123,16 @@ public class ReservationImplementation implements IReservationService{
                 userAuth,
                 trip,
                 tripStops[0],
-                tripStops[1],
-                statePending
+                tripStops[1]
         );
 
         //Creacion de reserva
         StateHistory stateHistory = StateHistory.builder()
+                .reservation(newReservation)
                 .state(statePending)
-        .build();
-
-        stateHistory.setReservation(newReservation);
+                .build();
 
         reservationRepository.save(newReservation);
-
         stateHistoryRepository.save(stateHistory);
 
         this.notificationService.send(
@@ -133,17 +146,18 @@ public class ReservationImplementation implements IReservationService{
 
     @Override
     public Response<Void> updateStateReservation(ReservationUpdateRequestDTO reservationUpdateRequestDTO) {
+
         Reservation reservation = reservationRepository.getReferenceById(reservationUpdateRequestDTO.getIdReservation());
         if(reservation == null){
             throw new ResourceNotFoundException("La reserva no existe");
         }
-        
-        if(!reservation.getState().getName().equals("PENDING")){
+
+        StateHistory lastestStateReservation = stateHistoryRepository.findTopByReservationIdOrderByStartDateTimeDesc(reservation.getId());
+        if(!STATE_PENDING.equals(lastestStateReservation.getState().getName())){
             throw new ConflictException("No se puede realizar acciones a la reserva ya que se encuentra en un estado final");
         }
-
+        lastestStateReservation.setFinishDateTime(LocalDateTime.now());
         Trip trip = reservation.getTrip();
-        int currentAvailableSeat = trip.getAvailableSeat();
 
         State state = null;
         NotificationEventEnum notification = null;
@@ -154,17 +168,25 @@ public class ReservationImplementation implements IReservationService{
             notification = NotificationEventEnum.RESERVATION_REJECTED;
         }else{
             state = stateRepository.findByNameAndScope("ACCEPTED", ScopeEnum.RESERVATION)
-                    .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para cancelar la reserva."));
-            if(currentAvailableSeat-1 < 0){
+                    .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para aceptar la reserva."));
+
+            final int discountAvailableSeat = trip.getCurrentAvailableSeats() - 1;
+            if(discountAvailableSeat < 0){
                 throw new ConflictException("Se alcanzó el cupo disponible, no se puede aceptar la reserva.");
             }
-            trip.setAvailableSeat(currentAvailableSeat);
+            trip.setCurrentAvailableSeats(discountAvailableSeat);
             tripRepository.save(trip);
             notification = NotificationEventEnum.RESERVATION_ACCEPTED;
         }
 
-        reservation.setState(state);
+        StateHistory stateHistory = StateHistory.builder()
+                .reservation(reservation)
+                .state(state)
+                .build();
+
         reservationRepository.save(reservation);
+        stateHistoryRepository.save(lastestStateReservation);
+        stateHistoryRepository.save(stateHistory);
 
         this.notificationService.send(
                 reservation.getUser(),
@@ -192,17 +214,21 @@ public class ReservationImplementation implements IReservationService{
         if (trip.getCurrentAvailableSeats() == 0){
             throw new ConflictException("Lo sentimos, no es posible reservar ya que el viaje está lleno.");
         }
-
+        State currentState = null;
         // 2. obtener el estado actual (sin fecha fin)
-        Optional<StateHistory> currentStateOptional = stateHistoryRepository.findByTripAndFinishDateTimeIsNull(trip);
+        Optional<StateHistory> currentStateOptional = stateHistoryRepository.findByTripAndFinishDateTimeIsNullAndReservationIdIsNull(trip);
 
-        //3. Si no se encuentra un estado actual, obtener el ultimo estado con fecha fin
-        StateHistory stateHistory = currentStateOptional
-                .orElseGet(() -> stateHistoryRepository
-                        .findTopByTripAndFinishDateTimeIsNotNullOrderByFinishDateTimeDesc(trip)
-                        .orElseThrow(() -> new ResourceNotFoundException("No se encontró un estado válido para el viaje")));
+        if(!currentStateOptional.isPresent()){
+            //3. Si no se encuentra un estado actual, obtener el ultimo estado con fecha fin
+            StateHistory stateHistory = currentStateOptional
+                    .orElseGet(() -> stateHistoryRepository
+                            .findTopByTripAndFinishDateTimeIsNotNullOrderByFinishDateTimeDesc(trip)
+                            .orElseThrow(() -> new ResourceNotFoundException("No se encontró un estado válido para el viaje")));
 
-        State currentState = stateHistory.getState();
+            currentState = stateHistory.getState();
+        } else {
+            currentState = currentStateOptional.get().getState();
+        }
 
         // 4. validar estados
         if (!currentState.getName().equals("CREATED")){

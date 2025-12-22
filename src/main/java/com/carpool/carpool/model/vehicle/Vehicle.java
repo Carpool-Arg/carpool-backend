@@ -30,25 +30,30 @@ public class Vehicle {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String domain;
 
+    @Column(nullable = false)
     private String color;
 
+    @Column(nullable = false)
     private String brand;
 
+    @Column(nullable = false)
     private String model;
 
+    @Column(nullable = false)
     private Integer year;
 
+    @Column(name = "available_seats", nullable = false)
     private Integer availableSeats;
 
     @ManyToOne
-    @JoinColumn(name = "vehicle_type_id", nullable = false) // Eliminado unique = true
+    @JoinColumn(name = "vehicle_type_id", nullable = false) 
     private VehicleType vehicleType;
 
     @ManyToOne
-    @JoinColumn(name = "driver_id", nullable = false) // Eliminado unique = true
+    @JoinColumn(name = "driver_id", nullable = false) 
     private Driver driver;
 
     @Column(name = "created_at", nullable = false, updatable = false)

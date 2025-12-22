@@ -30,20 +30,28 @@ public class User implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 100)
     private String name;
 
+    @Column(nullable = false, length = 100)
     private String lastname;
 
+    @Column(nullable = false, unique = true, length = 25)
     private String username;
 
+    @Column(nullable = false, unique = true, length = 75)
     private String email;
 
+    @Column(nullable = false, length = 255)
     private String password;
 
+    @Column(nullable = false, unique = true, length = 8)
     private String dni;
 
+    @Column(nullable = false, length = 25)
     private String phone;
 
+    @Column(name = "birth_date")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private LocalDate birthDate;
 
@@ -65,10 +73,7 @@ public class User implements Serializable {
     )
     private List<Role> roles;
 
-    /*
-     * Este campo se utiliza para almacenar un nuevo correo electrónico cuando el usuario decide cambiar su email.
-     */
-    @Column(name = "pending_email")
+    @Column(name = "pending_email", length = 75) 
     private String pendingEmail;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -83,7 +88,7 @@ public class User implements Serializable {
     @Column(name = "deleted_by")
     private Long deleted_by;
 
-    @Column(name="failed_attempts")
+    @Column(name="failed_attempts", nullable = false) 
     private int failedAttempts;
 
     @Column(name="lock_time")
@@ -92,22 +97,12 @@ public class User implements Serializable {
     @Column(name="last_failed_login_time")
     private Date lastFailedLoginTime;
 
-    /*
-     * Para el created_at empleamos la anotacicón @PrePersist.
-     * Esto hace que que el método onCreate() se ejecute justo antes de que la
-     * entidad se inserte en la base de datos.
-     */
     @PrePersist
     protected void onCreate() {
         this.created_at = LocalDateTime.now();
         this.failedAttempts = 0;
     }
 
-    /*
-     * Para el updated_at empleamos la anotación @PreUpdate.
-     * Esto hace que el método onUpdate() se ejecute justo antes de que la entidad
-     * se actualice en la base de datos.
-     */
     @PreUpdate
     protected void onUpdate() {
         this.updated_at = LocalDateTime.now();

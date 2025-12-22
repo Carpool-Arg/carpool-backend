@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -34,8 +36,9 @@ public class ReservationController {
     @GetMapping("/filter")
     public ResponseEntity<Response<ReservationResponseDTO>> getReservations(@RequestParam(required = false) @Positive(message = "El id del viaje debe ser mayor a 0") Long idTrip,
                                                                             @RequestParam(required = false) Long idStartCity, @RequestParam(required = false) Long idDestinationCity,
-                                                                            @RequestParam(required = false) Boolean baggage, @RequestParam(required = false) String nameState){
-        return new ResponseEntity<>(reservationService.getReservation(idTrip, idStartCity, idDestinationCity, baggage, nameState), HttpStatus.OK);
+                                                                            @RequestParam(required = false) Boolean baggage, @RequestParam(required = false) String nameState,
+                                                                            @Min(0) @RequestParam(defaultValue = "0") int page, @Min(1) @Max(30) @RequestParam(defaultValue = "10") int size){
+        return new ResponseEntity<>(reservationService.getReservation(idTrip, idStartCity, idDestinationCity, baggage, nameState, page, size), HttpStatus.OK);
     }
 
     @Operation(
