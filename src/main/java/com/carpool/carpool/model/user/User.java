@@ -47,19 +47,18 @@ public class User implements Serializable {
     @Column(nullable = false, length = 255)
     private String password;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, unique = true, length = 8)
     private String dni;
 
     @Column(nullable = false, length = 25)
     private String phone;
 
-    @Column(name = "birth_date", nullable = false)
+    @Column(name = "birth_date")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private LocalDate birthDate;
 
     @Enumerated(EnumType.STRING)
     @GenderValidEnum
-    @Column(nullable = false)
     private UserGenderEnum gender;
 
     @Enumerated(EnumType.STRING)

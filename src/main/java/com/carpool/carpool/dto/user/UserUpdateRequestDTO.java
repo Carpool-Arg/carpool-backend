@@ -55,7 +55,7 @@ public class UserUpdateRequestDTO {
 
     @NotNull(message = "El número del DNI no puede ser nulo.")
     @NotBlank(message = "El número del DNI no puede quedar en blanco.")
-    @Size(min = 7, max = 50, message = "El número del DNI debe tener entre 7 y 50 caracteres.")
+    @Size(min = 7, max = 8, message = "El número del DNI debe tener entre 7 y 8 caracteres.")
     @Pattern(regexp = "^[0-9]+$", message = "El número del DNI debe contener únicamente números.")
     @Schema(example = "12345678")
     private String dni;
