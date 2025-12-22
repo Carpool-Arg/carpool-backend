@@ -8,6 +8,7 @@ import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.user.User;
+import com.carpool.carpool.service.media.IMediaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,8 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class ReservationMapper {
+    private final IMediaService mediaService;
+
     /**
      * Convierte un DTO de reserva en una entidad Reservation.
      *

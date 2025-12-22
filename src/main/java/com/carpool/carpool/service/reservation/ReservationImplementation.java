@@ -23,6 +23,7 @@ import com.carpool.carpool.repository.trip.TripRepository;
 import com.carpool.carpool.repository.trip.stop.TripStopRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
+import com.carpool.carpool.security.filter.RecaptchaFilter;
 import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.notification.INotificationService;
 import com.carpool.carpool.utils.ResponseUtils;
@@ -54,7 +55,6 @@ public class ReservationImplementation implements IReservationService{
     private final ReservationMapper reservationMapper;
     private final StateRepository stateRepository;
     private final INotificationService notificationService;
-    private final IMediaService mediaService;
 
     private static final String STATE_PENDING = "PENDING";
 
@@ -86,6 +86,7 @@ public class ReservationImplementation implements IReservationService{
 
         List<ReservationDTO> listReservation = ReservationMapper.convertReservationToReservationDTO(reservations, urlImagesUsers, stateHistoryMap);
         ReservationResponseDTO responseReservation = new ReservationResponseDTO();
+
         responseReservation.setReservation(listReservation);
 
         return ResponseUtils.buildOKResponse(List.of("Reservas realizadas al viaje obtenido con éxito"), responseReservation);

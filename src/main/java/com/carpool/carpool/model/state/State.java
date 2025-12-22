@@ -4,8 +4,11 @@ import com.carpool.carpool.enums.state.ScopeEnum;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name="state")
 public class State {

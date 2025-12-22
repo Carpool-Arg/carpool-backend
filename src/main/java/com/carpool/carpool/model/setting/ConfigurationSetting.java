@@ -1,13 +1,12 @@
 package com.carpool.carpool.model.setting;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
 @Entity
-@Table(name = "configurations_settings") 
-@Data 
+@Table(name = "configurations_settings")
+@Getter
+@Setter
 @NoArgsConstructor 
 @AllArgsConstructor 
 public class ConfigurationSetting {

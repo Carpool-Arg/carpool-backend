@@ -123,7 +123,8 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Response<Void>> handleGenericException(Exception ex) {
-        return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of("Error inesperado",ex.getMessage())), HttpStatus.INTERNAL_SERVER_ERROR);
+        String message = ex.getMessage()!=null?ex.getMessage():"Error, contacte con un administrador.";
+        return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of("Error inesperado",message)), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     /**
