@@ -1,6 +1,6 @@
-package com.carpool.carpool.service.setting;
+package com.carpool.carpool.service.parameters;
 
-public interface ISettingService {
+public interface IParametersService {
     
     /**
      * Obtiene el ID de la ciudad por defecto desde la configuracion.

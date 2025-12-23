@@ -1,4 +1,4 @@
-package com.carpool.carpool.enums.setting;
+package com.carpool.carpool.enums.parameters;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,7 +13,7 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum SettingEnum {
+public enum ParametersEnum {
     DEFAULT_CITY_KEY("default-city-id"),
     MINIMUM_CITY_DISTANCE("minimum-city-distance"),
     MINIMUN_PRICE_VALUE("minimun-price-value");
