@@ -1,29 +1,29 @@
-package com.carpool.carpool.service.setting;
+package com.carpool.carpool.service.parameters;
 
-import com.carpool.carpool.enums.setting.SettingEnum;
+import com.carpool.carpool.enums.parameters.ParametersEnum;
 import org.springframework.stereotype.Service;
 
 import com.carpool.carpool.exception.ResourceNotFoundException;
-import com.carpool.carpool.model.setting.ConfigurationSetting;
-import com.carpool.carpool.repository.setting.ConfigurationRepository;
+import com.carpool.carpool.model.parameters.ConfigParameters;
+import com.carpool.carpool.repository.parameters.ParametersRepository;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor    
-public class SettingImplementation implements ISettingService {
+public class ParametersImplementation implements IParametersService {
 
-    private final ConfigurationRepository configurationRepository;
+    private final ParametersRepository parametersRepository;
 
     private static final String CONFIG_NOT_FOUND = "Clave de configuración '%s' no encontrada en la base de datos.";
     private static final String INVALID_NUMBER_FORMAT = "El valor de configuración '%s' en la base de datos no es un número válido: %s";
 
     @Override
     public Long getDefaultCityId() {
-        String key = SettingEnum.DEFAULT_CITY_KEY.getKey();
+        String key = ParametersEnum.DEFAULT_CITY_KEY.getKey();
 
         // 1. Buscar el Setting en la DB por su clave
-        ConfigurationSetting config = configurationRepository.findByKeyName(SettingEnum.DEFAULT_CITY_KEY.getKey())
+        ConfigParameters config = parametersRepository.findByKeyName(ParametersEnum.DEFAULT_CITY_KEY.getKey())
                 .orElseThrow(() -> new ResourceNotFoundException(String.format(CONFIG_NOT_FOUND, key)));
 
         // 2. Obtener el valor (es un String)
@@ -40,10 +40,10 @@ public class SettingImplementation implements ISettingService {
 
     @Override
     public int getMinimumCityDistance() {
-        String key = SettingEnum.MINIMUM_CITY_DISTANCE.getKey();
+        String key = ParametersEnum.MINIMUM_CITY_DISTANCE.getKey();
 
         // 1. Buscar el Setting en la DB por su clave
-        ConfigurationSetting config = configurationRepository.findByKeyName(SettingEnum.MINIMUM_CITY_DISTANCE.getKey())
+        ConfigParameters config = parametersRepository.findByKeyName(ParametersEnum.MINIMUM_CITY_DISTANCE.getKey())
                 .orElseThrow(() -> new ResourceNotFoundException(String.format(CONFIG_NOT_FOUND, key)));
 
         // 2. Obtener el valor (es un String)
@@ -59,10 +59,10 @@ public class SettingImplementation implements ISettingService {
 
     @Override
     public int getMinimunPriceValue() {
-        String key = SettingEnum.MINIMUN_PRICE_VALUE.getKey();
+        String key = ParametersEnum.MINIMUN_PRICE_VALUE.getKey();
 
         // 1. Buscar el Setting en la DB por su clave
-        ConfigurationSetting config = configurationRepository.findByKeyName(SettingEnum.MINIMUN_PRICE_VALUE.getKey())
+        ConfigParameters config = parametersRepository.findByKeyName(ParametersEnum.MINIMUN_PRICE_VALUE.getKey())
                 .orElseThrow(() -> new ResourceNotFoundException(String.format(CONFIG_NOT_FOUND, key)));
         // 2. Obtener el valor (es un String)
         String minimumPriceValue = config.getKeyValue();

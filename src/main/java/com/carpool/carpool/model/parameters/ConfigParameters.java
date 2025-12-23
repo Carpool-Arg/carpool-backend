@@ -1,4 +1,4 @@
-package com.carpool.carpool.model.setting;
+package com.carpool.carpool.model.parameters;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -6,11 +6,11 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 @Entity
-@Table(name = "configurations_settings") 
+@Table(name = "config_parameters")
 @Data 
 @NoArgsConstructor 
 @AllArgsConstructor 
-public class ConfigurationSetting {
+public class ConfigParameters {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
