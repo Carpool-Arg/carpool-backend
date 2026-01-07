@@ -41,12 +41,13 @@ public class TripMapper {
     private final IMediaService mediaService;
     final double AVERAGE_SPEED_KMH = 80.0; // Velocidad promedio en km/h
     
-    public Trip convertTripRequestDTOToTrip(TripRequestDTO tripRequestDTO, Vehicle vehicle){ 
+    public Trip convertTripRequestDTOToTrip(TripRequestDTO tripRequestDTO, Vehicle vehicle, double kilometerPrice ){ 
         Trip trip = Trip.builder()
             .startTripDateTime(tripRequestDTO.getStartDateTime())
             .availableSeat(tripRequestDTO.getAvailableSeat())
             .currentAvailableSeats(tripRequestDTO.getAvailableSeat())
             .availableBaggage(BaggageEnum.valueOf(tripRequestDTO.getAvailableBaggage()))
+            .kilometerPrice(kilometerPrice)
             .vehicle(vehicle)
             .seatPrice(tripRequestDTO.getSeatPrice())
             .tripStops(new ArrayList<>())

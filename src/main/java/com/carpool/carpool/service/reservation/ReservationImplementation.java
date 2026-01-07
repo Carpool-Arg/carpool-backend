@@ -9,12 +9,14 @@ import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.reservation.ReservationMapper;
+import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.state.State;
 import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.user.User;
+import com.carpool.carpool.repository.city.CityRepository;
 import com.carpool.carpool.repository.reservation.ReservationRepository;
 import com.carpool.carpool.repository.reservation.ReservationSpecification;
 import com.carpool.carpool.repository.state.StateRepository;
@@ -25,6 +27,7 @@ import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.notification.INotificationService;
+import com.carpool.carpool.utils.CoordsUtils;
 import com.carpool.carpool.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -55,6 +58,7 @@ public class ReservationImplementation implements IReservationService{
     private final StateRepository stateRepository;
     private final INotificationService notificationService;
     private final IMediaService mediaService;
+    private final CityRepository cityRepository;
 
     private static final String STATE_PENDING = "PENDING";
 
@@ -122,7 +126,8 @@ public class ReservationImplementation implements IReservationService{
                 userAuth,
                 trip,
                 tripStops[0],
-                tripStops[1]
+                tripStops[1],
+                calculateReservationTotal(tripStops[0].getCity(), tripStops[1].getCity(), trip)
         );
 
         //Creacion de reserva
@@ -197,6 +202,20 @@ public class ReservationImplementation implements IReservationService{
                 "Reserva %s con éxito",
                 reservationUpdateRequestDTO.isReject() ? "cancelada" : "aceptada");
         return ResponseUtils.buildOKResponse(List.of(message), null);
+    }
+
+    @Override
+    public Response<Double> calculateTotal(Long idTrip, Long idStartCity, Long idDestinationCity){
+        Trip trip = tripRepository.findById(idTrip)
+            .orElseThrow(()->new ResourceNotFoundException("El viaje no existe."));
+
+        City startCity = cityRepository.findById(idStartCity)
+            .orElseThrow(()-> new ConflictException("No se pudo encontrar la ciudad de origen."));
+
+        City destinationCity = cityRepository.findById(idDestinationCity)
+            .orElseThrow(()-> new ConflictException("No se pudo encontrar la ciudad de destino."));
+
+        return ResponseUtils.buildOKResponse(List.of("Total calculado con exito"), calculateReservationTotal(startCity, destinationCity, trip));
     }
 
     /**
@@ -277,6 +296,39 @@ public class ReservationImplementation implements IReservationService{
         String username = authentication.getName();
         return userRepository.findByUsernameAndDeletedAtIsNull(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+    }
+
+    /**
+     * Metodo para determinar el total a cobrar en una reserva. Si la reserva es desde el origen
+     * hasta el destino del viaje devolvemos el precio publicado del viaje, sino devolvemos un total 
+     * calculado segun el precio por kilometro del viaje
+     * @param reservationStops lista con las 2 paradas de la reserva, la de origen y la de destino
+     * @param trip el viaje al que se hace la reserva
+     * @return el total a cobrar
+     */
+    private double calculateReservationTotal(City originCityReservation, City destinationCityReservation, Trip trip ){
+        TripStop origin = trip.getTripStops().stream()
+            .filter(TripStop::isStart)
+            .findFirst()
+            .orElseThrow(() -> new ConflictException("No existe el origen del viaje."));
+
+        TripStop destination = trip.getTripStops().stream()
+            .filter(TripStop::isDestination)
+            .findFirst()
+            .orElseThrow(() -> new ConflictException("No existe el destino del viaje."));
+
+        if(originCityReservation.getId() == origin.getCity().getId() && destinationCityReservation.getId() == destination.getCity().getId()){
+            return trip.getPublishedSeatPrice();
+        }else{
+            double totalDistance = CoordsUtils.calculateDistance(
+                originCityReservation.getLatitude(), 
+                originCityReservation.getLongitude(), 
+                destinationCityReservation.getLatitude(), 
+                destinationCityReservation.getLongitude()
+            );
+
+            return (trip.getKilometerPrice() * totalDistance) + trip.getDriverPriceDiscount();
+        }
     }
 }
 

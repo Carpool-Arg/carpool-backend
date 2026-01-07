@@ -66,6 +66,9 @@ public class Trip {
     @Column(name = "deleted_by")
     private Long deleted_by;
 
+    @Column(name="kilometer_price", nullable = false)
+    private double kilometerPrice;
+
     @ManyToOne
     @JoinColumn(
             name = "vehicle_id",

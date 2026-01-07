@@ -16,6 +16,8 @@ public interface IReservationService {
      */
     Response<Void> createReservation(CreateReservationRequestDTO createReservationRequestDTO);
 
+    Response<Double> calculateTotal(Long idTrip, Long idStartCity, Long idDestinationCity);
+
     /**
      * Metodo encargado de obtener las reservas realizadas a un viaje. Solamente es accesible por aquellos usuarios que poseen el rol
      * CHOFER o ADMIN.
