@@ -41,6 +41,7 @@ import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.parameters.IParametersService;
 import com.carpool.carpool.utils.CoordsUtils;
 import com.carpool.carpool.utils.ResponseUtils;
+import com.carpool.carpool.utils.TripCostUtils;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -159,9 +160,11 @@ public class TripImplementation implements ITripService{
         if (trips.size() > limit) {
             trips = trips.subList(0, limit);
         }
-
+        City originCity = cityRepository.findById(userCityId)
+            .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de origen del usuario."));
+        
         List<TripSearchResponseDTO> responseDTOs = trips.stream()
-            .map(tripMapper::converTripToTripSearchResponseDTO)
+            .map(trip -> tripMapper.converTripToTripSearchResponseDTO(trip, TripCostUtils.calculateTripTotal(originCity, null, trip)))
             .collect(Collectors.toList());
 
         List<String> messages = new ArrayList<>();
@@ -203,6 +206,12 @@ public class TripImplementation implements ITripService{
             throw new ConflictException("Los campos de origen y destino son obligatorios para la búsqueda de viajes.");
         }
 
+        City originCity = cityRepository.findById(request.getOriginCityId())
+            .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de origen de la busqueda."));
+
+        City destinationCity = cityRepository.findById(request.getDestinationCityId())
+            .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de destino de la busqueda."));
+        
         List<Trip> trips = tripRepository.findFilteredTrips(
             request.getOriginCityId(),
             request.getDestinationCityId(),
@@ -218,7 +227,7 @@ public class TripImplementation implements ITripService{
         }
 
         List<TripSearchResponseDTO> responseDTOs = trips.stream()
-            .map(tripMapper::converTripToTripSearchResponseDTO)
+            .map(trip -> tripMapper.converTripToTripSearchResponseDTO(trip, TripCostUtils.calculateTripTotal(originCity, destinationCity, trip)))
             .collect(Collectors.toList());
 
         String message;

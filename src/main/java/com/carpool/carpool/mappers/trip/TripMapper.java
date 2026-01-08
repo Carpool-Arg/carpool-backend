@@ -197,7 +197,7 @@ public class TripMapper {
                 }).toList();
     }
 
-    public TripSearchResponseDTO converTripToTripSearchResponseDTO(Trip trip) {
+    public TripSearchResponseDTO converTripToTripSearchResponseDTO(Trip trip, double total) {
        
         Driver driver = trip.getVehicle().getDriver();
         User user = driver.getUser(); 
@@ -225,7 +225,7 @@ public class TripMapper {
             .startDateTime(trip.getStartTripDateTime())
             .tripStops(tripStopSearchResponseDTOs) 
             .availableSeat(trip.getCurrentAvailableSeats())
-            .seatPrice(roundPrice(trip.getPublishedSeatPrice()))
+            .seatPrice(roundPrice(total))
             .tripId(trip.getId())
             .build();
     }
