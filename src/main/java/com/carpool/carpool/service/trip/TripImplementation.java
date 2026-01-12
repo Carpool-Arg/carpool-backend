@@ -39,7 +39,6 @@ import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.vehicle.VehicleRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.parameters.IParametersService;
-import com.carpool.carpool.utils.CoordsUtils;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
 
@@ -87,7 +86,7 @@ public class TripImplementation implements ITripService{
         startDestinationValidation(tripRequestDTO.getTripStops());
         validateTripStopsOrder(tripRequestDTO.getTripStops());
 
-        Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, vehicle, getKilometerPrice(tripRequestDTO.getTripStops(), tripRequestDTO.getSeatPrice()));
+        Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, vehicle);
 
         // Calculo para obtener el extra que se debe de pagar
         double totalCommissionPerSeat = settingService.getMinimunPriceValue() / newTrip.getCurrentAvailableSeats();
@@ -379,33 +378,5 @@ public class TripImplementation implements ITripService{
             .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."))
             .getId();
     }
-
-    /**
-     * Metodo para calcular el precio por kilometro del viaje
-     * @param tripStops lista de paradas intermedias del viaje, que cotiene origen y destino
-     * @param price precio ingresado por el chofer para el viaje
-     * @return
-     */
-    private double getKilometerPrice(List<TripStopRequestDTO> tripStops, double price){
-        TripStopRequestDTO origin = tripStops.stream()
-            .filter(TripStopRequestDTO::isStart)
-            .findFirst()
-            .orElseThrow(()-> new ConflictException("No existe el origen del viaje."));
-        
-
-        TripStopRequestDTO destination = tripStops.stream()
-            .filter(TripStopRequestDTO::isDestination)
-            .findFirst()
-            .orElseThrow(()-> new ConflictException("No existe el origen del viaje."));
-
-        City originCity = cityRepository.findById(origin.getCityId()).orElseThrow(()-> new ConflictException("Ciudad de origen no encontrada"));
-
-        City destinationCity = cityRepository.findById(destination.getCityId()).orElseThrow(()-> new ConflictException("Ciudad de origen no encontrada"));
-        
-        double totalDistance = CoordsUtils.calculateDistance(originCity.getLatitude(), originCity.getLongitude(), destinationCity.getLatitude(), destinationCity.getLongitude());
-
-        return price/totalDistance;
-    }
-
     
 }
