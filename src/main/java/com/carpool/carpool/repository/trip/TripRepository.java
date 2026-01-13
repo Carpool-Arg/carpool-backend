@@ -58,11 +58,14 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         "JOIN t.tripStops ts " +
         "JOIN t.vehicle v " +
         "JOIN v.driver d " +
+        "JOIN t.stateHistory sh " +
         
         "WHERE t.currentAvailableSeats > 0 " +
+        "AND sh.state.name = 'CREATED' AND sh.finishDateTime IS NULL " +
         "AND ts.city.id = :cityId " +
         "AND d.user.id != :userId " +
         "AND ts.stopOrder < (SELECT MAX(tsMax.stopOrder) FROM TripStop tsMax WHERE tsMax.trip.id = t.id) " +
+
         
         
         "AND NOT EXISTS (" + 
@@ -86,19 +89,22 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query(value = "SELECT t.* FROM trip t " +
         "JOIN vehicles v ON v.id = t.vehicle_id " +
         "JOIN driver d ON d.id = v.driver_id " + 
-        
+        "JOIN state_history sh ON sh.trip_id = t.id " + 
+        "JOIN state s ON s.id = sh.state_id " +
+
         "WHERE t.current_available_seats > 0 " +
+        "AND s.name = 'CREATED' AND sh.finish_datetime IS NULL " +
         "AND d.user_id != :userId " + 
 
         
         "AND NOT EXISTS ( " +
         " SELECT 1 FROM reservation r " +
-        " JOIN state_history sh ON sh.reservation_id = r.id " +
-        " JOIN state s ON s.id = sh.state_id " +
+        " JOIN state_history shR ON shR.reservation_id = r.id " +
+        " JOIN state sR ON sR.id = shR.state_id " +
         " WHERE r.trip_id = t.id " + 
         " AND r.user_id = :userId " + 
-        " AND s.name IN ('ACCEPTED', 'PENDING') " + 
-        " AND sh.finish_datetime IS NULL " + 
+        " AND sR.name IN ('ACCEPTED', 'PENDING') " + 
+        " AND shR.finish_datetime IS NULL " + 
         ") " +
         
         // Filtro de fecha 
@@ -146,4 +152,17 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
           )
     """, nativeQuery = true)
     List<Trip> findTripsByDriverIdWithCurrentStateCreateTrip(@Param("driverId") Long driverId);
+
+    @Query("""
+            Select t from Trip t
+            Join t.stateHistory sh 
+            Join sh.state s
+            Where s.name = 'CREATED'
+                and s.scope = 'TRIP'
+                and sh.finishDateTime is NULL
+                and t.startTripDateTime <= :limitTime
+            """)
+    List<Trip> findTripToClose (@Param("limitTime") LocalDateTime limitTime);
+
+
 }
