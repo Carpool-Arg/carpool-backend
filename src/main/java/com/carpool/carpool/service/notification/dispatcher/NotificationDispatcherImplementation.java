@@ -3,8 +3,11 @@ package com.carpool.carpool.service.notification.dispatcher;
 import com.carpool.carpool.dto.notificationPayload.NotificationPayloadDTO;
 import com.carpool.carpool.enums.dispatchPolicy.DispatchPolicyEnum;
 import com.carpool.carpool.model.user.User;
+import com.carpool.carpool.service.notification.NotificationImplementation;
 import com.carpool.carpool.service.notification.dispatch.INotificationDispatchPolicyService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class NotificationDispatcherImplementation implements INotificationDispatcherService {
     private final Map<DispatchPolicyEnum, INotificationDispatchPolicyService> policyStrategies;
+    private static final Logger logger = LoggerFactory.getLogger(NotificationDispatcherImplementation.class);
 
     @Autowired
     public  NotificationDispatcherImplementation(List<INotificationDispatchPolicyService> strategies) {
@@ -31,6 +35,8 @@ public class NotificationDispatcherImplementation implements INotificationDispat
         if (strategy == null) {
             throw new UnsupportedOperationException("Política de despacho no soportada: " + policy);
         }
+
+        logger.debug("Dispatcher: strategy {}", strategy.getPolicy());
         // Delega a la estrategia de canal correcta
         strategy.execute(user, payload);
     }

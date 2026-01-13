@@ -3,10 +3,13 @@ package com.carpool.carpool.service.firebase.notification;
 import com.carpool.carpool.enums.token.TokenStateEnum;
 import com.carpool.carpool.model.user.token.UserToken;
 import com.carpool.carpool.repository.user.token.UserTokenRepository;
+import com.carpool.carpool.service.notification.dispatch.PushThenEmailPolicyImplementation;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +19,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FirebaseNotificationImplementation implements IFirebaseNotificationService{
     private final UserTokenRepository userTokenRepository;
+    private static final Logger logger = LoggerFactory.getLogger(FirebaseNotificationImplementation.class);
+
 
     @Override
     @Async
@@ -34,7 +39,13 @@ public class FirebaseNotificationImplementation implements IFirebaseNotification
                         .setNotification(notification)
                         .build();
 
-                FirebaseMessaging.getInstance().send(message);
+                String response = FirebaseMessaging.getInstance().send(message);
+                logger.debug(
+                        "Firebase notification sent. userTokenId={}, state={}, firebaseMessageId={}",
+                        token.getId(),
+                        token.getState(),
+                        response
+                );
             } catch (Exception e) {
                 // Si falla el envío, marcar token como EXPIRED
                 e.printStackTrace();
@@ -47,13 +58,20 @@ public class FirebaseNotificationImplementation implements IFirebaseNotification
     @Override
     public boolean sendSilentPush(String token) {
         try {
+            logger.debug("Sending silent push. token={}", token);
+
             Message message = Message.builder()
                     .setToken(token)
                     // Mensaje silencioso: no se muestra notificación en la UI
                     .putData("silent", "true")
                     .build();
 
-            FirebaseMessaging.getInstance().send(message);
+            String response = FirebaseMessaging.getInstance().send(message);
+
+            logger.debug(
+                    "Silent push sent successfully. firebaseMessageId={}",
+                    response
+            );
             return true;
         } catch (Exception e) {
             return false;

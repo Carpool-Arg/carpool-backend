@@ -6,6 +6,8 @@ import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.service.notification.content.INotificationContentService;
 import com.carpool.carpool.service.notification.dispatcher.INotificationDispatcherService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,6 +19,8 @@ import java.util.stream.Collectors;
 public class NotificationImplementation implements INotificationService {
     private final INotificationDispatcherService dispatcher;
     private final Map<NotificationEventEnum, INotificationContentService> contentStrategies;
+
+    private static final Logger logger = LoggerFactory.getLogger(NotificationImplementation.class);
 
     public NotificationImplementation(
             INotificationDispatcherService dispatcher,
@@ -43,6 +47,14 @@ public class NotificationImplementation implements INotificationService {
 
         // 3. Obtener la POLÍTICA de canal
         DispatchPolicyEnum policy = contentStrategy.getPolicy();
+
+        logger.debug(
+                "Notification built - predispatch. event={}, userId={}, policy={}, payload={}",
+                event,
+                userToNotify.getId(),
+                policy,
+                payload
+        );
 
         // 4. Enviar al DESPACHADOR de canal
         dispatcher.dispatch(userToNotify, payload, policy);

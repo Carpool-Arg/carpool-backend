@@ -10,9 +10,12 @@ import com.carpool.carpool.model.user.token.UserToken;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.user.token.UserTokenRepository;
 import com.carpool.carpool.response.Response;
+import com.carpool.carpool.service.firebase.notification.FirebaseNotificationImplementation;
 import com.carpool.carpool.service.firebase.notification.IFirebaseNotificationService;
 import com.carpool.carpool.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -27,9 +30,11 @@ public class UserNotificationImplementation implements IUserNotificationService 
     private final UserRepository userRepository;
     private final UserTokenRepository userTokenRepository;
     private final IFirebaseNotificationService firebaseNotificationService;
+    private static final Logger logger = LoggerFactory.getLogger(UserNotificationImplementation.class);
 
     @Override
     public Response<Void> register(UserTokenRequestDTO userTokenRequestDTO) {
+        logger.debug("USER-NOTIFICATION: comienzo de registro de token");
         //Obtener usuario autenticado
         User userAuth = this.getAuthenticatedActiveUser();
 
@@ -54,6 +59,8 @@ public class UserNotificationImplementation implements IUserNotificationService 
                 .build();
 
         userTokenRepository.save(userToken);
+
+        logger.debug("USER-NOTIFICATION: token registrado={}", userToken.getToken());
 
         return ResponseUtils.buildOKResponse(List.of("Token registrado con éxito") , null);
     }
