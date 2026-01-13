@@ -10,7 +10,7 @@ import com.carpool.carpool.model.trip.tripStop.TripStop;
 public class TripCostUtils {
 
   /**
-   * Metodo para determinar el total a cobrar para un viaje, si es desde el origen
+   * Método para determinar el total a cobrar para un viaje, si es desde el origen
    * hasta el destino del viaje devolvemos el precio publicado del viaje, sino devolvemos un total 
    * calculado segun el precio por kilometro del viaje
    * @param originCity ciudad de origen de la reserva
@@ -57,12 +57,12 @@ public class TripCostUtils {
     TripStop origin = tripStops.stream()
         .filter(ts -> ts.getCity().equals(originCity))
         .findFirst()
-    .orElseThrow(() -> new ConflictException("No se encontó una parada intermedia con la ciudad de origen ingresada"));
+    .orElseThrow(() -> new ConflictException("No se encontró una parada intermedia con la ciudad de origen ingresada."));
 
     TripStop destination = tripStops.stream()
         .filter(ts -> ts.getCity().equals(destinationCity))
         .findFirst()
-    .orElseThrow(() -> new ConflictException("No se encontró una parada intermedia con la ciudad de destino ingresada"));
+    .orElseThrow(() -> new ConflictException("No se encontró una parada intermedia con la ciudad de destino ingresada."));
     
     
     if(origin.getStopOrder() > destination.getStopOrder()){
