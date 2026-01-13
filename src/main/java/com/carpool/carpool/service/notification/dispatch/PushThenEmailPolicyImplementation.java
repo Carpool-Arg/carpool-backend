@@ -31,7 +31,7 @@ public class PushThenEmailPolicyImplementation implements INotificationDispatchP
                 user, TokenTypeEnum.PUSH_NOTIFICATION, TokenStateEnum.ACTIVE
         );
 
-        logger.debug("Policy - Push Then Email. Tokens={}", tokens);
+        logger.info("Policy - Push Then Email. Tokens={}", tokens);
 
         if (!tokens.isEmpty()) {
             firebaseService.sendPushNotification(tokens, payload.getPushTitle(), payload.getPushBody());

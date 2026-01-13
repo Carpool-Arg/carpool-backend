@@ -34,7 +34,7 @@ public class UserNotificationImplementation implements IUserNotificationService 
 
     @Override
     public Response<Void> register(UserTokenRequestDTO userTokenRequestDTO) {
-        logger.debug("USER-NOTIFICATION: comienzo de registro de token");
+        logger.info("USER-NOTIFICATION: comienzo de registro de token");
         //Obtener usuario autenticado
         User userAuth = this.getAuthenticatedActiveUser();
 
@@ -60,7 +60,7 @@ public class UserNotificationImplementation implements IUserNotificationService 
 
         userTokenRepository.save(userToken);
 
-        logger.debug("USER-NOTIFICATION: token registrado={}", userToken.getToken());
+        logger.info("USER-NOTIFICATION: token registrado={}", userToken.getToken());
 
         return ResponseUtils.buildOKResponse(List.of("Token registrado con éxito") , null);
     }

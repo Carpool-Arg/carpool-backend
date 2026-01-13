@@ -40,7 +40,7 @@ public class FirebaseNotificationImplementation implements IFirebaseNotification
                         .build();
 
                 String response = FirebaseMessaging.getInstance().send(message);
-                logger.debug(
+                logger.info(
                         "Firebase notification sent. userTokenId={}, state={}, firebaseMessageId={}",
                         token.getId(),
                         token.getState(),
@@ -58,7 +58,7 @@ public class FirebaseNotificationImplementation implements IFirebaseNotification
     @Override
     public boolean sendSilentPush(String token) {
         try {
-            logger.debug("Sending silent push. token={}", token);
+            logger.info("Sending silent push. token={}", token);
 
             Message message = Message.builder()
                     .setToken(token)
@@ -68,7 +68,7 @@ public class FirebaseNotificationImplementation implements IFirebaseNotification
 
             String response = FirebaseMessaging.getInstance().send(message);
 
-            logger.debug(
+            logger.info(
                     "Silent push sent successfully. firebaseMessageId={}",
                     response
             );

@@ -48,7 +48,7 @@ public class NotificationImplementation implements INotificationService {
         // 3. Obtener la POLÍTICA de canal
         DispatchPolicyEnum policy = contentStrategy.getPolicy();
 
-        logger.debug(
+        logger.info(
                 "Notification built - predispatch. event={}, userId={}, policy={}, payload={}",
                 event,
                 userToNotify.getId(),
