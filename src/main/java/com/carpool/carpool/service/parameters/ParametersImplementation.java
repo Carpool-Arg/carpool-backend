@@ -59,19 +59,19 @@ public class ParametersImplementation implements IParametersService {
 
     @Override
     public int getDiscountPercentage() {
-        String key = ParametersEnum.MINIMUN_PRICE_VALUE.getKey();
+        String key = ParametersEnum.DISCOUNT_PERCENTAGE.getKey();
 
         // 1. Buscar el Setting en la DB por su clave
-        ConfigParameters config = parametersRepository.findByKeyName(ParametersEnum.MINIMUN_PRICE_VALUE.getKey())
+        ConfigParameters config = parametersRepository.findByKeyName(ParametersEnum.DISCOUNT_PERCENTAGE.getKey())
                 .orElseThrow(() -> new ResourceNotFoundException(String.format(CONFIG_NOT_FOUND, key)));
         // 2. Obtener el valor (es un String)
-        String minimumPriceValue = config.getKeyValue();
+        String discountPercentageValue = config.getKeyValue();
 
         // 3. Convertir el valor a int y manejar el error de formato
         try {
-            return Integer.parseInt(minimumPriceValue);
+            return Integer.parseInt(discountPercentageValue);
         } catch (NumberFormatException e) {
-           throw new IllegalStateException(String.format(INVALID_NUMBER_FORMAT, key, minimumPriceValue), e);
+           throw new IllegalStateException(String.format(INVALID_NUMBER_FORMAT, key, discountPercentageValue), e);
         }
     }
 }
