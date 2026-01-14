@@ -17,9 +17,10 @@ public interface IParametersService {
     int getMinimumCityDistance();
 
     /**
-     * Obtiene el valor minimo permitido para publicar un viaje
-     * @return El valor minimo en moneda local
+     * Obtiene el procentaje del precio indicado por el chofer que se cobrara adicional por el uso de la aplicacion 
+     * tanto a choferes como a pasajeros
+     * @return El procentaje en numeros enteros
      *
      */
-    int getMinimunPriceValue();
+    int getDiscountPercentage();
 }

@@ -58,7 +58,7 @@ public class ParametersImplementation implements IParametersService {
     }
 
     @Override
-    public int getMinimunPriceValue() {
+    public int getDiscountPercentage() {
         String key = ParametersEnum.MINIMUN_PRICE_VALUE.getKey();
 
         // 1. Buscar el Setting en la DB por su clave

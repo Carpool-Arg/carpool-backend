@@ -77,6 +77,16 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Excepcion utilizada para cuando hay un error del lado del cliente. Se agregó para manejar las excepciones por instnaciar las clases Utils.
+     * @param ex Excepción
+     * @return {@link ResponseEntity} que contiene {@link Response} con data {@link Void}
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Response<Void>> handleIllegalState(IllegalArgumentException ex) {
+        return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(ex.getMessage())), HttpStatus.BAD_REQUEST);
+    }
+
+    /**
      * Excepcion utilizada para cuando un recurso no se encuentra.
      * @param ex Excepción
      * @return {@link ResponseEntity} que contiene {@link Response} con data {@link Void}

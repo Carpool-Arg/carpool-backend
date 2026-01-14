@@ -9,6 +9,10 @@ import com.carpool.carpool.model.trip.tripStop.TripStop;
 
 public class TripCostUtils {
 
+    private TripCostUtils() {
+        throw new IllegalStateException("No se puede instanciar TripCostUtils");
+    }
+
   /**
    * Método para determinar el total a cobrar para un viaje, si es desde el origen
    * hasta el destino del viaje devolvemos el precio publicado del viaje, sino devolvemos un total 

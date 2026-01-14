@@ -89,13 +89,12 @@ public class TripImplementation implements ITripService{
         Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, vehicle);
 
         // Calculo para obtener el extra que se debe de pagar
-        double totalCommissionPerSeat = settingService.getMinimunPriceValue() / newTrip.getCurrentAvailableSeats();
+        double totalCommissionPerSeat = (double) tripRequestDTO.getSeatPrice() * (settingService.getDiscountPercentage() / 100.0);
 
-        double splitCommission = totalCommissionPerSeat / 2;
         double requestedPrice = newTrip.getSeatPrice(); 
 
-        newTrip.setPublishedSeatPrice(requestedPrice + splitCommission);
-        newTrip.setDriverPriceDiscount(splitCommission);
+        newTrip.setPublishedSeatPrice(requestedPrice + totalCommissionPerSeat);
+        newTrip.setDriverPriceDiscount(totalCommissionPerSeat);
 
         StateHistory stateHistory = StateHistory.builder()
             .state(stateCreate)
@@ -249,11 +248,9 @@ public class TripImplementation implements ITripService{
         if (seatPrice == null || seatPrice <= 0) {
             throw new ConflictException("El precio base del asiento debe ser un valor positivo.");
         }
-
-        double totalCommissionPerSeat = (double) settingService.getMinimunPriceValue() / availableCurrentSeats;
-        double splitCommission = totalCommissionPerSeat / 2;
-
-        TripPriceCalculationResponseDTO calculation = tripMapper.convertTriptoTripPriceCalculationResponseDTO(seatPrice, splitCommission);
+        double totalCommissionPerSeat =(double) seatPrice * (settingService.getDiscountPercentage() / 100.0);
+        
+        TripPriceCalculationResponseDTO calculation = tripMapper.convertTriptoTripPriceCalculationResponseDTO(seatPrice, totalCommissionPerSeat);
         
         return ResponseUtils.buildOKResponse(List.of("Cálculo de precios realizado con éxito"), calculation);
     }
