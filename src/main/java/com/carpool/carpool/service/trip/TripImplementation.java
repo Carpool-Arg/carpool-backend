@@ -248,7 +248,7 @@ public class TripImplementation implements ITripService{
         if (seatPrice == null || seatPrice <= 0) {
             throw new ConflictException("El precio base del asiento debe ser un valor positivo.");
         }
-        double totalCommissionPerSeat =(double) seatPrice * (settingService.getDiscountPercentage() / 100.0);
+        double totalCommissionPerSeat =seatPrice * (settingService.getDiscountPercentage() / 100.0);
         
         TripPriceCalculationResponseDTO calculation = tripMapper.convertTriptoTripPriceCalculationResponseDTO(seatPrice, totalCommissionPerSeat);
         
