@@ -29,7 +29,7 @@ public class TripAutomaticClosureTask {
     private final StateHistoryRepository stateHistoryRepository;
     private final INotificationService notificationService;
 
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "0 */5 * * * *")
     @Transactional
     public void executeClosure() {
         LocalDateTime threshold = LocalDateTime.now().plusMinutes(30);

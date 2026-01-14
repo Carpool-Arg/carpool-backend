@@ -59,15 +59,12 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         "JOIN t.vehicle v " +
         "JOIN v.driver d " +
         "JOIN t.stateHistory sh " +
-        
         "WHERE t.currentAvailableSeats > 0 " +
         "AND sh.state.name = 'CREATED' AND sh.finishDateTime IS NULL " +
+        "AND t.startTripDateTime >= :now " +
         "AND ts.city.id = :cityId " +
         "AND d.user.id != :userId " +
         "AND ts.stopOrder < (SELECT MAX(tsMax.stopOrder) FROM TripStop tsMax WHERE tsMax.trip.id = t.id) " +
-
-        
-        
         "AND NOT EXISTS (" + 
         "  SELECT r FROM Reservation r " +
         "  WHERE r.trip.id = t.id " + 
@@ -81,7 +78,10 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         "  )" +
         ") " + 
         "ORDER BY t.startTripDateTime ASC")
-    List<Trip> findTripsForInitialFeed(@Param("cityId") Long cityId, @Param("userId") Long userId);
+    List<Trip> findTripsForInitialFeed(
+        @Param("cityId") Long cityId, 
+        @Param("userId") Long userId,
+        @Param("now") LocalDateTime now);
     
     /*
      * Busca viajes para el caso de la busqueda con filtros aplicados 
@@ -94,9 +94,9 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
 
         "WHERE t.current_available_seats > 0 " +
         "AND s.name = 'CREATED' AND sh.finish_datetime IS NULL " +
+        "AND t.start_date_time >= :now " +
         "AND d.user_id != :userId " + 
 
-        
         "AND NOT EXISTS ( " +
         " SELECT 1 FROM reservation r " +
         " JOIN state_history shR ON shR.reservation_id = r.id " +
@@ -106,21 +106,15 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         " AND sR.name IN ('ACCEPTED', 'PENDING') " + 
         " AND shR.finish_datetime IS NULL " + 
         ") " +
-        
-        // Filtro de fecha 
         "AND ((:departureDate)::date IS NULL OR t.start_date_time::date = :departureDate) " +
-        // Filtro de ruta obligatorio
         "AND EXISTS (SELECT 1 FROM trip_stop ts1, trip_stop ts2 " +
         " WHERE ts1.city_id = :originCityId " + 
         " AND ts2.city_id = :destinationCityId " + 
         " AND ts1.stop_order < ts2.stop_order " +
         " AND t.id = ts1.trip_id " +
         " AND t.id = ts2.trip_id) " +
-        // Filtros opcionales de precio 
         "AND (:minPrice IS NULL OR t.published_seat_price >= :minPrice) " + 
         "AND (:maxPrice IS NULL OR t.published_seat_price <= :maxPrice) " + 
-
-
         "ORDER BY " +
         "CASE WHEN :orderByRating = TRUE THEN d.rating ELSE NULL END DESC, " + 
         "t.start_date_time ASC",
@@ -132,8 +126,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         @Param("minPrice") Double minPrice,
         @Param("maxPrice") Double maxPrice,
         @Param("userId") Long userId,
-        @Param("orderByRating") Boolean orderByRating 
-    );
+        @Param("orderByRating") Boolean orderByRating,
+        @Param("now") LocalDateTime now);
 
     @Query(value = """
         SELECT t.* 

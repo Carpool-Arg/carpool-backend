@@ -152,7 +152,7 @@ public class TripImplementation implements ITripService{
             infoMessage = "No se proporcionó la ubicación actual del usuario, por lo que se cargaron los viajes que salen o pasan por " + cityRepository.findById(userCityId).get().getName();
         }
 
-        List<Trip> trips = tripRepository.findTripsForInitialFeed(userCityId, userId);
+        List<Trip> trips = tripRepository.findTripsForInitialFeed(userCityId, userId, LocalDateTime.now());
 
         if (trips.size() > limit) {
             trips = trips.subList(0, limit);
@@ -208,7 +208,8 @@ public class TripImplementation implements ITripService{
             request.getMinPrice(),
             request.getMaxPrice(),
             userId,
-            request.getOrderByDriverRating()
+            request.getOrderByDriverRating(),
+            LocalDateTime.now()
         );
 
         if (trips.size() > limit) {
