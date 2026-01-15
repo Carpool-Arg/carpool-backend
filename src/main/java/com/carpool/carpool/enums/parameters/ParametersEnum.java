@@ -16,6 +16,6 @@ import lombok.Getter;
 public enum ParametersEnum {
     DEFAULT_CITY_KEY("default-city-id"),
     MINIMUM_CITY_DISTANCE("minimum-city-distance"),
-    MINIMUN_PRICE_VALUE("minimun-price-value");
+    DISCOUNT_PERCENTAGE("discount-percentage");
     private final String key;
 }

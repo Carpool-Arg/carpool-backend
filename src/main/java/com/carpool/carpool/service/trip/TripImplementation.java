@@ -24,6 +24,7 @@ import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.trip.TripMapper;
 import com.carpool.carpool.model.driver.Driver;
+import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.state.State;
 import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
@@ -39,6 +40,7 @@ import com.carpool.carpool.repository.vehicle.VehicleRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.parameters.IParametersService;
 import com.carpool.carpool.utils.ResponseUtils;
+import com.carpool.carpool.utils.TripCostUtils;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -87,13 +89,12 @@ public class TripImplementation implements ITripService{
         Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, vehicle);
 
         // Calculo para obtener el extra que se debe de pagar
-        double totalCommissionPerSeat = settingService.getMinimunPriceValue() / newTrip.getCurrentAvailableSeats();
+        double totalCommissionPerSeat = (double) tripRequestDTO.getSeatPrice() * (settingService.getDiscountPercentage() / 100.0);
 
-        double splitCommission = totalCommissionPerSeat / 2;
         double requestedPrice = newTrip.getSeatPrice(); 
 
-        newTrip.setPublishedSeatPrice(requestedPrice + splitCommission);
-        newTrip.setDriverPriceDiscount(splitCommission);
+        newTrip.setPublishedSeatPrice(requestedPrice + totalCommissionPerSeat);
+        newTrip.setDriverPriceDiscount(totalCommissionPerSeat);
 
         StateHistory stateHistory = StateHistory.builder()
             .state(stateCreate)
@@ -157,9 +158,11 @@ public class TripImplementation implements ITripService{
         if (trips.size() > limit) {
             trips = trips.subList(0, limit);
         }
-
+        City originCity = cityRepository.findById(userCityId)
+            .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de origen del usuario."));
+        
         List<TripSearchResponseDTO> responseDTOs = trips.stream()
-            .map(tripMapper::converTripToTripSearchResponseDTO)
+            .map(trip -> tripMapper.converTripToTripSearchResponseDTO(trip, TripCostUtils.calculateTripTotal(originCity, null, trip)))
             .collect(Collectors.toList());
 
         List<String> messages = new ArrayList<>();
@@ -201,6 +204,12 @@ public class TripImplementation implements ITripService{
             throw new ConflictException("Los campos de origen y destino son obligatorios para la búsqueda de viajes.");
         }
 
+        City originCity = cityRepository.findById(request.getOriginCityId())
+            .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de origen de la busqueda."));
+
+        City destinationCity = cityRepository.findById(request.getDestinationCityId())
+            .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de destino de la busqueda."));
+        
         List<Trip> trips = tripRepository.findFilteredTrips(
             request.getOriginCityId(),
             request.getDestinationCityId(),
@@ -216,7 +225,7 @@ public class TripImplementation implements ITripService{
         }
 
         List<TripSearchResponseDTO> responseDTOs = trips.stream()
-            .map(tripMapper::converTripToTripSearchResponseDTO)
+            .map(trip -> tripMapper.converTripToTripSearchResponseDTO(trip, TripCostUtils.calculateTripTotal(originCity, destinationCity, trip)))
             .collect(Collectors.toList());
 
         String message;
@@ -239,11 +248,9 @@ public class TripImplementation implements ITripService{
         if (seatPrice == null || seatPrice <= 0) {
             throw new ConflictException("El precio base del asiento debe ser un valor positivo.");
         }
-
-        double totalCommissionPerSeat = (double) settingService.getMinimunPriceValue() / availableCurrentSeats;
-        double splitCommission = totalCommissionPerSeat / 2;
-
-        TripPriceCalculationResponseDTO calculation = tripMapper.convertTriptoTripPriceCalculationResponseDTO(seatPrice, splitCommission);
+        double totalCommissionPerSeat =seatPrice * (settingService.getDiscountPercentage() / 100.0);
+        
+        TripPriceCalculationResponseDTO calculation = tripMapper.convertTriptoTripPriceCalculationResponseDTO(seatPrice, totalCommissionPerSeat);
         
         return ResponseUtils.buildOKResponse(List.of("Cálculo de precios realizado con éxito"), calculation);
     }
@@ -368,6 +375,5 @@ public class TripImplementation implements ITripService{
             .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."))
             .getId();
     }
-
     
 }
