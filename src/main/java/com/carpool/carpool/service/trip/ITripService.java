@@ -38,7 +38,7 @@ public interface ITripService {
      * Metodo para obtener los viajes que creó un chofer que se encuentra en la sesión
      * @return Response<TripDriverResponseDTO> con el listado de viajes en caso exitoso o una lista vacia caso contrario
      */
-    Response<TripDriverResponseDTO> getTrips();
+    Response<TripDriverResponseDTO> getTrips(String tripState);
 
     /**
      *  Metodo para obtener el feed inicial de viajes.

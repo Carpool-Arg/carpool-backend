@@ -47,8 +47,10 @@ public class TripController {
             @ApiResponse(responseCode = "401", description = "El usuario no inició sesión", content = @Content),
     })
     @GetMapping
-    public ResponseEntity<Response<TripDriverResponseDTO>> getTrips(){
-        return new ResponseEntity<>(tripService.getTrips(), HttpStatus.OK);
+    public ResponseEntity<Response<TripDriverResponseDTO>> getTrips(
+        @RequestParam(defaultValue = "CREATED") String tripState
+    ){
+        return new ResponseEntity<>(tripService.getTrips(tripState), HttpStatus.OK);
     }
 
     @Operation(
