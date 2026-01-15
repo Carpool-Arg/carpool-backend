@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class TripAutomaticClosureTask {
+public class verifyTripStartTime {
     private final TripRepository tripRepository;
     private final StateRepository stateRepository; 
     private final StateHistoryRepository stateHistoryRepository;
