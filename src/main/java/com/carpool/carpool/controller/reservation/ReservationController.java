@@ -42,6 +42,21 @@ public class ReservationController {
     }
 
     @Operation(
+        summary = "Calcular total a pagar para una reserva"
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Total calculado con éxito",content = @Content)
+    })
+    @GetMapping("/calculate-total")
+    public ResponseEntity<Response<Double>> calculateTotal(
+        @RequestParam(required = true) @Positive(message = "El id del viaje debe ser mayor que 0") Long idTrip,
+        @RequestParam(required = false) Long idStartCity,
+        @RequestParam(required = false) Long idDestinationCity)
+    {
+        return new ResponseEntity<>(reservationService.calculateTotal(idTrip,idStartCity,idDestinationCity),HttpStatus.OK);     
+    }
+
+    @Operation(
             summary = "Solicitar una reserva de un viaje"
     )
     @ApiResponses({

@@ -23,6 +23,9 @@ public class Reservation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column
+    private double total;
+
     @ManyToOne
     @JoinColumn(
             name = "user_id",

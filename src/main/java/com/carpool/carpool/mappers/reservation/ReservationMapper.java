@@ -28,12 +28,13 @@ public class ReservationMapper {
      * @param destinationCity TripStop de destino
      * @return Reservation lista para persistir
      */
-    public static Reservation convertReservationRequestDTOToReservation(
+    public Reservation convertReservationRequestDTOToReservation(
             CreateReservationRequestDTO createReservationRequestDTO,
             User user,
             Trip trip,
             TripStop startCity,
-            TripStop destinationCity
+            TripStop destinationCity,
+            double total
     ) {
         return Reservation.builder()
                 .user(user)
@@ -41,6 +42,7 @@ public class ReservationMapper {
                 .startCity(startCity)
                 .destinationCity(destinationCity)
                 .baggage(createReservationRequestDTO.isBaggage())
+                .total(total)
                 .build();
     }
 

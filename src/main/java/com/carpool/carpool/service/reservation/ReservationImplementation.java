@@ -9,12 +9,14 @@ import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.reservation.ReservationMapper;
+import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.state.State;
 import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.user.User;
+import com.carpool.carpool.repository.city.CityRepository;
 import com.carpool.carpool.repository.reservation.ReservationRepository;
 import com.carpool.carpool.repository.reservation.ReservationSpecification;
 import com.carpool.carpool.repository.state.StateRepository;
@@ -25,7 +27,9 @@ import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.notification.INotificationService;
+import com.carpool.carpool.utils.CoordsUtils;
 import com.carpool.carpool.utils.ResponseUtils;
+import com.carpool.carpool.utils.TripCostUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -55,6 +59,7 @@ public class ReservationImplementation implements IReservationService{
     private final StateRepository stateRepository;
     private final INotificationService notificationService;
     private final IMediaService mediaService;
+    private final CityRepository cityRepository;
 
     private static final String STATE_PENDING = "PENDING";
 
@@ -122,7 +127,8 @@ public class ReservationImplementation implements IReservationService{
                 userAuth,
                 trip,
                 tripStops[0],
-                tripStops[1]
+                tripStops[1],
+                TripCostUtils.calculateTripTotal(tripStops[0].getCity(), tripStops[1].getCity(), trip)
         );
 
         //Creacion de reserva
@@ -215,6 +221,20 @@ public class ReservationImplementation implements IReservationService{
                 "Reserva %s con éxito",
                 reservationUpdateRequestDTO.isReject() ? "cancelada" : "aceptada");
         return ResponseUtils.buildOKResponse(List.of(message), null);
+    }
+
+    @Override
+    public Response<Double> calculateTotal(Long idTrip, Long idStartCity, Long idDestinationCity){
+        Trip trip = tripRepository.findById(idTrip)
+            .orElseThrow(()->new ResourceNotFoundException("El viaje no existe."));
+
+        City startCity = cityRepository.findById(idStartCity)
+            .orElseThrow(()-> new ConflictException("No se pudo encontrar la ciudad de origen."));
+
+        City destinationCity = cityRepository.findById(idDestinationCity)
+            .orElseThrow(()-> new ConflictException("No se pudo encontrar la ciudad de destino."));
+
+        return ResponseUtils.buildOKResponse(List.of("Total calculado con exito"), TripCostUtils.calculateTripTotal(startCity, destinationCity, trip));
     }
 
     /**
