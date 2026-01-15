@@ -69,6 +69,7 @@ public class SpringSecurityConfig {
         .requestMatchers("/password-change", "/password-change/**").permitAll()
         .requestMatchers(HttpMethod.POST, "/auth-google/**").permitAll()
         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+        .requestMatchers("/ws/**").permitAll()
         
         
         // Endpoints para roles específicos
