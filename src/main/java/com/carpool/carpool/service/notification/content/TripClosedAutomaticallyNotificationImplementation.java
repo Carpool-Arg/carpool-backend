@@ -37,7 +37,7 @@ public class TripClosedAutomaticallyNotificationImplementation implements INotif
                 .pushTitle("Viaje cerrado")
                 .pushBody(String.format("El viaje conducido por %s hacia %s ha sido cerrado automáticamente.", driverName, destination))
                 .emailSubject(SUBJECT_TRIP_CLOSED_AUTOMATICALLY)
-                .emailTitle(TITLE_TRIP_CLOSED_AUTOMATICALLY.replace("{name}", driverName))
+                .emailTitle(TITLE_GREETING.replace("{name}", driverName))
                 .emailMessage(MESSAGE_TRIP_CLOSED_AUTOMATICALLY.replace("{destination}", destination))
                 .emailButtonText(null)
                 .emailButtonUrl(null)

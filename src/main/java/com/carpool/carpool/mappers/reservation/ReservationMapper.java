@@ -3,7 +3,6 @@ package com.carpool.carpool.mappers.reservation;
 import com.carpool.carpool.dto.reservation.CreateReservationRequestDTO;
 import com.carpool.carpool.dto.reservation.ReservationDTO;
 import com.carpool.carpool.model.reservation.Reservation;
-import com.carpool.carpool.model.state.State;
 import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.trip.tripStop.TripStop;

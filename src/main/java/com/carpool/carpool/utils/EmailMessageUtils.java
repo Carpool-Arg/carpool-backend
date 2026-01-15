@@ -3,6 +3,9 @@ package com.carpool.carpool.utils;
 public class EmailMessageUtils {
 
     private EmailMessageUtils() {}
+    
+    // COMMON
+    public static final String TITLE_GREETING = "¡Hola, {name}!";
 
     // WELCOME
     public static final String SUBJECT_EMAIL_WELCOME = "¡Bienvenido a Carpool!";
@@ -39,7 +42,6 @@ public class EmailMessageUtils {
 
     // EMAIL CHANGE
     public static final String SUBJECT_EMAIL_CHANGE = "Verificación de nuevo correo electrónico";
-    public static final String TITLE_EMAIL_CHANGE = "¡Hola, {name}!";
     public static final String MESSAGE_EMAIL_CHANGE = "Recibimos una solicitud para cambiar tu correo electrónico en <strong>Carpool</strong>.<br>" +
             "Para confirmar esta modificación, por favor hacé clic en el botón de abajo.<br><br>" +
             "Si no realizaste esta solicitud, podés ignorar este mensaje.";
@@ -48,7 +50,6 @@ public class EmailMessageUtils {
 
     //RESERVATION
     public static final String SUBJECT_EMAIL_NEW_RESERVATION = "¡Nueva solicitud de reserva en tu viaje!";
-    public static final String TITLE_NEW_RESERVATION = "¡Hola, {name}!";
     public static final String MESSAGE_NEW_RESERVATION = "¡Buenas noticias! Recibiste una nueva solicitud de reserva.<br>" +
             "El pasajero <strong>{passengerName}</strong> quiere unirse a tu viaje!<br><br>" +
             "Para gestionarla, por favor hacé clic en el botón de abajo.";
@@ -57,14 +58,12 @@ public class EmailMessageUtils {
 
     //RESERVATION ACCEPTED
     public static final String SUBJECT_EMAIL_RESERVATION_ACCEPTED = "¡Tu solicitud de reserva ha sido aceptada!";
-    public static final String TITLE_RESERVATION_ACCEPTED = "¡Hola, {name}!";
     public static final String MESSAGE_RESERVATION_ACCEPTED ="\uD83E\uDD73 ¡Buenas noticias! Tu reserva para el viaje <strong>{origin}</strong> → <strong>{destination}</strong> fue aceptada por <strong>{driverName}</strong>.<br><br>" +
             "Ya tenés tu lugar confirmado. ¡Gracias por elegir <strong>Carpool</strong> y buen viaje!";
     public static final String MESSAGE_FOOTER_RESERVATION_ACCEPTED = "El equipo de Carpool";
 
     //RESERVATION REJECTED
     public static final String SUBJECT_EMAIL_RESERVATION_REJECTED = "Tu solicitud de reserva ha sido rechazada";
-    public static final String TITLE_RESERVATION_REJECTED = "¡Hola, {name}!";
     public static final String MESSAGE_RESERVATION_REJECTED ="Lamentablemente, tu solicitud de reserva para el viaje <strong>{origin}</strong> → <strong>{destination}</strong> fue rechazada por <strong>{driverName}</strong>.<br><br>" +
             "Gracias por tu comprensión.<br>" +
            "Esperamos que pronto encuentres otro viaje que se adapte a vos \uD83D\uDE4C";
@@ -72,8 +71,13 @@ public class EmailMessageUtils {
 
     // TRIP CLOSED AUTOMATICALLY
     public static final String SUBJECT_TRIP_CLOSED_AUTOMATICALLY = "Tu viaje ya esta listo para arrancar!";
-    public static final String TITLE_TRIP_CLOSED_AUTOMATICALLY = "¡Hola, {name}!";
     public static final String MESSAGE_TRIP_CLOSED_AUTOMATICALLY = "Te informamos que tu viaje con destino a <strong>{destination}</strong> ha sido cerrado para nuevas reservas.<br><br>" +
             "Esto sucede porque estamos cerca de la hora de salida. ¡Es momento de preparar todo para el trayecto! 🚗✨";
     public static final String MESSAGE_FOOTER_TRIP_CLOSED_AUTOMATICALLY = "Gracias por ser parte de la comunidad <strong>Carpool</strong>.";
+    
+//    // TRIP FULL
+    public static final String SUBJECT_TRIP_FULL = "¡Tu viaje alcanzo el cupo completo!";
+    public static final String MESSAGE_TRIP_FULL = "¡Buenas noticias! Tu viaje de <strong>{origin}</strong> a <strong>{destination}</strong>, programado para el día <strong>{date}</strong> ha sido cerrado ya que se completó el cupo.<br><br>" +
+            "<em>¡Te deseamos un excelente trayecto!</em>";
+    public static final String MESSAGE_FOOTER_TRIP_FULL = "Gracias por ser parte de la comunidad <strong>Carpool</strong>.";
 }

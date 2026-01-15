@@ -46,12 +46,12 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ReservationImplementation implements IReservationService{
+	
     private final TripRepository tripRepository;
     private final StateHistoryRepository stateHistoryRepository;
     private final UserRepository userRepository;
     private final ReservationRepository reservationRepository;
     private final TripStopRepository  tripStopRepository;
-    private final ReservationMapper reservationMapper;
     private final StateRepository stateRepository;
     private final INotificationService notificationService;
     private final IMediaService mediaService;
@@ -117,7 +117,7 @@ public class ReservationImplementation implements IReservationService{
         // Validaciones de las ciudades
         TripStop[] tripStops =  cityValidations(createReservationRequestDTO.getStartCity(), createReservationRequestDTO.getDestinationCity(), trip);
 
-        Reservation newReservation = reservationMapper.convertReservationRequestDTOToReservation(
+        Reservation newReservation = ReservationMapper.convertReservationRequestDTOToReservation(
                 createReservationRequestDTO,
                 userAuth,
                 trip,
@@ -173,6 +173,24 @@ public class ReservationImplementation implements IReservationService{
             if(discountAvailableSeat < 0){
                 throw new ConflictException("Se alcanzó el cupo disponible, no se puede aceptar la reserva.");
             }
+            if(discountAvailableSeat == 0){
+
+                this.notificationService.send(
+                        trip.getVehicle().getDriver().getUser(),
+                        NotificationEventEnum.TRIP_FULL,
+                        trip);
+                
+                State stateInrogress = stateRepository.findByNameAndScope("IN_PROGRESS", ScopeEnum.TRIP)
+                        .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para iniciar el viaje."));
+                
+                StateHistory stateHistory = StateHistory.builder()
+                        .state(stateInrogress)
+                        .trip(trip)
+                        .build();
+                
+                stateHistoryRepository.save(stateHistory);
+            }
+
             trip.setCurrentAvailableSeats(discountAvailableSeat);
             tripRepository.save(trip);
             notification = NotificationEventEnum.RESERVATION_ACCEPTED;
