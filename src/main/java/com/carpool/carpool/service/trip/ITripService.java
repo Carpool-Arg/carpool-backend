@@ -75,4 +75,6 @@ public interface ITripService {
      * @throws ConflictException si la cantidad de asientos es menor o igual a 0 o si el precio publicado es negativo
      */
     Response<TripPriceCalculationResponseDTO> calculatePublishSeatPrice(Double publishedPrice, Integer availableCurrentSeats);
+
+    Response<CurrentTripResponseDTO> getCurrentTrip();
 }

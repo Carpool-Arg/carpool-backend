@@ -1,16 +1,17 @@
 package com.carpool.carpool.service.licenseClass;
 
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import com.carpool.carpool.dto.licenseClass.LicenseClassResponseDTO;
 import com.carpool.carpool.mappers.licenseClass.LicenseClassMapper;
 import com.carpool.carpool.model.licenseClass.LicenseClass;
 import com.carpool.carpool.repository.licenseClass.LicenseClassRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.utils.ResponseUtils;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor

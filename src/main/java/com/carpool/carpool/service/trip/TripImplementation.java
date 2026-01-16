@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
 import com.carpool.carpool.dto.trip.TripDriverDTO;
 import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
@@ -42,6 +43,7 @@ import com.carpool.carpool.service.parameters.IParametersService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -254,6 +256,16 @@ public class TripImplementation implements ITripService{
         
         return ResponseUtils.buildOKResponse(List.of("Cálculo de precios realizado con éxito"), calculation);
     }
+
+    @Override
+    public Response<CurrentTripResponseDTO> getCurrentTrip(){
+        Driver driver = getAuthenticatedDriver();
+        Trip currentTrip = tripRepository.findCurrentTripByDriver(driver.getId())
+            .orElseThrow(() -> new EntityNotFoundException("El chofer no tiene un viaje en curso en este momento."));
+
+        return ResponseUtils.buildOKResponse(List.of("Viaje en curso recuperado con éxito"), tripMapper.covertTripToCurrentTripResponseDTO(currentTrip));
+    }
+
 
     /**
      * Validaciones del viaje en general. Comprobamos aspectos como:

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
 import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 import com.carpool.carpool.dto.trip.TripRequestDTO;
@@ -121,6 +122,20 @@ public class TripController {
             @RequestParam("seatPrice") Double publishedPrice,
             @RequestParam("availableCurrentSeats") Integer availableSeats) {
         Response<TripPriceCalculationResponseDTO> response = tripService.calculatePublishSeatPrice(publishedPrice, availableSeats);
+        return new ResponseEntity<>(response, HttpStatus.OK); 
+    }
+
+
+    @Operation(
+            summary = "Obtener el viaje en curso del chofer logueado.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Viaje obtenido con éxito."),
+            @ApiResponse(responseCode = "404", description = "No se pudo encontrar el viaje.", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor al obtener el viaje.", content = @Content),
+    })
+    @GetMapping("/current-trip")
+    public ResponseEntity<Response<CurrentTripResponseDTO>> getDriverCurrentTrip() {
+        Response<CurrentTripResponseDTO> response = tripService.getCurrentTrip();
         return new ResponseEntity<>(response, HttpStatus.OK); 
     }
 

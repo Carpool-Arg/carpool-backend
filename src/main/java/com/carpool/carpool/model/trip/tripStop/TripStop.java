@@ -49,6 +49,9 @@ public class TripStop implements Serializable{
     @Column(nullable = false)
     private LocalDateTime estimatedArrivalDateTime;
 
+    @Column
+    private LocalDateTime arrivalDateTime; 
+
     @ManyToOne
     @JoinColumn(name="city_id",nullable = false)
     private City city;
