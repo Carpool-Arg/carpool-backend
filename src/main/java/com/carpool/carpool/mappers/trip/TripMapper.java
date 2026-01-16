@@ -192,6 +192,7 @@ public class TripMapper {
                             .availableBaggage(trip.getAvailableBaggage().getTypeBaggage())
                             .seatPrice(roundPrice(trip.getSeatPrice() - trip.getDriverPriceDiscount()))
                             .estimatedArrivalDateTime(estimatedArrivalDate)
+                            .tripState(getCurrentTripStatusName(trip))
                             .build();
                 }).toList();
     }
@@ -243,4 +244,15 @@ public class TripMapper {
                 .setScale(3, RoundingMode.HALF_UP) 
                 .doubleValue();
     }
+
+    private String getCurrentTripStatusName(Trip trip) {
+        return trip.getStateHistory().stream()
+            .filter(history -> history.getFinishDateTime() == null)
+            .map(history -> history.getState().getName())
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException(
+                "El viaje no tiene un estado actual"
+            ));
+    }
+
 }
