@@ -62,6 +62,8 @@ public class TripImplementation implements ITripService{
     @Transactional
     public Response<Void> createTrip(TripRequestDTO tripRequestDTO) {
 
+        Driver authenticatedDriver = getAuthenticatedDriver();
+
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())
         .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe."));
 
@@ -84,11 +86,14 @@ public class TripImplementation implements ITripService{
                 .findFirst()
                 .orElseThrow(() -> new ConflictException("No se pudo calcular la fecha de llegada."));
 
-        Driver authenticatedDriver = getAuthenticatedDriver();
         
+        // Verfica que el chofer no tenga un viaje en progreso para publicar un viaje
+        if (tripRepository.hasTripInProgress(authenticatedDriver.getId())) {
+            throw new ConflictException("No podés publicar un nuevo viaje mientras tenés uno en curso.");
+        }
         // Se verifica si el nuevo viaje interfiere con otros viajes del chofer.
         if (tripRepository.hasOverlappingSchedule(authenticatedDriver.getId(), tripRequestDTO.getStartDateTime(), newEnd)) {
-            throw new ConflictException("El horario se solapa con otro viaje activo (incluyendo 30m antes del comienzo).");    
+            throw new ConflictException("El horario se solapa con otro viaje activo (incluyendo 30m antes del comienzo y 30m después del mismo).");    
         }
 
         // Calculo para obtener el extra que se debe de pagar

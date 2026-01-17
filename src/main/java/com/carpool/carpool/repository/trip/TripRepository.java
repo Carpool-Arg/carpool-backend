@@ -177,8 +177,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         WHERE t.vehicle_id IN (SELECT v.id FROM vehicles v WHERE v.driver_id = :driverId)
             AND ts.is_destination = true
             AND sh.finish_datetime IS NULL
-            AND s.name IN ('CREATED', 'IN_PROGRESS')
-            AND :newStart < ts.estimated_arrival_date_time 
+            AND s.name IN ('CREATED', 'CLOSED', 'IN_PROGRESS')
+            AND :newStart < (ts.estimated_arrival_date_time + INTERVAL '30 minutes')
             AND :newEnd > (t.start_date_time - INTERVAL '30 minutes')
     """, nativeQuery = true)
     boolean hasOverlappingSchedule(
@@ -211,4 +211,20 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         @Param("driverId") Long driverId, 
         @Param("timeToCheck") LocalDateTime timeToCheck
     );
+
+    /**
+     * Verifica que el chofer tenga un viaje en progreso
+     * @param driverId Id del chofer 
+     * @return true si tien un viaje en progreso 
+     */
+    @Query(value = """
+            SELECT COUNT (t.id) > 0
+            FROM trip t 
+            JOIN state_history sh ON t.id = sh.trip_id
+            JOIN state s ON s.id = sh.state_id
+            WHERE t.vehicle_id IN (SELECT v.id FROM vehicles v WHERE v.driver_id = :driverId)
+                AND sh.finish_datetime IS NULL 
+                AND s.name = 'IN_PROGRESS'
+    """, nativeQuery = true)
+    boolean hasTripInProgress(@Param("driverId") Long driverId); 
 }
