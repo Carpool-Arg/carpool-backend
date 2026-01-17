@@ -27,7 +27,14 @@ public class TripClosedAutomaticallyNotificationImplementation implements INotif
 
     @Override
     public NotificationPayloadDTO build(Trip context) {
+        
         String driverName = context.getVehicle().getDriver().getUser().getName();
+        
+        String origin = context.getTripStops().stream()
+            .min(Comparator.comparing(TripStop::getStopOrder))
+            .map(ts -> ts.getCity().getName())
+            .orElse("desconocido");
+
         String destination = context.getTripStops().stream()
                 .max(Comparator.comparing(TripStop::getStopOrder))
                 .map(ts -> ts.getCity().getName())
@@ -38,7 +45,7 @@ public class TripClosedAutomaticallyNotificationImplementation implements INotif
                 .pushBody(String.format("El viaje conducido por %s hacia %s ha sido cerrado automáticamente.", driverName, destination))
                 .emailSubject(SUBJECT_TRIP_CLOSED_AUTOMATICALLY)
                 .emailTitle(TITLE_TRIP_CLOSED_AUTOMATICALLY.replace("{name}", driverName))
-                .emailMessage(MESSAGE_TRIP_CLOSED_AUTOMATICALLY.replace("{destination}", destination))
+                .emailMessage(MESSAGE_TRIP_CLOSED_AUTOMATICALLY.replace("{origin}", origin).replace("{destination}", destination))
                 .emailButtonText(null)
                 .emailButtonUrl(null)
                 .emailMessageFooter(MESSAGE_FOOTER_TRIP_CLOSED_AUTOMATICALLY)

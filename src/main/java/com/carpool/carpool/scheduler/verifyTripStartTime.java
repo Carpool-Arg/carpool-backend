@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class verifyTripStartTime {
+public class VerifyTripStartTime {
     private final TripRepository tripRepository;
     private final StateRepository stateRepository; 
     private final StateHistoryRepository stateHistoryRepository;
@@ -41,35 +41,51 @@ public class verifyTripStartTime {
                 .orElseThrow(() -> new IllegalStateException("Estado CLOSED no encontrado"));
 
         for (Trip trip : tripsToClose) {
-            try {
-                LocalDateTime now = LocalDateTime.now();
-                stateHistoryRepository.findByTripAndFinishDateTimeIsNullAndReservationIdIsNull(trip)
-                        .ifPresent(sh -> {
-                            sh.setFinishDateTime(now);
-                            stateHistoryRepository.save(sh); 
-                        });
+            processTripClosure(trip, closedState);
+        }
+    }
 
-                StateHistory newStateHistory = StateHistory.builder()
-                        .trip(trip)
-                        .state(closedState)
-                        .startDateTime(now)
-                        .build();
-                
-                stateHistoryRepository.save(newStateHistory);
-                
-                try {
-                    notificationService.send(
-                        trip.getVehicle().getDriver().getUser(), 
-                        NotificationEventEnum.TRIP_CLOSED_AUTOMATICALLY, 
-                        trip
-                    );
-                } catch (Exception e) {
-                    log.error("Error al enviar notificación para viaje {}: {}", trip.getId(), e.getMessage());
-                }
+    /**
+     * Procesa el cierre individual de un viaje y gestiona sus excepciones.
+     */
+    private void processTripClosure(Trip trip, State closedState) {
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            stateHistoryRepository.findByTripAndFinishDateTimeIsNullAndReservationIdIsNull(trip)
+                    .ifPresent(sh -> {
+                        sh.setFinishDateTime(now);
+                        stateHistoryRepository.save(sh); 
+                    });
 
-            } catch (Exception e) {
-                log.error("Error grave procesando viaje {}: {}", trip.getId(), e.getMessage());
-            }
+            StateHistory newStateHistory = StateHistory.builder()
+                    .trip(trip)
+                    .state(closedState)
+                    .startDateTime(now)
+                    .build();
+            
+            stateHistoryRepository.save(newStateHistory);
+            
+            // Intentamos notificar al usuario 
+            sendClosureNotification(trip);
+
+        } catch (Exception e) {
+            log.error("Error grave procesando el cierre automático del viaje {}: {}", trip.getId(), e.getMessage());
+        }
+    }
+
+    /**
+    * Envía la notificación de cierre automático. 
+    * 
+    */
+    private void sendClosureNotification(Trip trip) {
+        try {
+            notificationService.send(
+                trip.getVehicle().getDriver().getUser(), 
+                NotificationEventEnum.TRIP_CLOSED_AUTOMATICALLY, 
+                trip
+            );
+        } catch (Exception e) {
+            log.error("Error al enviar notificación para viaje {}: {}", trip.getId(), e.getMessage());
         }
     }
 }
