@@ -28,6 +28,7 @@ import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.state.State;
 import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
+import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.model.vehicle.Vehicle;
 import com.carpool.carpool.repository.city.CityRepository;
@@ -63,6 +64,8 @@ public class TripImplementation implements ITripService{
     @Transactional
     public Response<Void> createTrip(TripRequestDTO tripRequestDTO) {
 
+        Driver authenticatedDriver = getAuthenticatedDriver();
+
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())
         .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe."));
 
@@ -72,21 +75,28 @@ public class TripImplementation implements ITripService{
         //Validaciones del viaje en general 
         tripValidations(vehicle,tripRequestDTO);
 
-        //Validacion para comprobar que la fecha de inicio del viaje es igual o posterior a la actual + 30 minutos
-        if(tripRequestDTO.getStartDateTime().isBefore(LocalDateTime.now().plusMinutes(30))){
-            throw new ConflictException("La fecha y hora del viaje deben tener un intervalo superior a 30 minutos desde la hora actual.");
-        }
-
-        //Validacion para comprobar que no existe otro viaje programado para el mismo vehiculo en la misma fecha y hora
-        if (hasATripPlanned(tripRequestDTO.getStartDateTime())) {
-            throw new ConflictException("Ya tenés un viaje programado en la misma fecha y hora.");
-        }
-
         //Validaciones para las paradas intermedias
         startDestinationValidation(tripRequestDTO.getTripStops());
         validateTripStopsOrder(tripRequestDTO.getTripStops());
 
         Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, vehicle);
+
+        // Obtenemos la fecha y hora estimada de llegada de la parada marcada como destino.
+        LocalDateTime newEnd = newTrip.getTripStops().stream()
+                .filter(TripStop::isDestination)
+                .map(TripStop::getEstimatedArrivalDateTime)
+                .findFirst()
+                .orElseThrow(() -> new ConflictException("No se pudo calcular la fecha de llegada."));
+
+        
+        // Verfica que el chofer no tenga un viaje en progreso para publicar un viaje
+        if (tripRepository.hasTripInProgress(authenticatedDriver.getId())) {
+            throw new ConflictException("No podés publicar un nuevo viaje mientras tenés uno en curso.");
+        }
+        // Se verifica si el nuevo viaje interfiere con otros viajes del chofer.
+        if (tripRepository.hasOverlappingSchedule(authenticatedDriver.getId(), tripRequestDTO.getStartDateTime(), newEnd)) {
+            throw new ConflictException("El horario se solapa con otro viaje activo (incluyendo 30m antes del comienzo y 30m después del mismo).");    
+        }
 
         // Calculo para obtener el extra que se debe de pagar
         double totalCommissionPerSeat = (double) tripRequestDTO.getSeatPrice() * (settingService.getDiscountPercentage() / 100.0);
@@ -101,8 +111,8 @@ public class TripImplementation implements ITripService{
         .build();
 
         stateHistory.setTrip(newTrip);
-
         tripRepository.save(newTrip);
+
         stateHistoryRepository.save(stateHistory);
         return ResponseUtils.buildOKResponse(List.of("Viaje creado con éxito") , null);
     }
@@ -134,11 +144,14 @@ public class TripImplementation implements ITripService{
 
     @Override
     public Response<Void> checkTripAvailability(LocalDateTime startDateTime) {
-        if(hasATripPlanned(startDateTime)){
-           throw new ConflictException("Ya tenés un viaje programado en la misma fecha y hora.");
-        }else{
-            return ResponseUtils.buildOKResponse(List.of("El viaje es posible"), null);
+
+        Driver driver = getAuthenticatedDriver();
+        
+        if (tripRepository.isTimeSlotOccupied(driver.getId(), startDateTime)) {
+            throw new ConflictException("Ese horario coincide con un viaje que ya tenés en curso.");
         }
+        
+        return ResponseUtils.buildOKResponse(List.of("El horario de inicio está disponible"), null);
     }
 
     @Override
@@ -153,7 +166,7 @@ public class TripImplementation implements ITripService{
             infoMessage = "No se proporcionó la ubicación actual del usuario, por lo que se cargaron los viajes que salen o pasan por " + cityRepository.findById(userCityId).get().getName();
         }
 
-        List<Trip> trips = tripRepository.findTripsForInitialFeed(userCityId, userId);
+        List<Trip> trips = tripRepository.findTripsForInitialFeed(userCityId, userId, LocalDateTime.now());
 
         if (trips.size() > limit) {
             trips = trips.subList(0, limit);
@@ -217,7 +230,8 @@ public class TripImplementation implements ITripService{
             request.getMinPrice(),
             request.getMaxPrice(),
             userId,
-            request.getOrderByDriverRating()
+            request.getOrderByDriverRating(),
+            LocalDateTime.now()
         );
 
         if (trips.size() > limit) {
@@ -349,18 +363,6 @@ public class TripImplementation implements ITripService{
 
         return driverRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new ConflictException("No se encontró el perfil de chofer para el usuario autenticado."));
-    }
-
-    /**
-     * Verifica si un chofer tiene un viaje planificado en una fecha y hora determinadas.
-     * @param startDateTime La fecha y hora a partir de la cual verificar.
-     * @return true si el chofer tiene un viaje planificado después de la fecha y hora dadas, false en caso contrario.
-     * @throws ConflictException si el chofer ya tiene un viaje planificado en la fecha y hora dadas.
-     */
-    private boolean hasATripPlanned (LocalDateTime startDateTime){
-        Driver driver = getAuthenticatedDriver();
-
-        return tripRepository.existsByVehicleDriverIdAndStartTripDateTime(driver.getId(), startDateTime);
     }
 
     /**

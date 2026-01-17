@@ -70,4 +70,10 @@ public class EmailMessageUtils {
            "Esperamos que pronto encuentres otro viaje que se adapte a vos \uD83D\uDE4C";
     public static final String MESSAGE_FOOTER_RESERVATION_REJECTED = "El equipo de Carpool";
 
+    // TRIP CLOSED AUTOMATICALLY
+    public static final String SUBJECT_TRIP_CLOSED_AUTOMATICALLY = "Tu viaje ya esta listo para arrancar!";
+    public static final String TITLE_TRIP_CLOSED_AUTOMATICALLY = "¡Hola, {name}!";
+    public static final String MESSAGE_TRIP_CLOSED_AUTOMATICALLY = "Te informamos que tu viaje desde <strong>{origin}</strong> con destino a <strong>{destination}</strong> ha sido cerrado para nuevas reservas.<br><br>" +
+            "Esto sucede porque estamos cerca de la hora de salida. ¡Es momento de preparar todo para el trayecto! 🚗✨";
+    public static final String MESSAGE_FOOTER_TRIP_CLOSED_AUTOMATICALLY = "Gracias por ser parte de la comunidad <strong>Carpool</strong>.";
 }
