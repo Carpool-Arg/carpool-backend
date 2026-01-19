@@ -21,6 +21,8 @@ target/
 *.iml
 *.ipr
 
+### Eclipse IDE ###
+.metadata/
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
