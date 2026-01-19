@@ -27,7 +27,6 @@ import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.notification.INotificationService;
-import com.carpool.carpool.utils.CoordsUtils;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +52,7 @@ public class ReservationImplementation implements IReservationService{
 	
     private final TripRepository tripRepository;
     private final StateHistoryRepository stateHistoryRepository;
+    private final ReservationMapper reservationMapper;
     private final UserRepository userRepository;
     private final ReservationRepository reservationRepository;
     private final TripStopRepository  tripStopRepository;
@@ -122,7 +122,7 @@ public class ReservationImplementation implements IReservationService{
         // Validaciones de las ciudades
         TripStop[] tripStops =  cityValidations(createReservationRequestDTO.getStartCity(), createReservationRequestDTO.getDestinationCity(), trip);
 
-        Reservation newReservation = ReservationMapper.convertReservationRequestDTOToReservation(
+        Reservation newReservation = reservationMapper.convertReservationRequestDTOToReservation(
                 createReservationRequestDTO,
                 userAuth,
                 trip,
@@ -186,7 +186,7 @@ public class ReservationImplementation implements IReservationService{
                         NotificationEventEnum.TRIP_FULL,
                         trip);
                 
-                State stateInrogress = stateRepository.findByNameAndScope("IN_PROGRESS", ScopeEnum.TRIP)
+                State stateInrogress = stateRepository.findByNameAndScope("CLOSED", ScopeEnum.TRIP)
                         .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para iniciar el viaje."));
                 
                 StateHistory stateHistory = StateHistory.builder()
