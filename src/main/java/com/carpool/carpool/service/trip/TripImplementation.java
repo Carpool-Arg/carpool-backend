@@ -47,6 +47,7 @@ import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.vehicle.VehicleRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.parameters.IParametersService;
+import com.carpool.carpool.service.reservation.IReservationService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
 
@@ -69,7 +70,8 @@ public class TripImplementation implements ITripService{
     private final ReservationRepository reservationRepository;
     private final TripStopRepository tripStopRepository;
     private final IParametersService settingService;
-
+    private final IReservationService reservationService;
+    
     @Override
     @Transactional
     public Response<Void> createTrip(TripRequestDTO tripRequestDTO) {
@@ -282,8 +284,6 @@ public class TripImplementation implements ITripService{
         Trip currentTrip = tripRepository.findCurrentTripByDriver(driver.getId())
             .orElseThrow(() -> new EntityNotFoundException("El chofer no tiene un viaje en curso en este momento.")); 
 
-        State stateUnpaid = stateRepository.findByNameAndScope("UNPAID", ScopeEnum.RESERVATION)
-            .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para iniciar una reserva."));
 
         TripStop stop = currentTrip.getTripStops().stream()
             .filter(ts -> ts.getId() == tripArriveRequestDTO.getIdTripStop())
@@ -294,34 +294,38 @@ public class TripImplementation implements ITripService{
 
         validateStopOrderToClose(currentTrip, stop);
 
-        List<Reservation> reservations = stop.getDestinationReservations();
+        List<Reservation> reservations = reservationRepository.findReservationsByTripAndDestinationAndState(currentTrip.getId(), stop.getId(), "IN_PROGRESS");
 
         if(reservations != null && !reservations.isEmpty()){
-            reservations.forEach(reservation -> processReservation(reservation, stateUnpaid));
+            reservations.forEach(reservation ->reservationService.finishTripReservation(reservation));
         }
         
         stop.setArrivalDateTime(LocalDateTime.now());
         tripStopRepository.save(stop);
         if(stop.isDestination()){
-            StateHistory actualStateHistory = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(currentTrip.getId()).orElseThrow(() -> new ConflictException("El viaje no tiene un estado actual"));
-
-            actualStateHistory.setFinishDateTime(LocalDateTime.now());
-
-            State stateFinished = stateRepository.findByNameAndScope("FINISHED", ScopeEnum.TRIP)
-                .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para finalizar el viaje."));
-            
-            StateHistory stateHistory = StateHistory.builder()
-                .state(stateFinished)
-            .build();
-            
-            stateHistory.setTrip(currentTrip);
-            tripRepository.save(currentTrip);
-            stateHistoryRepository.save(actualStateHistory);
-            stateHistoryRepository.save(stateHistory);
-            return ResponseUtils.buildOKResponse(List.of("Viaje finalizado con éxito") , null);
+            return finishTrip(currentTrip);
         }else{
             return ResponseUtils.buildOKResponse(List.of("Llegada a parada registrada con éxito.") , null);
         }
+    }
+
+    private Response<Void> finishTrip(Trip trip){
+        StateHistory actualStateHistory = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(trip.getId()).orElseThrow(() -> new ConflictException("El viaje no tiene un estado actual"));
+
+        actualStateHistory.setFinishDateTime(LocalDateTime.now());
+
+        State stateFinished = stateRepository.findByNameAndScope("FINISHED", ScopeEnum.TRIP)
+            .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para finalizar el viaje."));
+        
+        StateHistory stateHistory = StateHistory.builder()
+            .state(stateFinished)
+        .build();
+        
+        stateHistory.setTrip(trip);
+        tripRepository.save(trip);
+        stateHistoryRepository.save(actualStateHistory);
+        stateHistoryRepository.save(stateHistory);
+        return ResponseUtils.buildOKResponse(List.of("Viaje finalizado con éxito") , null);
     }
 
     private void validateStopOrderToClose(Trip trip, TripStop stopToClose) {
@@ -349,24 +353,7 @@ public class TripImplementation implements ITripService{
 
 
 
-    private void processReservation(Reservation reservation, State state ){
-        StateHistory actualStateHistory = stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservation.getId()).orElseThrow(() -> new ConflictException("La reserva no tiene un estado actual"));
 
-        if(!actualStateHistory.getState().getName().equals("IN_PROGRESS")){
-            throw new ConflictException("La reserva con el ID " + reservation.getId() + " no está en progreso");
-        }
-
-        StateHistory stateHistory = StateHistory.builder()
-            .state(state)
-            .reservation(reservation)
-        .build();
-
-        actualStateHistory.setFinishDateTime(LocalDateTime.now());
-
-        reservationRepository.save(reservation);
-        stateHistoryRepository.save(actualStateHistory);
-        stateHistoryRepository.save(stateHistory);
-    }
 
     /**
      * Validaciones del viaje en general. Comprobamos aspectos como:

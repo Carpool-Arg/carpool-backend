@@ -220,6 +220,29 @@ public class ReservationImplementation implements IReservationService{
         return ResponseUtils.buildOKResponse(List.of("Total calculado con exito"), TripCostUtils.calculateTripTotal(startCity, destinationCity, trip));
     }
 
+
+    @Override
+    public void finishTripReservation(Reservation reservation){
+        State stateUnpaid = stateRepository.findByNameAndScope("UNPAID", ScopeEnum.RESERVATION)
+            .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para iniciar una reserva."));
+
+        StateHistory actualStateHistory = stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservation.getId())
+            .orElseThrow(() -> new ConflictException("La reserva no tiene un estado actual"));
+
+        if(!actualStateHistory.getState().getName().equals("IN_PROGRESS")){
+            throw new ConflictException("La reserva con el ID " + reservation.getId() + " no está en progreso");
+        }
+
+        StateHistory stateHistory = StateHistory.builder()
+            .state(stateUnpaid)
+            .reservation(reservation)
+        .build();
+
+        actualStateHistory.setFinishDateTime(LocalDateTime.now());
+
+        stateHistoryRepository.save(actualStateHistory);
+        stateHistoryRepository.save(stateHistory);
+    }
     /**
      * Validaciones relacionadas al viaje. Comprobamos lo siguiente:
      * - Que el viaje NO esté lleno
