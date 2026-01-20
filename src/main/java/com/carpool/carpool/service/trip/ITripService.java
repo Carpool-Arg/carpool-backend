@@ -77,4 +77,6 @@ public interface ITripService {
     Response<TripPriceCalculationResponseDTO> calculatePublishSeatPrice(Double publishedPrice, Integer availableCurrentSeats);
 
     Response<CurrentTripResponseDTO> getCurrentTrip();
+
+    Response<Void> arriveTripStop(TripArriveRequestDTO tripArriveRequestDTO);
 }

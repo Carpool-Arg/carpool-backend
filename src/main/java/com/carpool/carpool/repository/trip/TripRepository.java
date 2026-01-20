@@ -74,7 +74,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         "    JOIN sh.state st " +
         "    WHERE sh.reservation.id = r.id " +
         "    AND sh.finishDateTime IS NULL " + 
-        "    AND st.name IN ('ACCEPTED', 'PENDING') " +
         "  )" +
         ") " + 
         "ORDER BY t.startTripDateTime ASC")
@@ -97,7 +96,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         " JOIN state s ON s.id = sh.state_id " +
         " WHERE r.trip_id = t.id " + 
         " AND r.user_id = :userId " + 
-        " AND s.name IN ('ACCEPTED', 'PENDING') " + 
         " AND sh.finish_datetime IS NULL " + 
         ") " +
         

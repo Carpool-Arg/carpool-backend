@@ -158,9 +158,9 @@ public class ReservationImplementation implements IReservationService{
             throw new ResourceNotFoundException("La reserva no existe");
         }
 
-        StateHistory lastestStateReservation = stateHistoryRepository.findTopByReservationIdOrderByStartDateTimeDesc(reservation.getId());
+        StateHistory lastestStateReservation = stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservation.getId()).orElseThrow(() -> new ConflictException("La reserva no tiene un estado actual."));
         if(!STATE_PENDING.equals(lastestStateReservation.getState().getName())){
-            throw new ConflictException("No se puede realizar acciones a la reserva ya que se encuentra en un estado final");
+            throw new ConflictException("No se puede realizar acciones a la reserva ya que la misma no esta pendiente.");
         }
         lastestStateReservation.setFinishDateTime(LocalDateTime.now());
         Trip trip = reservation.getTrip();
