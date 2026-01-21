@@ -74,7 +74,7 @@ public class SpringSecurityConfig {
         // Endpoints para roles específicos
         .requestMatchers(HttpMethod.GET, "/vehicle-types").hasAnyRole("DRIVER", "ADMIN")
         .requestMatchers("/vehicles", "/vehicles/**").hasRole("DRIVER")
-        .requestMatchers("/trip", "/trip/check-trip-availability", "/trip/current-trip").hasRole("DRIVER")
+        .requestMatchers("/trip", "/trip/check-trip-availability", "/trip/current-trip", "/trip/arrive-tripstop").hasRole("DRIVER")
         .requestMatchers(HttpMethod.GET, "/trip/{id}").hasRole("USER")
         .requestMatchers(HttpMethod.GET, "/trip").hasAnyRole("DRIVER", "ADMIN")
         .requestMatchers(HttpMethod.POST, "/trip/filter").hasAnyRole("DRIVER", "ADMIN")
@@ -84,7 +84,7 @@ public class SpringSecurityConfig {
         .exceptionHandling(config -> config
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         )
-        .addFilterBefore(new RecaptchaFilter(authRecaptchaService), UsernamePasswordAuthenticationFilter.class)
+        //.addFilterBefore(new RecaptchaFilter(authRecaptchaService), UsernamePasswordAuthenticationFilter.class)
         .addFilter(new JwtAuthenticationFilter(authenticationManager(),userRepository, userAccountService, emailImplementation, supportEmail, userTokenRepository, urlUnlockAccount))
         .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService, userRepository))
         .csrf(config-> config.disable())

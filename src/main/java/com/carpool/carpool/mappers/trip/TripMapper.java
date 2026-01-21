@@ -106,7 +106,7 @@ public class TripMapper {
         User user = driver.getUser();
         String profilePictureUrl = mediaService.getProfilePictureUrlByUserId(user.getId());
        
-        List<TripStopResponseDTO> tripStopResponseDTOs = getTripResponseDTO(trip);
+        List<TripStopResponseDTO> tripStopResponseDTOs = getTripstopResponseDTO(trip);
         
         Vehicle vehicleEntity = trip.getVehicle();
         VehicleResponseTripDTO vehicle = VehicleResponseTripDTO.builder()
@@ -137,11 +137,12 @@ public class TripMapper {
     }
 
     public CurrentTripResponseDTO covertTripToCurrentTripResponseDTO(Trip trip){
-        List<CurrentTripStopResponseDTO> currentTripStopResponseDTO = getCurrentTripResponseDTO(trip);
+        List<CurrentTripStopResponseDTO> currentTripStopResponseDTO = getCurrentTripstopsResponseDTO(trip);
 
         return CurrentTripResponseDTO.builder()
             .idTrip(trip.getId())
             .tripStops(currentTripStopResponseDTO)
+            .totalDistance(trip.getTripStops().stream().mapToDouble(TripStop::getDistanceFromPrevious).sum())
             .build();
 
     }   
@@ -232,7 +233,7 @@ public class TripMapper {
     }
 
 
-    private List<TripStopResponseDTO> getTripResponseDTO(Trip trip){
+    private List<TripStopResponseDTO> getTripstopResponseDTO(Trip trip){
         return trip.getTripStops().stream()
             .map(tripStop -> TripStopResponseDTO.builder()
                 .cityId(tripStop.getCity().getId())
@@ -246,7 +247,7 @@ public class TripMapper {
         .collect(Collectors.toList());
     }
 
-    private List<CurrentTripStopResponseDTO> getCurrentTripResponseDTO(Trip trip) {
+    private List<CurrentTripStopResponseDTO> getCurrentTripstopsResponseDTO(Trip trip) {
         return trip.getTripStops().stream()
             .map(tripStop -> {
                 TripStopResponseDTO tripStopResponseDTO =

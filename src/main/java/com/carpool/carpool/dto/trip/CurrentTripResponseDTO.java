@@ -12,5 +12,5 @@ import lombok.Getter;
 public class CurrentTripResponseDTO {
   private Long idTrip;
   private List<CurrentTripStopResponseDTO> tripStops;
-
+  private double totalDistance;
 }
