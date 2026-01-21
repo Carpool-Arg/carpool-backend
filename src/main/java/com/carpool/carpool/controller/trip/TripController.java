@@ -158,4 +158,19 @@ public class TripController {
     public ResponseEntity<Response<Void>> createTrip(@Valid @RequestBody TripRequestDTO tripRequestDTO){
         return new ResponseEntity<>(tripService.createTrip(tripRequestDTO), HttpStatus.CREATED);
     }
+
+    @Operation(
+        summary = "Iniciar un viaje programado"
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Viaje iniciado con éxito"),
+        @ApiResponse(responseCode = "404", description = "El viaje no existe", content = @Content),
+        @ApiResponse(responseCode = "409", description = "Conflicto con el horario o el estado del viaje", content = @Content)
+    })
+    @PostMapping("/{id}/start")
+    public ResponseEntity<Response<Void>> startTrip(@PathVariable Long id) {
+        Response<Void> response = tripService.startTrip(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    
 }

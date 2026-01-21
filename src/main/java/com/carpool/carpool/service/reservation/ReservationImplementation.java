@@ -27,9 +27,10 @@ import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.notification.INotificationService;
-import com.carpool.carpool.utils.CoordsUtils;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
+
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -217,6 +218,56 @@ public class ReservationImplementation implements IReservationService{
             .orElseThrow(()-> new ConflictException("No se pudo encontrar la ciudad de destino."));
 
         return ResponseUtils.buildOKResponse(List.of("Total calculado con exito"), TripCostUtils.calculateTripTotal(startCity, destinationCity, trip));
+    }
+
+    @Override
+    public void startTripReservation(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada."));
+
+        State inProgressState = stateRepository.findByNameAndScope("IN_PROGRESS", ScopeEnum.RESERVATION)
+                .orElseThrow(() -> new ResourceNotFoundException("Estado IN_PROGRESS no encontrado para RESERVATION."));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservationId)
+                .ifPresent(sh -> {
+                    sh.setFinishDateTime(now);
+                    stateHistoryRepository.save(sh);
+                });
+
+        StateHistory newHistory = StateHistory.builder()
+                .reservation(reservation)
+                .state(inProgressState)
+                .startDateTime(now)
+                .build();
+
+        stateHistoryRepository.save(newHistory);
+    }
+
+    @Override
+    public void cancelBySystem(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada con ID: " + reservationId));
+
+        State cancelledState = stateRepository.findByNameAndScope("CANCELLED", ScopeEnum.RESERVATION)
+                .orElseThrow(() -> new ResourceNotFoundException("Estado CANCELLED no encontrado para RESERVATION."));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservationId)
+                .ifPresent(sh -> {
+                    sh.setFinishDateTime(now);
+                    stateHistoryRepository.save(sh);
+                });
+        
+        StateHistory newHistory = StateHistory.builder()
+                .reservation(reservation)
+                .state(cancelledState)
+                .startDateTime(now)
+                .build();
+
+        stateHistoryRepository.save(newHistory);
     }
 
     /**

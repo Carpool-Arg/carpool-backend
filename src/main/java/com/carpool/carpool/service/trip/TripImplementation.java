@@ -18,6 +18,7 @@ import com.carpool.carpool.dto.trip.TripResponseDTO;
 import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
 import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
+import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.enums.trip.BaggageEnum;
 import com.carpool.carpool.exception.ConflictException;
@@ -25,13 +26,16 @@ import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.trip.TripMapper;
 import com.carpool.carpool.model.driver.Driver;
 import com.carpool.carpool.model.province.city.City;
+import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.state.State;
 import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
+import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.model.vehicle.Vehicle;
 import com.carpool.carpool.repository.city.CityRepository;
 import com.carpool.carpool.repository.driver.DriverRepository;
+import com.carpool.carpool.repository.reservation.ReservationRepository;
 import com.carpool.carpool.repository.state.StateRepository;
 import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
 import com.carpool.carpool.repository.trip.TripRepository;
@@ -39,15 +43,17 @@ import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.vehicle.VehicleRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.parameters.IParametersService;
+import com.carpool.carpool.service.reservation.IReservationService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
+import com.carpool.carpool.service.notification.INotificationService;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class TripImplementation implements ITripService{
+public class TripImplementation implements ITripService {
 
     private final VehicleRepository vehicleRepository;
     private final TripMapper tripMapper;
@@ -58,53 +64,68 @@ public class TripImplementation implements ITripService{
     private final StateHistoryRepository stateHistoryRepository;
     private final CityRepository cityRepository;
     private final IParametersService settingService;
+    private final ReservationRepository reservationRepository;
+    private final IReservationService reservationService;
+    private final INotificationService notificationService;
 
     @Override
     @Transactional
     public Response<Void> createTrip(TripRequestDTO tripRequestDTO) {
 
+        Driver authenticatedDriver = getAuthenticatedDriver();
+
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())
-        .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe."));
+                .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe."));
 
         State stateCreate = stateRepository.findByNameAndScope("CREATED", ScopeEnum.TRIP)
-        .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para crear el viaje."));
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontro el estado para crear el viaje."));
 
-        //Validaciones del viaje en general 
-        tripValidations(vehicle,tripRequestDTO);
+        // Validaciones del viaje en general
+        tripValidations(vehicle, tripRequestDTO);
 
-        //Validacion para comprobar que la fecha de inicio del viaje es igual o posterior a la actual + 30 minutos
-        if(tripRequestDTO.getStartDateTime().isBefore(LocalDateTime.now().plusMinutes(30))){
-            throw new ConflictException("La fecha y hora del viaje deben tener un intervalo superior a 30 minutos desde la hora actual.");
-        }
-
-        //Validacion para comprobar que no existe otro viaje programado para el mismo vehiculo en la misma fecha y hora
-        if (hasATripPlanned(tripRequestDTO.getStartDateTime())) {
-            throw new ConflictException("Ya tenés un viaje programado en la misma fecha y hora.");
-        }
-
-        //Validaciones para las paradas intermedias
+        // Validaciones para las paradas intermedias
         startDestinationValidation(tripRequestDTO.getTripStops());
         validateTripStopsOrder(tripRequestDTO.getTripStops());
 
-        Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, vehicle);
+        Trip newTrip = tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, vehicle);
+
+        // Obtenemos la fecha y hora estimada de llegada de la parada marcada como
+        // destino.
+        LocalDateTime newEnd = newTrip.getTripStops().stream()
+                .filter(TripStop::isDestination)
+                .map(TripStop::getEstimatedArrivalDateTime)
+                .findFirst()
+                .orElseThrow(() -> new ConflictException("No se pudo calcular la fecha de llegada."));
+
+        // Verfica que el chofer no tenga un viaje en progreso para publicar un viaje
+        if (tripRepository.hasTripInProgress(authenticatedDriver.getId())) {
+            throw new ConflictException("No podés publicar un nuevo viaje mientras tenés uno en curso.");
+        }
+        // Se verifica si el nuevo viaje interfiere con otros viajes del chofer.
+        if (tripRepository.hasOverlappingSchedule(authenticatedDriver.getId(), tripRequestDTO.getStartDateTime(),
+                newEnd)) {
+            throw new ConflictException(
+                    "El horario se solapa con otro viaje activo (incluyendo 30m antes del comienzo y 30m después del mismo).");
+        }
 
         // Calculo para obtener el extra que se debe de pagar
-        double totalCommissionPerSeat = (double) tripRequestDTO.getSeatPrice() * (settingService.getDiscountPercentage() / 100.0);
+        double totalCommissionPerSeat = (double) tripRequestDTO.getSeatPrice()
+                * (settingService.getDiscountPercentage() / 100.0);
 
-        double requestedPrice = newTrip.getSeatPrice(); 
+        double requestedPrice = newTrip.getSeatPrice();
 
         newTrip.setPublishedSeatPrice(requestedPrice + totalCommissionPerSeat);
         newTrip.setDriverPriceDiscount(totalCommissionPerSeat);
 
         StateHistory stateHistory = StateHistory.builder()
-            .state(stateCreate)
-        .build();
+                .state(stateCreate)
+                .build();
 
         stateHistory.setTrip(newTrip);
-
         tripRepository.save(newTrip);
+
         stateHistoryRepository.save(stateHistory);
-        return ResponseUtils.buildOKResponse(List.of("Viaje creado con éxito") , null);
+        return ResponseUtils.buildOKResponse(List.of("Viaje creado con éxito"), null);
     }
 
     @Override
@@ -121,7 +142,7 @@ public class TripImplementation implements ITripService{
         Driver driver = getAuthenticatedDriver();
 
         List<Trip> trips = tripRepository.findTripsByDriverIdWithCurrentStateCreateTrip(driver.getId(), tripState);
-        if(trips.isEmpty()){
+        if (trips.isEmpty()) {
             return ResponseUtils.buildOKResponse(List.of("No existen viajes publicados por el chofer"), null);
         }
 
@@ -134,11 +155,14 @@ public class TripImplementation implements ITripService{
 
     @Override
     public Response<Void> checkTripAvailability(LocalDateTime startDateTime) {
-        if(hasATripPlanned(startDateTime)){
-           throw new ConflictException("Ya tenés un viaje programado en la misma fecha y hora.");
-        }else{
-            return ResponseUtils.buildOKResponse(List.of("El viaje es posible"), null);
+
+        Driver driver = getAuthenticatedDriver();
+
+        if (tripRepository.isTimeSlotOccupied(driver.getId(), startDateTime)) {
+            throw new ConflictException("Ese horario coincide con un viaje que ya tenés en curso.");
         }
+
+        return ResponseUtils.buildOKResponse(List.of("El horario de inicio está disponible"), null);
     }
 
     @Override
@@ -150,20 +174,22 @@ public class TripImplementation implements ITripService{
 
         if (userCityId == null) {
             userCityId = settingService.getDefaultCityId();
-            infoMessage = "No se proporcionó la ubicación actual del usuario, por lo que se cargaron los viajes que salen o pasan por " + cityRepository.findById(userCityId).get().getName();
+            infoMessage = "No se proporcionó la ubicación actual del usuario, por lo que se cargaron los viajes que salen o pasan por "
+                    + cityRepository.findById(userCityId).get().getName();
         }
 
-        List<Trip> trips = tripRepository.findTripsForInitialFeed(userCityId, userId);
+        List<Trip> trips = tripRepository.findTripsForInitialFeed(userCityId, userId, LocalDateTime.now());
 
         if (trips.size() > limit) {
             trips = trips.subList(0, limit);
         }
         City originCity = cityRepository.findById(userCityId)
-            .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de origen del usuario."));
-        
+                .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de origen del usuario."));
+
         List<TripSearchResponseDTO> responseDTOs = trips.stream()
-            .map(trip -> tripMapper.converTripToTripSearchResponseDTO(trip, TripCostUtils.calculateTripTotal(originCity, null, trip)))
-            .collect(Collectors.toList());
+                .map(trip -> tripMapper.converTripToTripSearchResponseDTO(trip,
+                        TripCostUtils.calculateTripTotal(originCity, null, trip)))
+                .collect(Collectors.toList());
 
         List<String> messages = new ArrayList<>();
 
@@ -176,7 +202,6 @@ public class TripImplementation implements ITripService{
             messages.add(String.format("Se cargaron %d viajes.", responseDTOs.size()));
         }
 
-
         return ResponseUtils.buildOKResponse(messages, responseDTOs);
 
     }
@@ -186,13 +211,12 @@ public class TripImplementation implements ITripService{
 
         Long authenticatedUserId = getAuthenticatedUserId();
         Trip trip = tripRepository.findById(tripId)
-            .orElseThrow(() -> new ResourceNotFoundException("El viaje no existe."));
+                .orElseThrow(() -> new ResourceNotFoundException("El viaje no existe."));
 
         boolean isCreator = trip.getVehicle().getDriver().getUser().getId().equals(authenticatedUserId);
         return ResponseUtils.buildOKResponse(
-            List.of("Verificación realizada con éxito"),
-            isCreator
-        );
+                List.of("Verificación realizada con éxito"),
+                isCreator);
     }
 
     @Override
@@ -205,28 +229,29 @@ public class TripImplementation implements ITripService{
         }
 
         City originCity = cityRepository.findById(request.getOriginCityId())
-            .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de origen de la busqueda."));
+                .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de origen de la busqueda."));
 
         City destinationCity = cityRepository.findById(request.getDestinationCityId())
-            .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de destino de la busqueda."));
-        
+                .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de destino de la busqueda."));
+
         List<Trip> trips = tripRepository.findFilteredTrips(
-            request.getOriginCityId(),
-            request.getDestinationCityId(),
-            request.getDepartureDate(),
-            request.getMinPrice(),
-            request.getMaxPrice(),
-            userId,
-            request.getOrderByDriverRating()
-        );
+                request.getOriginCityId(),
+                request.getDestinationCityId(),
+                request.getDepartureDate(),
+                request.getMinPrice(),
+                request.getMaxPrice(),
+                userId,
+                request.getOrderByDriverRating(),
+                LocalDateTime.now());
 
         if (trips.size() > limit) {
             trips = trips.subList(0, limit);
         }
 
         List<TripSearchResponseDTO> responseDTOs = trips.stream()
-            .map(trip -> tripMapper.converTripToTripSearchResponseDTO(trip, TripCostUtils.calculateTripTotal(originCity, destinationCity, trip)))
-            .collect(Collectors.toList());
+                .map(trip -> tripMapper.converTripToTripSearchResponseDTO(trip,
+                        TripCostUtils.calculateTripTotal(originCity, destinationCity, trip)))
+                .collect(Collectors.toList());
 
         String message;
         if (responseDTOs.isEmpty()) {
@@ -239,8 +264,9 @@ public class TripImplementation implements ITripService{
     }
 
     @Override
-    public Response<TripPriceCalculationResponseDTO> calculatePublishSeatPrice(Double seatPrice, Integer availableCurrentSeats) {
-        
+    public Response<TripPriceCalculationResponseDTO> calculatePublishSeatPrice(Double seatPrice,
+            Integer availableCurrentSeats) {
+
         if (availableCurrentSeats == null || availableCurrentSeats <= 0) {
             throw new ConflictException("La cantidad de asientos disponibles debe ser un número positivo.");
         }
@@ -248,97 +274,148 @@ public class TripImplementation implements ITripService{
         if (seatPrice == null || seatPrice <= 0) {
             throw new ConflictException("El precio base del asiento debe ser un valor positivo.");
         }
-        double totalCommissionPerSeat =seatPrice * (settingService.getDiscountPercentage() / 100.0);
-        
-        TripPriceCalculationResponseDTO calculation = tripMapper.convertTriptoTripPriceCalculationResponseDTO(seatPrice, totalCommissionPerSeat);
-        
+        double totalCommissionPerSeat = seatPrice * (settingService.getDiscountPercentage() / 100.0);
+
+        TripPriceCalculationResponseDTO calculation = tripMapper.convertTriptoTripPriceCalculationResponseDTO(seatPrice,
+                totalCommissionPerSeat);
+
         return ResponseUtils.buildOKResponse(List.of("Cálculo de precios realizado con éxito"), calculation);
+    }
+
+    @Override
+    public Response<Void> startTrip(Long tripId) {
+        Trip trip = tripRepository.findTripWithAllDetails(tripId)
+                .orElseThrow(() -> new ResourceNotFoundException("Viaje no encontrado."));
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime scheduledStart = trip.getStartTripDateTime();
+
+        boolean isClosed = stateHistoryRepository.isCurrentState(trip, "CLOSED", ScopeEnum.TRIP);
+        if (!isClosed) {
+            throw new ConflictException("Solo se puede iniciar un viaje que esté en estado 'CERRADO'.");
+        }
+
+        if (now.isBefore(scheduledStart.minusMinutes(30))) {
+            throw new ConflictException("Todavía es muy temprano. Podés iniciar el viaje hasta 30 minutos antes de las "
+                    + scheduledStart.toLocalTime());
+        }
+
+        if (now.isAfter(scheduledStart.plusMinutes(15))) {
+            cancelTripAutomatically(trip);
+            cancelAllReservations(trip);
+            notifyPassengers(trip, NotificationEventEnum.TRIP_CANCELLED_BY_SYSTEM);
+            return ResponseUtils.buildErrorResponse(List.of(
+                    "El tiempo límite para iniciar el viaje ha expirado (máximo 15 min de demora). El viaje ha sido cancelado automáticamente."));
+        }
+
+        updateTripState(trip, "IN_PROGRESS");
+        this.startTripReservation(trip);
+        notifyPassengers(trip, NotificationEventEnum.TRIP_STARTED);
+
+        return ResponseUtils.buildOKResponse(List.of("¡Viaje iniciado! Que tengas un buen recorrido."), null);
     }
 
     /**
      * Validaciones del viaje en general. Comprobamos aspectos como:
-     * - Que el vehiculo con el id ingresado sea del chofer que inicio el viaje (usuario en sesion)
-     * - Que la cantidad de asientos ingresada no sea mayor a la cantidad de asientos que estaban definidos para ese vehiculo
+     * - Que el vehiculo con el id ingresado sea del chofer que inicio el viaje
+     * (usuario en sesion)
+     * - Que la cantidad de asientos ingresada no sea mayor a la cantidad de
+     * asientos que estaban definidos para ese vehiculo
      * - Que el equipaje ingresado este dentro de los posibles valores (ENUM)
-     * @param vehicle El vehiculo obtenido con el ID ingresado en la request
+     * 
+     * @param vehicle        El vehiculo obtenido con el ID ingresado en la request
      * @param tripRequestDTO la request para cargar el viaje
      * @throws ConflictException si alguna de las validaciones falla
      */
-    private void tripValidations(Vehicle vehicle, TripRequestDTO tripRequestDTO){
+    private void tripValidations(Vehicle vehicle, TripRequestDTO tripRequestDTO) {
 
-        //Validacion para comprobar si el vehiculo pertenece al conductor que esta tratando de crear el viaje
+        // Validacion para comprobar si el vehiculo pertenece al conductor que esta
+        // tratando de crear el viaje
         Driver authenticatedDriver = getAuthenticatedDriver();
 
         if (!vehicle.getDriver().getId().equals(authenticatedDriver.getId())) {
             throw new ConflictException("El vehículo no pertenece al conductor autenticado.");
         }
 
-        //Validaciones para el equipaje y la cantidad de asientos
-        if(tripRequestDTO.getAvailableSeat() > vehicle.getAvailableSeats()){
+        // Validaciones para el equipaje y la cantidad de asientos
+        if (tripRequestDTO.getAvailableSeat() > vehicle.getAvailableSeats()) {
             throw new ConflictException("La cantidad de asientos no corresponde con el vehiculo registrado.");
         }
 
-        if(!BaggageEnum.contains(tripRequestDTO.getAvailableBaggage())){
+        if (!BaggageEnum.contains(tripRequestDTO.getAvailableBaggage())) {
             throw new ConflictException("El tipo de equipaje es inválido.");
         }
     }
 
     /**
      * Realizamos diferentes validaciones para comprobar:
-     * -Que el origen y el destino del viaje no son la misma ciudad 
+     * -Que el origen y el destino del viaje no son la misma ciudad
      * -Que hay un solo origen y un solo destino en toda la lista de paradas
      * -Que cada ciudad esta solo una vez en la lista de paradas
+     * 
      * @param tripStops la lista de paradas de un viaje
      * @throws ConflictException si alguna de las validaciones falla
      */
-    private void startDestinationValidation(List<TripStopRequestDTO> tripStops){
+    private void startDestinationValidation(List<TripStopRequestDTO> tripStops) {
 
-        //Validacion para comprobar que la ciudad de origen y la de destino no son la misma
+        // Validacion para comprobar que la ciudad de origen y la de destino no son la
+        // misma
         Long idStartCity = tripStops.stream()
-            .filter(TripStopRequestDTO::isStart)
-            .map(TripStopRequestDTO::getCityId)
-            .findFirst()
-        .orElseThrow(() -> new IllegalArgumentException("No se definio la ciudad de origen."));
+                .filter(TripStopRequestDTO::isStart)
+                .map(TripStopRequestDTO::getCityId)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No se definio la ciudad de origen."));
 
         Long idDestinationCity = tripStops.stream()
-            .filter(ts->ts.isDestination())
-            .map(TripStopRequestDTO::getCityId)
-            .findFirst()
-        .orElseThrow(() -> new IllegalArgumentException("No se definio la ciudad de destino."));  
+                .filter(ts -> ts.isDestination())
+                .map(TripStopRequestDTO::getCityId)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No se definio la ciudad de destino."));
 
-        if(idStartCity == idDestinationCity) throw new ConflictException("La ciudad de origen y la ciudad de destino no puedne ser la misma");
+        if (idStartCity == idDestinationCity)
+            throw new ConflictException("La ciudad de origen y la ciudad de destino no puedne ser la misma");
 
-        //Validacion para comprobar que hay un solo origen y un solo destino
+        // Validacion para comprobar que hay un solo origen y un solo destino
         long starts = tripStops.stream().filter(TripStopRequestDTO::isStart).count();
         long destinations = tripStops.stream().filter(TripStopRequestDTO::isDestination).count();
-        if (starts != 1 || destinations != 1) throw new ConflictException("Debe haber un solo origen y un solo destino en la lista de paradas.");
-    
-        //Validacion para comprbar que cada ciudad esta solo una vez en la lista de paradas
-        boolean allCitiesUnique = tripStops.stream()
-        .map(TripStopRequestDTO::getCityId)
-        .allMatch(new HashSet<>()::add);
+        if (starts != 1 || destinations != 1)
+            throw new ConflictException("Debe haber un solo origen y un solo destino en la lista de paradas.");
 
-        if (!allCitiesUnique) throw new ConflictException("Cada ciudad puede estar solo en una parada. Si va a hacer mas paradas en la ciudad puede indicarlo en el campo de observaciones.");
+        // Validacion para comprbar que cada ciudad esta solo una vez en la lista de
+        // paradas
+        boolean allCitiesUnique = tripStops.stream()
+                .map(TripStopRequestDTO::getCityId)
+                .allMatch(new HashSet<>()::add);
+
+        if (!allCitiesUnique)
+            throw new ConflictException(
+                    "Cada ciudad puede estar solo en una parada. Si va a hacer mas paradas en la ciudad puede indicarlo en el campo de observaciones.");
     }
-    
+
     /**
-     * Realizamos una validacion para comporbar que el orden de las paradas no se repite
+     * Realizamos una validacion para comporbar que el orden de las paradas no se
+     * repite
+     * 
      * @param tripStops la lista de paradas del viaje
      * @throws ConflictException si la validacion falla
      */
-    private void validateTripStopsOrder(List<TripStopRequestDTO> tripStops){
-        //Validacion para controlar que los numeros de orden no se respitan en la lista de paradas
+    private void validateTripStopsOrder(List<TripStopRequestDTO> tripStops) {
+        // Validacion para controlar que los numeros de orden no se respitan en la lista
+        // de paradas
         boolean allOrderUnique = tripStops.stream()
-        .map(TripStopRequestDTO::getOrder)
-        .allMatch(new HashSet<>()::add);
+                .map(TripStopRequestDTO::getOrder)
+                .allMatch(new HashSet<>()::add);
 
-        if (!allOrderUnique) throw new ConflictException("El orden en las paradas no se puede repetir."); 
+        if (!allOrderUnique)
+            throw new ConflictException("El orden en las paradas no se puede repetir.");
     }
 
     /**
      * Obtiene el chofer autenticado en el contexto de seguridad.
+     * 
      * @return El chofer autenticado en el contexto de seguridad.
-     * @throws ConflictException si el usuario autenticado no se encuentra o no tiene un perfil de chofer asociado.
+     * @throws ConflictException si el usuario autenticado no se encuentra o no
+     *                           tiene un perfil de chofer asociado.
      */
     private Driver getAuthenticatedDriver() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -348,23 +425,14 @@ public class TripImplementation implements ITripService{
                 .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."));
 
         return driverRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new ConflictException("No se encontró el perfil de chofer para el usuario autenticado."));
+                .orElseThrow(
+                        () -> new ConflictException("No se encontró el perfil de chofer para el usuario autenticado."));
     }
 
     /**
-     * Verifica si un chofer tiene un viaje planificado en una fecha y hora determinadas.
-     * @param startDateTime La fecha y hora a partir de la cual verificar.
-     * @return true si el chofer tiene un viaje planificado después de la fecha y hora dadas, false en caso contrario.
-     * @throws ConflictException si el chofer ya tiene un viaje planificado en la fecha y hora dadas.
-     */
-    private boolean hasATripPlanned (LocalDateTime startDateTime){
-        Driver driver = getAuthenticatedDriver();
-
-        return tripRepository.existsByVehicleDriverIdAndStartTripDateTime(driver.getId(), startDateTime);
-    }
-
-    /**
-     * Obtiene el ID del usuario autenticado en el contexto de seguridad. Sirve para excluir al usuario de los resultados en las busquedas de viajes.
+     * Obtiene el ID del usuario autenticado en el contexto de seguridad. Sirve para
+     * excluir al usuario de los resultados en las busquedas de viajes.
+     * 
      * @return El ID del usuario autenticado en el contexto de seguridad.
      */
     private Long getAuthenticatedUserId() {
@@ -372,8 +440,70 @@ public class TripImplementation implements ITripService{
         String username = authentication.getName();
 
         return userRepository.findByUsernameAndDeletedAtIsNull(username)
-            .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."))
-            .getId();
+                .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."))
+                .getId();
     }
-    
+
+    /**
+     * 
+     * @param trip
+     * @param stateName
+     */
+    private void updateTripState(Trip trip, String stateName) {
+        State nextState = stateRepository.findByNameAndScope(stateName, ScopeEnum.TRIP)
+                .orElseThrow(() -> new IllegalStateException("Estado " + stateName + " no encontrado."));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        stateHistoryRepository.findCurrentStateByTrip(trip)
+                .ifPresent(sh -> {
+                    sh.setFinishDateTime(now);
+                    stateHistoryRepository.save(sh);
+                });
+
+        StateHistory newHistory = StateHistory.builder()
+                .trip(trip)
+                .state(nextState)
+                .startDateTime(now)
+                .build();
+        stateHistoryRepository.save(newHistory);
+    }
+
+    private void cancelTripAutomatically(Trip trip) {
+        updateTripState(trip, "CANCELLED");
+    }
+
+    private void cancelAllReservations(Trip trip) {
+        List<Reservation> reservations = reservationRepository.findByTripIdAndStateName(trip.getId(), "ACCEPTED");
+
+        for (Reservation reservation : reservations) {
+            reservationService.cancelBySystem(reservation.getId());
+        }
+    }
+
+    private void startTripReservation(Trip trip) {
+        List<Reservation> acceptedReservations = reservationRepository.findByTripIdAndStateName(trip.getId(),
+                "ACCEPTED");
+
+        for (Reservation res : acceptedReservations) {
+            try {
+                reservationService.startTripReservation(res.getId());
+            } catch (Exception e) {
+                System.err.println("Error al actualizar reserva " + res.getId() + ": " + e.getMessage());
+            }
+        }
+    }
+
+    private void notifyPassengers(Trip trip, NotificationEventEnum event) {
+        List<Reservation> acceptedReservations = reservationRepository.findByTripIdAndStateName(trip.getId(),
+                "ACCEPTED");
+
+        for (Reservation res : acceptedReservations) {
+            this.notificationService.send(
+                    res.getUser(),
+                    event,
+                    res);
+        }
+    }
+
 }
