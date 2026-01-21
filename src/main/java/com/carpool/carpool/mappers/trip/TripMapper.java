@@ -264,6 +264,7 @@ public class TripMapper {
                 return CurrentTripStopResponseDTO.builder()
                     .tripStop(tripStopResponseDTO)
                     .arrivalDateTime(tripStop.getArrivalDateTime())
+                    .distanceFromPrevious(tripStop.getDistanceFromPrevious())
                     .build();
             })
             .collect(Collectors.toList());

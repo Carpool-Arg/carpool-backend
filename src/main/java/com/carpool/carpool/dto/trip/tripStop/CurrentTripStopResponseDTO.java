@@ -10,4 +10,5 @@ import lombok.Getter;
 public class CurrentTripStopResponseDTO {
   TripStopResponseDTO tripStop; 
   LocalDateTime arrivalDateTime;
+  double distanceFromPrevious;
 }
