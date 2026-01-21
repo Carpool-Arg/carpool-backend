@@ -328,6 +328,12 @@ public class TripImplementation implements ITripService{
         return ResponseUtils.buildOKResponse(List.of("Viaje finalizado con éxito") , null);
     }
 
+    /**
+     * Metodo que se utiliza para validar el orden de una parda intermedia que se quiere cerrar para un viaje
+     * Las paradas se deben cerrar en orden y no se puede cerrar si la anterior no tiene horario de llegada. 
+     * A su vez no es posible iniciar un vijae con este endpoint, solamente cerrar desde la segunda parada intermedia hasta
+     * el destino
+     */
     private void validateStopOrderToClose(Trip trip, TripStop stopToClose) {
 
         Optional<TripStop> lastClosedStop = trip.getTripStops().stream()
@@ -350,10 +356,6 @@ public class TripImplementation implements ITripService{
             );
         }
     }
-
-
-
-
 
     /**
      * Validaciones del viaje en general. Comprobamos aspectos como:

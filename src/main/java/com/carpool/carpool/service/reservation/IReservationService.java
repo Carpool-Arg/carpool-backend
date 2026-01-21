@@ -42,5 +42,9 @@ public interface IReservationService {
      */
     Response<Void> updateStateReservation(ReservationUpdateRequestDTO reservationUpdateRequestDTO);
 
+    /**
+     * Metodo para finalizar una reserva de un viaje
+     * @param reservation
+     */
     void finishTripReservation(Reservation reservation);
 }

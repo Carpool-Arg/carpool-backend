@@ -144,7 +144,12 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
           )
     """, nativeQuery = true)
     List<Trip> findTripsByDriverIdWithCurrentStateCreateTrip(@Param("driverId") Long driverId);
-
+    
+    /**
+     * Consulta que devuelve el viaje en progreso de un chofer, si es que lo tiene
+     * @param driverId
+     * @return
+     */
     @Query(value = """
         SELECT t.* 
         FROM trip t
