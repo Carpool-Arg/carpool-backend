@@ -180,19 +180,20 @@ public class ReservationImplementation implements IReservationService{
                 throw new ConflictException("Se alcanzó el cupo disponible, no se puede aceptar la reserva.");
             }
             if(discountAvailableSeat == 0){
-
+                
+                State stateClosed = stateRepository.findByNameAndScope("CLOSED", ScopeEnum.TRIP)
+                        .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para cerrar el viaje."));
+                
+                StateHistory stateHistory = StateHistory.builder()
+                        .state(stateClosed)
+                        .trip(trip)
+                        .finishDateTime(LocalDateTime.now())
+                        .build();
+                
                 this.notificationService.send(
                         trip.getVehicle().getDriver().getUser(),
                         NotificationEventEnum.TRIP_FULL,
                         trip);
-                
-                State stateInrogress = stateRepository.findByNameAndScope("CLOSED", ScopeEnum.TRIP)
-                        .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para iniciar el viaje."));
-                
-                StateHistory stateHistory = StateHistory.builder()
-                        .state(stateInrogress)
-                        .trip(trip)
-                        .build();
                 
                 stateHistoryRepository.save(stateHistory);
             }
