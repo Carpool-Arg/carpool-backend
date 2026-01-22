@@ -308,6 +308,13 @@ public class TripImplementation implements ITripService {
                     "El tiempo límite para iniciar el viaje ha expirado (máximo 15 min de demora). El viaje ha sido cancelado automáticamente."));
         }
 
+        TripStop startStop = trip.getTripStops().stream()
+            .filter(ts -> ts.getStopOrder() == 1) 
+            .findFirst()
+            .orElseThrow(() -> new ConflictException("No se encontró la parada inicial del viaje."));
+
+        startStop.setArrivalDateTime(LocalDateTime.now());
+
         updateTripState(trip, "IN_PROGRESS");
         this.startTripReservation(trip);
         notifyPassengers(trip, NotificationEventEnum.TRIP_STARTED);
