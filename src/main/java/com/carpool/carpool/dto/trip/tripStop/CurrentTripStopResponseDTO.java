@@ -11,4 +11,5 @@ public class CurrentTripStopResponseDTO {
   TripStopResponseDTO tripStop; 
   LocalDateTime arrivalDateTime;
   double distanceFromPrevious;
+  Long tripstopId;
 }
