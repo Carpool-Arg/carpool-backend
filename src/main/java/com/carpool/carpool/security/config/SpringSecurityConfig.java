@@ -75,7 +75,7 @@ public class SpringSecurityConfig {
         // Endpoints para roles específicos
         .requestMatchers(HttpMethod.GET, "/vehicle-types").hasAnyRole("DRIVER", "ADMIN")
         .requestMatchers("/vehicles", "/vehicles/**").hasRole("DRIVER")
-        .requestMatchers("/trip", "/trip/check-trip-availability").hasRole("DRIVER")
+        .requestMatchers("/trip", "/trip/check-trip-availability", "/trip/current-trip", "/trip/arrive-tripstop").hasRole("DRIVER")
         .requestMatchers(HttpMethod.GET, "/trip/{id}").hasRole("USER")
         .requestMatchers(HttpMethod.GET, "/trip").hasAnyRole("DRIVER", "ADMIN")
         .requestMatchers(HttpMethod.POST, "/trip/filter").hasAnyRole("DRIVER", "ADMIN")

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
 import com.carpool.carpool.dto.trip.TripDriverDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 
@@ -16,6 +17,7 @@ import com.carpool.carpool.dto.driver.DriverSearchResponseDTO;
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
 import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
+import com.carpool.carpool.dto.trip.tripStop.CurrentTripStopResponseDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopResponseDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopSearchResponseDTO;
@@ -93,7 +95,7 @@ public class TripMapper {
             trip.getTripStops().add(tripStop);
             previousCity = currentCity;           
         };
-
+        trip.setKilometerPrice(tripRequestDTO.getSeatPrice() / totalDistanceAccumulated);
         return trip;
 
     }
@@ -104,17 +106,7 @@ public class TripMapper {
         User user = driver.getUser();
         String profilePictureUrl = mediaService.getProfilePictureUrlByUserId(user.getId());
        
-        List<TripStopResponseDTO> tripStopResponseDTOs = trip.getTripStops().stream()
-            .map(tripStop -> TripStopResponseDTO.builder()
-                .cityId(tripStop.getCity().getId())
-                .cityName(tripStop.getCity().getName())
-                .estimatedArrivalDateTime(tripStop.getEstimatedArrivalDateTime())
-                .observation(tripStop.getObservation())
-                .order(tripStop.getStopOrder())
-                .start(tripStop.isStart())
-                .destination(tripStop.isDestination())
-                .build())
-            .collect(Collectors.toList());
+        List<TripStopResponseDTO> tripStopResponseDTOs = getTripstopResponseDTO(trip);
         
         Vehicle vehicleEntity = trip.getVehicle();
         VehicleResponseTripDTO vehicle = VehicleResponseTripDTO.builder()
@@ -143,6 +135,17 @@ public class TripMapper {
             .seatPrice(roundPrice(trip.getPublishedSeatPrice())) 
             .build();
     }
+
+    public CurrentTripResponseDTO covertTripToCurrentTripResponseDTO(Trip trip){
+        List<CurrentTripStopResponseDTO> currentTripStopResponseDTO = getCurrentTripstopsResponseDTO(trip);
+
+        return CurrentTripResponseDTO.builder()
+            .idTrip(trip.getId())
+            .tripStops(currentTripStopResponseDTO)
+            .totalDistance(trip.getTripStops().stream().mapToDouble(TripStop::getDistanceFromPrevious).sum())
+            .build();
+
+    }   
 
     /**
      * Este metodo obtiene un listado de viajes y los convierte en un listado de objetos {@link TripDriverDTO}
@@ -196,7 +199,7 @@ public class TripMapper {
                 }).toList();
     }
 
-    public TripSearchResponseDTO converTripToTripSearchResponseDTO(Trip trip) {
+    public TripSearchResponseDTO converTripToTripSearchResponseDTO(Trip trip, double total) {
        
         Driver driver = trip.getVehicle().getDriver();
         User user = driver.getUser(); 
@@ -224,10 +227,51 @@ public class TripMapper {
             .startDateTime(trip.getStartTripDateTime())
             .tripStops(tripStopSearchResponseDTOs) 
             .availableSeat(trip.getCurrentAvailableSeats())
-            .seatPrice(roundPrice(trip.getPublishedSeatPrice()))
+            .seatPrice(roundPrice(total))
             .tripId(trip.getId())
             .build();
     }
+
+
+    private List<TripStopResponseDTO> getTripstopResponseDTO(Trip trip){
+        return trip.getTripStops().stream()
+            .map(tripStop -> TripStopResponseDTO.builder()
+                .cityId(tripStop.getCity().getId())
+                .cityName(tripStop.getCity().getName())
+                .estimatedArrivalDateTime(tripStop.getEstimatedArrivalDateTime())
+                .observation(tripStop.getObservation())
+                .order(tripStop.getStopOrder())
+                .start(tripStop.isStart())
+                .destination(tripStop.isDestination())
+                .build())
+        .collect(Collectors.toList());
+    }
+
+    private List<CurrentTripStopResponseDTO> getCurrentTripstopsResponseDTO(Trip trip) {
+        return trip.getTripStops().stream()
+            .map(tripStop -> {
+                TripStopResponseDTO tripStopResponseDTO =
+                    TripStopResponseDTO.builder()
+                        .cityId(tripStop.getCity().getId())
+                        .cityName(tripStop.getCity().getName())
+                        .estimatedArrivalDateTime(tripStop.getEstimatedArrivalDateTime())
+                        .observation(tripStop.getObservation())
+                        .order(tripStop.getStopOrder())
+                        .start(tripStop.isStart())
+                        .destination(tripStop.isDestination())
+                        .build();
+
+                return CurrentTripStopResponseDTO.builder()
+                    .tripStop(tripStopResponseDTO)
+                    .arrivalDateTime(tripStop.getArrivalDateTime())
+                    .distanceFromPrevious(tripStop.getDistanceFromPrevious())
+                    .tripstopId(tripStop.getId())
+                    .build();
+            })
+            .collect(Collectors.toList());
+    }
+
+
 
     public TripPriceCalculationResponseDTO convertTriptoTripPriceCalculationResponseDTO(double seatPrice, double splitCommission) { 
         return TripPriceCalculationResponseDTO.builder()

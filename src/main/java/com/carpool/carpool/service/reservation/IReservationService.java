@@ -5,6 +5,7 @@ import com.carpool.carpool.dto.reservation.ReservationResponseDTO;
 import com.carpool.carpool.dto.reservation.ReservationUpdateRequestDTO;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.UnauthorizedException;
+import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 
@@ -15,6 +16,8 @@ public interface IReservationService {
      * @throws ResourceNotFoundException
      */
     Response<Void> createReservation(CreateReservationRequestDTO createReservationRequestDTO);
+
+    Response<Double> calculateTotal(Long idTrip, Long idStartCity, Long idDestinationCity);
 
     /**
      * Metodo encargado de obtener las reservas realizadas a un viaje. Solamente es accesible por aquellos usuarios que poseen el rol
@@ -38,4 +41,10 @@ public interface IReservationService {
      * @throws ConflictException
      */
     Response<Void> updateStateReservation(ReservationUpdateRequestDTO reservationUpdateRequestDTO);
+
+    /**
+     * Metodo para finalizar una reserva de un viaje
+     * @param reservation
+     */
+    void finishTripReservation(Reservation reservation);
 }

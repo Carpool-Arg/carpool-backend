@@ -75,4 +75,19 @@ public interface ITripService {
      * @throws ConflictException si la cantidad de asientos es menor o igual a 0 o si el precio publicado es negativo
      */
     Response<TripPriceCalculationResponseDTO> calculatePublishSeatPrice(Double publishedPrice, Integer availableCurrentSeats);
+
+    /**
+     * Metodo para devolver el viaje en progreso de un chofer
+     * @return CurrentTripResponseDTO que contiene todos los datos necesarios del viaje y sus paradas intermedias
+     */
+    Response<CurrentTripResponseDTO> getCurrentTrip();
+
+
+    /**
+     * Metodo para que el chofer indique que llego a una determinada parada intermedia de su viaje actual,
+     * pasando todas las reservas que finalicen en esa parada a estado UNPAID
+     * @param tripArriveRequestDTO contiene el id de la parda intermedia que desea ser cerrada
+     * @return una respuesta vacia con mensajes que indican el resultado de la peticion
+     */
+    Response<Void> arriveTripStop(TripArriveRequestDTO tripArriveRequestDTO);
 }

@@ -2,14 +2,18 @@ package com.carpool.carpool.service.trip;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
+import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
 import com.carpool.carpool.dto.trip.TripDriverDTO;
 import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
@@ -24,22 +28,30 @@ import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.trip.TripMapper;
 import com.carpool.carpool.model.driver.Driver;
+import com.carpool.carpool.model.province.city.City;
+import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.state.State;
 import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
+import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.model.vehicle.Vehicle;
 import com.carpool.carpool.repository.city.CityRepository;
 import com.carpool.carpool.repository.driver.DriverRepository;
+import com.carpool.carpool.repository.reservation.ReservationRepository;
 import com.carpool.carpool.repository.state.StateRepository;
 import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
 import com.carpool.carpool.repository.trip.TripRepository;
+import com.carpool.carpool.repository.trip.stop.TripStopRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.vehicle.VehicleRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.parameters.IParametersService;
+import com.carpool.carpool.service.reservation.IReservationService;
 import com.carpool.carpool.utils.ResponseUtils;
+import com.carpool.carpool.utils.TripCostUtils;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -55,8 +67,11 @@ public class TripImplementation implements ITripService{
     private final StateRepository stateRepository;
     private final StateHistoryRepository stateHistoryRepository;
     private final CityRepository cityRepository;
+    private final ReservationRepository reservationRepository;
+    private final TripStopRepository tripStopRepository;
     private final IParametersService settingService;
-
+    private final IReservationService reservationService;
+    
     @Override
     @Transactional
     public Response<Void> createTrip(TripRequestDTO tripRequestDTO) {
@@ -87,13 +102,12 @@ public class TripImplementation implements ITripService{
         Trip newTrip =  tripMapper.convertTripRequestDTOToTrip(tripRequestDTO, vehicle);
 
         // Calculo para obtener el extra que se debe de pagar
-        double totalCommissionPerSeat = settingService.getMinimunPriceValue() / newTrip.getCurrentAvailableSeats();
+        double totalCommissionPerSeat = (double) tripRequestDTO.getSeatPrice() * (settingService.getDiscountPercentage() / 100.0);
 
-        double splitCommission = totalCommissionPerSeat / 2;
         double requestedPrice = newTrip.getSeatPrice(); 
 
-        newTrip.setPublishedSeatPrice(requestedPrice + splitCommission);
-        newTrip.setDriverPriceDiscount(splitCommission);
+        newTrip.setPublishedSeatPrice(requestedPrice + totalCommissionPerSeat);
+        newTrip.setDriverPriceDiscount(totalCommissionPerSeat);
 
         StateHistory stateHistory = StateHistory.builder()
             .state(stateCreate)
@@ -157,9 +171,11 @@ public class TripImplementation implements ITripService{
         if (trips.size() > limit) {
             trips = trips.subList(0, limit);
         }
-
+        City originCity = cityRepository.findById(userCityId)
+            .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de origen del usuario."));
+        
         List<TripSearchResponseDTO> responseDTOs = trips.stream()
-            .map(tripMapper::converTripToTripSearchResponseDTO)
+            .map(trip -> tripMapper.converTripToTripSearchResponseDTO(trip, TripCostUtils.calculateTripTotal(originCity, null, trip)))
             .collect(Collectors.toList());
 
         List<String> messages = new ArrayList<>();
@@ -201,6 +217,12 @@ public class TripImplementation implements ITripService{
             throw new ConflictException("Los campos de origen y destino son obligatorios para la búsqueda de viajes.");
         }
 
+        City originCity = cityRepository.findById(request.getOriginCityId())
+            .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de origen de la busqueda."));
+
+        City destinationCity = cityRepository.findById(request.getDestinationCityId())
+            .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de destino de la busqueda."));
+        
         List<Trip> trips = tripRepository.findFilteredTrips(
             request.getOriginCityId(),
             request.getDestinationCityId(),
@@ -216,7 +238,7 @@ public class TripImplementation implements ITripService{
         }
 
         List<TripSearchResponseDTO> responseDTOs = trips.stream()
-            .map(tripMapper::converTripToTripSearchResponseDTO)
+            .map(trip -> tripMapper.converTripToTripSearchResponseDTO(trip, TripCostUtils.calculateTripTotal(originCity, destinationCity, trip)))
             .collect(Collectors.toList());
 
         String message;
@@ -239,13 +261,100 @@ public class TripImplementation implements ITripService{
         if (seatPrice == null || seatPrice <= 0) {
             throw new ConflictException("El precio base del asiento debe ser un valor positivo.");
         }
-
-        double totalCommissionPerSeat = (double) settingService.getMinimunPriceValue() / availableCurrentSeats;
-        double splitCommission = totalCommissionPerSeat / 2;
-
-        TripPriceCalculationResponseDTO calculation = tripMapper.convertTriptoTripPriceCalculationResponseDTO(seatPrice, splitCommission);
+        double totalCommissionPerSeat =seatPrice * (settingService.getDiscountPercentage() / 100.0);
+        
+        TripPriceCalculationResponseDTO calculation = tripMapper.convertTriptoTripPriceCalculationResponseDTO(seatPrice, totalCommissionPerSeat);
         
         return ResponseUtils.buildOKResponse(List.of("Cálculo de precios realizado con éxito"), calculation);
+    }
+
+    @Override
+    public Response<CurrentTripResponseDTO> getCurrentTrip(){
+        Driver driver = getAuthenticatedDriver();
+        Trip currentTrip = tripRepository.findCurrentTripByDriver(driver.getId())
+            .orElseThrow(() -> new EntityNotFoundException("El chofer no tiene un viaje en curso en este momento."));
+
+        return ResponseUtils.buildOKResponse(List.of("Viaje en curso recuperado con éxito"), tripMapper.covertTripToCurrentTripResponseDTO(currentTrip));
+    }
+
+    @Override
+    public Response<Void> arriveTripStop(TripArriveRequestDTO tripArriveRequestDTO){
+        Driver driver = getAuthenticatedDriver();
+
+        Trip currentTrip = tripRepository.findCurrentTripByDriver(driver.getId())
+            .orElseThrow(() -> new EntityNotFoundException("El chofer no tiene un viaje en curso en este momento.")); 
+
+
+        TripStop stop = currentTrip.getTripStops().stream()
+            .filter(ts -> ts.getId() == tripArriveRequestDTO.getIdTripStop())
+            .findFirst()
+            .orElseThrow(() ->
+                new EntityNotFoundException("Parada no encontrada en el viaje")
+        );
+
+        validateStopOrderToClose(currentTrip, stop);
+
+        List<Reservation> reservations = reservationRepository.findReservationsByTripAndDestinationAndState(currentTrip.getId(), stop.getId(), "IN_PROGRESS");
+
+        if(reservations != null && !reservations.isEmpty()){
+            reservations.forEach(reservation ->reservationService.finishTripReservation(reservation));
+        }
+        
+        stop.setArrivalDateTime(LocalDateTime.now());
+        tripStopRepository.save(stop);
+        if(stop.isDestination()){
+            return finishTrip(currentTrip);
+        }else{
+            return ResponseUtils.buildOKResponse(List.of("Llegada a parada registrada con éxito.") , null);
+        }
+    }
+
+    private Response<Void> finishTrip(Trip trip){
+        StateHistory actualStateHistory = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(trip.getId()).orElseThrow(() -> new ConflictException("El viaje no tiene un estado actual"));
+
+        actualStateHistory.setFinishDateTime(LocalDateTime.now());
+
+        State stateFinished = stateRepository.findByNameAndScope("FINISHED", ScopeEnum.TRIP)
+            .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para finalizar el viaje."));
+        
+        StateHistory stateHistory = StateHistory.builder()
+            .state(stateFinished)
+        .build();
+        
+        stateHistory.setTrip(trip);
+        tripRepository.save(trip);
+        stateHistoryRepository.save(actualStateHistory);
+        stateHistoryRepository.save(stateHistory);
+        return ResponseUtils.buildOKResponse(List.of("Viaje finalizado con éxito") , null);
+    }
+
+    /**
+     * Metodo que se utiliza para validar el orden de una parda intermedia que se quiere cerrar para un viaje
+     * Las paradas se deben cerrar en orden y no se puede cerrar si la anterior no tiene horario de llegada. 
+     * A su vez no es posible iniciar un vijae con este endpoint, solamente cerrar desde la segunda parada intermedia hasta
+     * el destino
+     */
+    private void validateStopOrderToClose(Trip trip, TripStop stopToClose) {
+
+        Optional<TripStop> lastClosedStop = trip.getTripStops().stream()
+                .filter(ts -> ts.getArrivalDateTime() != null)
+                .max(Comparator.comparingInt(TripStop::getStopOrder));
+
+        if (lastClosedStop.isEmpty()) {
+
+            throw new ConflictException(
+                "No hay ninguna parada cerrada hasta el momento."
+            );
+
+        }
+
+        int expectedOrder = lastClosedStop.get().getStopOrder() + 1;
+
+        if (stopToClose.getStopOrder() != expectedOrder) {
+            throw new ConflictException(
+                "Orden inválido. Debe cerrarse la parada con orden " + expectedOrder
+            );
+        }
     }
 
     /**
@@ -368,6 +477,5 @@ public class TripImplementation implements ITripService{
             .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."))
             .getId();
     }
-
     
 }
