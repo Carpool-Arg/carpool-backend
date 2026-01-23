@@ -311,9 +311,9 @@ public class TripImplementation implements ITripService {
         }
 
         TripStop startStop = trip.getTripStops().stream()
-            .filter(ts -> ts.getStopOrder() == 1) 
-            .findFirst()
-            .orElseThrow(() -> new ConflictException("No se encontró la parada inicial del viaje."));
+                .filter(ts -> ts.getStopOrder() == 1)
+                .findFirst()
+                .orElseThrow(() -> new ConflictException("No se encontró la parada inicial del viaje."));
 
         startStop.setArrivalDateTime(LocalDateTime.now());
 
@@ -395,7 +395,7 @@ public class TripImplementation implements ITripService {
         boolean allCitiesUnique = tripStops.stream()
                 .map(TripStopRequestDTO::getCityId)
                 .allMatch(new HashSet<>()::add);
-    
+
         if (!allCitiesUnique)
             throw new ConflictException(
                     "Cada ciudad puede estar solo en una parada. Si va a hacer mas paradas en la ciudad puede indicarlo en el campo de observaciones.");
@@ -454,9 +454,10 @@ public class TripImplementation implements ITripService {
     }
 
     /**
+     * Actualiza el estado de un viaje.
      * 
-     * @param trip
-     * @param stateName
+     * @param trip      el viaje a actualizar
+     * @param stateName el nombre del estado
      */
     private void updateTripState(Trip trip, String stateName) {
         State nextState = stateRepository.findByNameAndScope(stateName, ScopeEnum.TRIP)
@@ -478,10 +479,20 @@ public class TripImplementation implements ITripService {
         stateHistoryRepository.save(newHistory);
     }
 
+    /**
+     * Cancela un viaje automaticamente.
+     * 
+     * @param trip el viaje a cancelar
+     */
     private void cancelTripAutomatically(Trip trip) {
         updateTripState(trip, "CANCELLED");
     }
 
+    /**
+     * Cancela todas las reservas de un viaje.
+     * 
+     * @param trip el viaje a cancelar
+     */
     private void cancelAllReservations(Trip trip) {
         List<Reservation> reservations = reservationRepository.findByTripIdAndStateName(trip.getId(), STATE_ACCEPTED);
 
@@ -490,6 +501,11 @@ public class TripImplementation implements ITripService {
         }
     }
 
+    /**
+     * Inicia todas las reservas de un viaje.
+     * 
+     * @param trip el viaje a iniciar
+     */
     private void startTripReservation(Trip trip) {
         List<Reservation> acceptedReservations = reservationRepository.findByTripIdAndStateName(trip.getId(),
                 STATE_ACCEPTED);
@@ -499,6 +515,12 @@ public class TripImplementation implements ITripService {
         }
     }
 
+    /**
+     * Notifica a los pasajeros de un viaje.
+     * 
+     * @param trip  el viaje a notificar
+     * @param event el evento de notificacion
+     */
     private void notifyPassengers(Trip trip, NotificationEventEnum event) {
         List<Reservation> acceptedReservations = reservationRepository.findByTripIdAndStateName(trip.getId(),
                 STATE_ACCEPTED);
