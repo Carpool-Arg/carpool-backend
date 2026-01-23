@@ -107,7 +107,7 @@ public class TripImplementation implements ITripService {
         if (tripRepository.hasOverlappingSchedule(authenticatedDriver.getId(), tripRequestDTO.getStartDateTime(),
                 newEnd)) {
             throw new ConflictException(
-                    "El horario se solapa con otro viaje activo (incluyendo 30m antes del comienzo y 30m después del mismo).");
+                    "El horario para iniciar el viaje se superpone con otro viaje activo. Por favor, elige otro horario.");
         }
 
         // Calculo para obtener el extra que se debe de pagar
