@@ -68,6 +68,8 @@ public class TripImplementation implements ITripService {
     private final IReservationService reservationService;
     private final INotificationService notificationService;
 
+    private static final String STATE_ACCEPTED = "ACCEPTED";
+
     @Override
     @Transactional
     public Response<Void> createTrip(TripRequestDTO tripRequestDTO) {
@@ -379,7 +381,7 @@ public class TripImplementation implements ITripService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No se definio la ciudad de destino."));
 
-        if (idStartCity == idDestinationCity)
+        if (idStartCity.equals(idDestinationCity))
             throw new ConflictException("La ciudad de origen y la ciudad de destino no puedne ser la misma");
 
         // Validacion para comprobar que hay un solo origen y un solo destino
@@ -393,7 +395,7 @@ public class TripImplementation implements ITripService {
         boolean allCitiesUnique = tripStops.stream()
                 .map(TripStopRequestDTO::getCityId)
                 .allMatch(new HashSet<>()::add);
-
+    
         if (!allCitiesUnique)
             throw new ConflictException(
                     "Cada ciudad puede estar solo en una parada. Si va a hacer mas paradas en la ciudad puede indicarlo en el campo de observaciones.");
@@ -481,7 +483,7 @@ public class TripImplementation implements ITripService {
     }
 
     private void cancelAllReservations(Trip trip) {
-        List<Reservation> reservations = reservationRepository.findByTripIdAndStateName(trip.getId(), "ACCEPTED");
+        List<Reservation> reservations = reservationRepository.findByTripIdAndStateName(trip.getId(), STATE_ACCEPTED);
 
         for (Reservation reservation : reservations) {
             reservationService.cancelBySystem(reservation.getId());
@@ -490,20 +492,16 @@ public class TripImplementation implements ITripService {
 
     private void startTripReservation(Trip trip) {
         List<Reservation> acceptedReservations = reservationRepository.findByTripIdAndStateName(trip.getId(),
-                "ACCEPTED");
+                STATE_ACCEPTED);
 
         for (Reservation res : acceptedReservations) {
-            try {
-                reservationService.startTripReservation(res.getId());
-            } catch (Exception e) {
-                System.err.println("Error al actualizar reserva " + res.getId() + ": " + e.getMessage());
-            }
+            reservationService.startTripReservation(res.getId());
         }
     }
 
     private void notifyPassengers(Trip trip, NotificationEventEnum event) {
         List<Reservation> acceptedReservations = reservationRepository.findByTripIdAndStateName(trip.getId(),
-                "ACCEPTED");
+                STATE_ACCEPTED);
 
         for (Reservation res : acceptedReservations) {
             this.notificationService.send(
