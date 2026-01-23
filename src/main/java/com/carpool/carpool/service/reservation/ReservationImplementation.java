@@ -29,7 +29,10 @@ import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.notification.INotificationService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
+
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -48,6 +51,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReservationImplementation implements IReservationService{
 	
     private final TripRepository tripRepository;
@@ -177,9 +181,26 @@ public class ReservationImplementation implements IReservationService{
 
             final int discountAvailableSeat = trip.getCurrentAvailableSeats() - 1;
             if(discountAvailableSeat < 0){
+            	log.error("El viaje ya alcanzo el cupo maximo. Asientos disponibles: [ {} ]", discountAvailableSeat);
                 throw new ConflictException("Se alcanzó el cupo disponible, no se puede aceptar la reserva.");
             }
+                        
             if(discountAvailableSeat == 0){
+            	
+                final var idTrip = trip.getId();
+                StateHistory stateHistoryTripCreated = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(idTrip)
+                	.orElseThrow(() -> {
+                		log.error("Ocurrio un error al buscar el historial de estado del viaje con id: {}", idTrip);
+                		return new ResourceNotFoundException("El viaje no tiene un estado actual");
+                	});
+                
+                if(!"CREATED".equals(stateHistoryTripCreated.getState().getName()) || !ScopeEnum.TRIP.equals(stateHistoryTripCreated.getState().getScope())) {
+                	log.error("El viaje no se encuentra en estado CREATED: {}", idTrip);                	
+                	throw new ConflictException("El viaje no se encuentra en estado creado");
+                }
+                
+                stateHistoryTripCreated.setFinishDateTime(LocalDateTime.now());
+                stateHistoryRepository.save(stateHistoryTripCreated);
                 
                 State stateClosed = stateRepository.findByNameAndScope("CLOSED", ScopeEnum.TRIP)
                         .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para cerrar el viaje."));
@@ -187,7 +208,6 @@ public class ReservationImplementation implements IReservationService{
                 StateHistory stateHistory = StateHistory.builder()
                         .state(stateClosed)
                         .trip(trip)
-                        .finishDateTime(LocalDateTime.now())
                         .build();
                 
                 this.notificationService.send(

@@ -1,6 +1,5 @@
 package com.carpool.carpool.model.reservation;
 
-import com.carpool.carpool.model.state.State;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.user.User;
