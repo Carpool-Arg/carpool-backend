@@ -27,7 +27,7 @@ public class TripClosedAutomaticallyNotificationImplementation implements INotif
 
     @Override
     public NotificationPayloadDTO build(Trip context) {
-        
+
         String driverName = context.getVehicle().getDriver().getUser().getName();
         
         String origin = context.getTripStops().stream()

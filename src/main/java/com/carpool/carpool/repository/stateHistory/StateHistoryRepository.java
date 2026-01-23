@@ -7,7 +7,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface StateHistoryRepository extends JpaRepository<StateHistory, Long> {
+	
     Optional<StateHistory> findByTripAndFinishDateTimeIsNullAndReservationIdIsNull(Trip trip);
+    
+    Optional<StateHistory> findByTripIdAndFinishDateTimeIsNull(Long idTrip);
 
     Optional<StateHistory> findTopByTripAndFinishDateTimeIsNotNullOrderByFinishDateTimeDesc(Trip trip);
 

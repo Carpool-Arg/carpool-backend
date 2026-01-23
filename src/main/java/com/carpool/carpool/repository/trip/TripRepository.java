@@ -157,9 +157,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 and t.startTripDateTime <= :limitTime
             """)
     List<Trip> findTripToClose (@Param("limitTime") LocalDateTime limitTime);
-    
 
-   
     /**
      * Verifica si el rango de tiempo para un nuevo viaje se solapa con uno existente, creado o en curso. 
      * Es decir que se encuentra dentro del rango de un viaje, e inclusive 30 minutos antes del inicio del mismo 
@@ -227,4 +225,5 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 AND s.name = 'IN_PROGRESS'
     """, nativeQuery = true)
     boolean hasTripInProgress(@Param("driverId") Long driverId); 
+    
 }
