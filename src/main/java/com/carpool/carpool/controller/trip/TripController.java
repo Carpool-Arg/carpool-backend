@@ -46,7 +46,7 @@ public class TripController {
         })
         @GetMapping
         public ResponseEntity<Response<TripDriverResponseDTO>> getTrips(
-                        @RequestParam(defaultValue = "CREATED") String tripState) {
+                        @RequestParam(defaultValue = "CREATED") List<String> tripState) {
                 return new ResponseEntity<>(tripService.getTrips(tripState), HttpStatus.OK);
         }
 

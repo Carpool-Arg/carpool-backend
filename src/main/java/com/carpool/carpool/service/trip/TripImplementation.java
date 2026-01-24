@@ -140,10 +140,10 @@ public class TripImplementation implements ITripService {
     }
 
     @Override
-    public Response<TripDriverResponseDTO> getTrips(String tripState) {
+    public Response<TripDriverResponseDTO> getTrips(List<String> tripState) {
         Driver driver = getAuthenticatedDriver();
 
-        List<Trip> trips = tripRepository.findTripsByDriverIdWithCurrentStateCreateTrip(driver.getId(), tripState);
+        List<Trip> trips = tripRepository.findTripsByDriverIdWithCurrentStateTrip(driver.getId(), tripState);
         if (trips.isEmpty()) {
             return ResponseUtils.buildOKResponse(List.of("No existen viajes publicados por el chofer"), null);
         }

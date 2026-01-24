@@ -137,7 +137,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         JOIN vehicles v ON v.id = t.vehicle_id
         JOIN trip_stop ts ON ts.trip_id = t.id AND ts.is_destination = true
         WHERE v.driver_id = :driverId
-          AND s.name = :tripState
+          AND s.name IN (:tripState)
           AND s.scope = 'TRIP'
           AND sh.start_datetime = (
               SELECT MAX(sh2.start_datetime)
@@ -145,7 +145,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
               WHERE sh2.trip_id = t.id
           )
     """, nativeQuery = true)
-    List<Trip> findTripsByDriverIdWithCurrentStateCreateTrip(@Param("driverId") Long driverId, @Param("tripState") String tripState);
+    List<Trip> findTripsByDriverIdWithCurrentStateTrip(@Param("driverId") Long driverId, @Param("tripState") List<String> tripState);
 
     @Query("""
             Select t from Trip t

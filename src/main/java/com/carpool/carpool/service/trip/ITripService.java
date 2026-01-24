@@ -45,7 +45,7 @@ public interface ITripService {
      * @return Response<TripDriverResponseDTO> con el listado de viajes en caso
      *         exitoso o una lista vacia caso contrario
      */
-    Response<TripDriverResponseDTO> getTrips(String tripState);
+    Response<TripDriverResponseDTO> getTrips(List<String> tripState);
 
     /**
      * Metodo para obtener el feed inicial de viajes.
