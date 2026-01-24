@@ -71,7 +71,7 @@ public class TripImplementation implements ITripService{
     private final TripStopRepository tripStopRepository;
     private final IParametersService settingService;
     private final IReservationService reservationService;
-    
+
     @Override
     @Transactional
     public Response<Void> createTrip(TripRequestDTO tripRequestDTO) {
@@ -173,7 +173,7 @@ public class TripImplementation implements ITripService{
         }
         City originCity = cityRepository.findById(userCityId)
             .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de origen del usuario."));
-        
+
         List<TripSearchResponseDTO> responseDTOs = trips.stream()
             .map(trip -> tripMapper.converTripToTripSearchResponseDTO(trip, TripCostUtils.calculateTripTotal(originCity, null, trip)))
             .collect(Collectors.toList());
@@ -222,7 +222,7 @@ public class TripImplementation implements ITripService{
 
         City destinationCity = cityRepository.findById(request.getDestinationCityId())
             .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de destino de la busqueda."));
-        
+
         List<Trip> trips = tripRepository.findFilteredTrips(
             request.getOriginCityId(),
             request.getDestinationCityId(),
@@ -262,7 +262,7 @@ public class TripImplementation implements ITripService{
             throw new ConflictException("El precio base del asiento debe ser un valor positivo.");
         }
         double totalCommissionPerSeat =seatPrice * (settingService.getDiscountPercentage() / 100.0);
-        
+
         TripPriceCalculationResponseDTO calculation = tripMapper.convertTriptoTripPriceCalculationResponseDTO(seatPrice, totalCommissionPerSeat);
         
         return ResponseUtils.buildOKResponse(List.of("Cálculo de precios realizado con éxito"), calculation);
@@ -282,7 +282,7 @@ public class TripImplementation implements ITripService{
         Driver driver = getAuthenticatedDriver();
 
         Trip currentTrip = tripRepository.findCurrentTripByDriver(driver.getId())
-            .orElseThrow(() -> new EntityNotFoundException("El chofer no tiene un viaje en curso en este momento.")); 
+            .orElseThrow(() -> new EntityNotFoundException("El chofer no tiene un viaje en curso en este momento."));
 
 
         TripStop stop = currentTrip.getTripStops().stream()
@@ -299,7 +299,7 @@ public class TripImplementation implements ITripService{
         if(reservations != null && !reservations.isEmpty()){
             reservations.forEach(reservation ->reservationService.finishTripReservation(reservation));
         }
-        
+
         stop.setArrivalDateTime(LocalDateTime.now());
         tripStopRepository.save(stop);
         if(stop.isDestination()){
@@ -316,11 +316,11 @@ public class TripImplementation implements ITripService{
 
         State stateFinished = stateRepository.findByNameAndScope("FINISHED", ScopeEnum.TRIP)
             .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para finalizar el viaje."));
-        
+
         StateHistory stateHistory = StateHistory.builder()
             .state(stateFinished)
         .build();
-        
+
         stateHistory.setTrip(trip);
         tripRepository.save(trip);
         stateHistoryRepository.save(actualStateHistory);
@@ -330,7 +330,7 @@ public class TripImplementation implements ITripService{
 
     /**
      * Metodo que se utiliza para validar el orden de una parda intermedia que se quiere cerrar para un viaje
-     * Las paradas se deben cerrar en orden y no se puede cerrar si la anterior no tiene horario de llegada. 
+     * Las paradas se deben cerrar en orden y no se puede cerrar si la anterior no tiene horario de llegada.
      * A su vez no es posible iniciar un vijae con este endpoint, solamente cerrar desde la segunda parada intermedia hasta
      * el destino
      */
@@ -383,6 +383,12 @@ public class TripImplementation implements ITripService{
         if(!BaggageEnum.contains(tripRequestDTO.getAvailableBaggage())){
             throw new ConflictException("El tipo de equipaje es inválido.");
         }
+    }
+    public User getAuthenticatedActiveUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        return userRepository.findByUsernameAndDeletedAtIsNull(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
     }
 
     /**
@@ -477,5 +483,6 @@ public class TripImplementation implements ITripService{
             .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."))
             .getId();
     }
+
     
 }

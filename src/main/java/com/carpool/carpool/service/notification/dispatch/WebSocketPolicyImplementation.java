@@ -6,20 +6,39 @@ import com.carpool.carpool.model.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.user.SimpUser;
+import org.springframework.messaging.simp.user.SimpUserRegistry;
+import org.springframework.stereotype.Service;
 
+@Service
 @RequiredArgsConstructor
 @Slf4j
 public class WebSocketPolicyImplementation implements  INotificationDispatchPolicyService{
     private final SimpMessagingTemplate messagingTemplate;
 
+    private final SimpUserRegistry userRegistry;
+
     @Override
     public void execute(User user, NotificationPayloadDTO payload) {
-        log.info("Enviando notificacion WS al usuario = {} con payload= {}",user.getId(), payload.getPushBody());
+        String username = user.getUsername();
+        log.info("Enviando notificacion WS");
+        log.info("Usuario: '{}'", username);
+
+        // Verificar sesiones activas
+        SimpUser simpUser = userRegistry.getUser(username);
+
+        if (simpUser == null) {
+            log.error("ERROR - Usuario '{}' NO está conectado al WS!", username);
+            return;
+        }
+
         messagingTemplate.convertAndSendToUser(
-                String.valueOf(user.getId()),
-                "/notification", //TODO Ver que nombre le pongo al endpoint del frontend
+                username,
+                "/queue/notification",
                 payload
         );
+
+        log.info("Notificación enviada mediante WS");
     }
 
     @Override

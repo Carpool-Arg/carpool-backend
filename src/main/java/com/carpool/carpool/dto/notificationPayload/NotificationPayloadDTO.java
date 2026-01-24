@@ -3,10 +3,14 @@ package com.carpool.carpool.dto.notificationPayload;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.Map;
+
 @Data
 @Builder
 public class NotificationPayloadDTO {
-    // --- Campos para PUSH NOTIFICATION ---
+    // --- Campos para PUSH/WS NOTIFICATION ---
+    private String type;
+
     private String pushTitle;
 
     private String pushBody;
@@ -25,4 +29,7 @@ public class NotificationPayloadDTO {
     private String emailButtonText;
 
     private String emailMessageFooter;
+
+    //Map para agregar información extra
+    private Map<String, Object> data;
 }

@@ -242,6 +242,8 @@ public class ReservationImplementation implements IReservationService{
 
         stateHistoryRepository.save(actualStateHistory);
         stateHistoryRepository.save(stateHistory);
+
+        notificationService.send(reservation.getUser(), NotificationEventEnum.RESERVATION_UNPAID, reservation);
     }
     /**
      * Validaciones relacionadas al viaje. Comprobamos lo siguiente:
