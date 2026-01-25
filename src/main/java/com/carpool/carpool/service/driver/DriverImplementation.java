@@ -11,7 +11,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.carpool.carpool.dto.driver.DriverRequestDTO;
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
 import com.carpool.carpool.exception.ConflictException;
@@ -29,11 +28,9 @@ import com.carpool.carpool.security.model.CustomUserDetails;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
-
 import static com.carpool.carpool.security.utils.JwtUtils.*;
 
 @Service
@@ -46,6 +43,7 @@ public class DriverImplementation implements IDriverService {
     private final UserRepository userRepository;
     private final CityRepository cityRepository;
     private final LicenseClassRepository licenseClassRepository;
+
 
     //Para asignar roles a los choferes, se inyecta el RoleRepository
     private final RoleRepository roleRepository;
@@ -128,8 +126,6 @@ public class DriverImplementation implements IDriverService {
             .add(USERNAME_CLAIM, updatedUserDetails.getUsername())
             .build();
 
-
-
         /*
          * Generamos el Access Token utilizando los métodos de JwtUtils.
          * Esto incluye la firma del token y la adición de los claims necesarios.
@@ -149,7 +145,6 @@ public class DriverImplementation implements IDriverService {
 
         return ResponseUtils.buildOKResponse(List.of("El perfil de chofer ha sido creado correctamente."), tokens);
     }
-
 
     /**
      * Metodo utilizado para verificar si el usuario ya tiene un perfil de chofer.

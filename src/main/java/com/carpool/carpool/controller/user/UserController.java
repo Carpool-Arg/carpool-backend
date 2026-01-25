@@ -5,6 +5,7 @@ import com.carpool.carpool.service.user.account.IUserAccountService;
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
 import com.carpool.carpool.enums.user.UserGenderEnum;
 
+import com.carpool.carpool.service.user.debt.IUserDebtService;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Arrays;
@@ -34,6 +35,7 @@ public class UserController {
 
     private final IUserService userService;
     private final IUserAccountService userAccountService;
+    private final IUserDebtService userDebtService;
 
     @Operation(summary = "Validar si un username se encuentra en uso")
     @ApiResponses({
@@ -103,6 +105,16 @@ public class UserController {
     @GetMapping()
     public ResponseEntity<Response<UserResponseDTO>> getAuthenticatedUser() {
         return new ResponseEntity<>(userService.getAuthenticatedUser(), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Verificar si el usuario es deudor o no")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Información sobre deuda disponible"),
+            @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
+    @GetMapping("/debtor")
+    public ResponseEntity<Response<Boolean>> getDebtUser() {
+        return new ResponseEntity<>(userDebtService.isDebtor(), HttpStatus.OK);
     }
 
     @Operation(
