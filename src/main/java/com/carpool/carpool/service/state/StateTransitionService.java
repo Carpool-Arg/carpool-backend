@@ -15,9 +15,11 @@ import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class StateTransitionService {
 
     private final StateRepository stateRepository;
@@ -38,20 +40,30 @@ public class StateTransitionService {
               .findFirst()
               .orElseThrow(() ->
                       new IllegalStateException("No existe handler para el scope " + scope));
-
-      State newState = stateRepository
+      
+      final State newState = stateRepository
               .findByNameAndScope(newStateName, scope)
-              .orElseThrow(() ->
-                      new ResourceNotFoundException("No se encontró el estado " + newStateName));
+              .orElseThrow(() -> {
+            	  log.error("No se pudo obtener el estado: {} de la base de datos", newStateName);
+            	  return new ResourceNotFoundException("No se encontró el estado " + newStateName);
+              });
 
-      StateHistory current = finder.findCurrent(entity)
-              .orElseThrow(() ->
-                      new ConflictException("La entidad no tiene un estado actual"));
+      
+      final StateHistory current = finder.findCurrent(entity)
+              .orElseThrow(() -> {
+            	  log.error("La entidad no cuenta con un estado actual");
+            	  return new ConflictException("La entidad no tiene un estado actual");
+              });
+      
+      final var currentState = current.getState();
+      if(currentState.isFinish()) {
+    	  log.error("El estado actual en el que se encuentra el registro es un estado final");
+    	  throw new ConflictException("El estado actual es un estado final");
+      }
 
-      if (!current.getState().getName().equals(expectedCurrentState)) {
-          throw new ConflictException(
-                  "El estado actual no es " + expectedCurrentState
-          );
+      if (!currentState.getName().equals(expectedCurrentState)) {
+    	  log.error("El estado esperado: {} no coincide con el estado actual en el que se encuentra la entidad: {}", expectedCurrentState, currentState.getName());
+          throw new ConflictException("El estado actual no es " + expectedCurrentState);
       }
 
       current.setFinishDateTime(LocalDateTime.now());
