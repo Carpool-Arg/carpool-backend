@@ -73,13 +73,12 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         "    SELECT sh FROM StateHistory sh " +
         "    JOIN sh.state st " +
         "    WHERE sh.reservation.id = r.id " +
-        "    AND sh.finishDateTime IS NULL " + 
-        "    AND st.name IN ('ACCEPTED', 'PENDING') " +
+        "    AND sh.finishDateTime IS NULL " +
         "  )" +
         ") " + 
         "ORDER BY t.startTripDateTime ASC")
     List<Trip> findTripsForInitialFeed(
-        @Param("cityId") Long cityId, 
+        @Param("cityId") Long cityId,
         @Param("userId") Long userId,
         @Param("now") LocalDateTime now);
     
@@ -89,13 +88,13 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query(value = "SELECT t.* FROM trip t " +
         "JOIN vehicles v ON v.id = t.vehicle_id " +
         "JOIN driver d ON d.id = v.driver_id " + 
-        "JOIN state_history sh ON sh.trip_id = t.id " + 
+        "JOIN state_history sh ON sh.trip_id = t.id " +
         "JOIN state s ON s.id = sh.state_id " +
 
         "WHERE t.current_available_seats > 0 " +
         "AND s.name = 'CREATED' AND sh.finish_datetime IS NULL " +
         "AND t.start_date_time >= :now " +
-        "AND d.user_id != :userId " + 
+        "AND d.user_id != :userId " +
 
         "AND NOT EXISTS ( " +
         " SELECT 1 FROM reservation r " +
@@ -103,8 +102,9 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         " JOIN state sR ON sR.id = shR.state_id " +
         " WHERE r.trip_id = t.id " + 
         " AND r.user_id = :userId " + 
-        " AND sR.name IN ('ACCEPTED', 'PENDING') " + 
-        " AND shR.finish_datetime IS NULL " + 
+        " AND sR.name IN ('ACCEPTED', 'PENDING') " +
+        " AND shR.finish_datetime IS NULL " +
+        " AND sh.finish_datetime IS NULL " +
         ") " +
         "AND ((:departureDate)::date IS NULL OR t.start_date_time::date = :departureDate) " +
         "AND EXISTS (SELECT 1 FROM trip_stop ts1, trip_stop ts2 " +
@@ -114,7 +114,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         " AND t.id = ts1.trip_id " +
         " AND t.id = ts2.trip_id) " +
         "AND (:minPrice IS NULL OR t.published_seat_price >= :minPrice) " + 
-        "AND (:maxPrice IS NULL OR t.published_seat_price <= :maxPrice) " + 
+        "AND (:maxPrice IS NULL OR t.published_seat_price <= :maxPrice) " +
         "ORDER BY " +
         "CASE WHEN :orderByRating = TRUE THEN d.rating ELSE NULL END DESC, " + 
         "t.start_date_time ASC",
@@ -157,16 +157,16 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 and t.startTripDateTime <= :limitTime
             """)
     List<Trip> findTripToClose (@Param("limitTime") LocalDateTime limitTime);
-    
 
-   
+
+
     /**
-     * Verifica si el rango de tiempo para un nuevo viaje se solapa con uno existente, creado o en curso. 
-     * Es decir que se encuentra dentro del rango de un viaje, e inclusive 30 minutos antes del inicio del mismo 
-     * @param driverId 
+     * Verifica si el rango de tiempo para un nuevo viaje se solapa con uno existente, creado o en curso.
+     * Es decir que se encuentra dentro del rango de un viaje, e inclusive 30 minutos antes del inicio del mismo
+     * @param driverId
      * @param newStart
      * @param newEnd
-     * @return 
+     * @return
      */
     @Query(value = """
         SELECT COUNT(t.id) > 0 
@@ -182,14 +182,14 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             AND :newEnd > (t.start_date_time - INTERVAL '30 minutes')
     """, nativeQuery = true)
     boolean hasOverlappingSchedule(
-        @Param("driverId") Long driverId, 
+        @Param("driverId") Long driverId,
         @Param("newStart") LocalDateTime newStart,
         @Param("newEnd") LocalDateTime newEnd
     );
 
     /**
      * Verifica si en un instante de tiempo especifico para hacer un viaje, cae
-     * dentro de un viaje programado o en curso 
+     * dentro de un viaje programado o en curso
      * @param driverId
      * @param timeToCheck
      * @return
@@ -208,14 +208,14 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                                 AND ts.estimated_arrival_date_time
     """, nativeQuery = true)
     boolean isTimeSlotOccupied(
-        @Param("driverId") Long driverId, 
+        @Param("driverId") Long driverId,
         @Param("timeToCheck") LocalDateTime timeToCheck
     );
 
     /**
      * Verifica que el chofer tenga un viaje en progreso
-     * @param driverId Id del chofer 
-     * @return true si tien un viaje en progreso 
+     * @param driverId Id del chofer
+     * @return true si tien un viaje en progreso
      */
     @Query(value = """
             SELECT COUNT (t.id) > 0
@@ -226,5 +226,33 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 AND sh.finish_datetime IS NULL 
                 AND s.name = 'IN_PROGRESS'
     """, nativeQuery = true)
-    boolean hasTripInProgress(@Param("driverId") Long driverId); 
+    boolean hasTripInProgress(@Param("driverId") Long driverId);
+    List<Trip> findTripsByDriverIdWithCurrentStateCreateTrip(@Param("driverId") Long driverId);
+
+    /**
+     * Consulta que devuelve el viaje en progreso de un chofer, si es que lo tiene
+     * @param driverId
+     * @return
+     */
+    @Query(value = """
+        SELECT t.* 
+        FROM trip t
+        JOIN state_history sh ON sh.trip_id = t.id
+        JOIN state s ON s.id = sh.state_id
+        JOIN vehicles v ON v.id = t.vehicle_id
+        JOIN trip_stop ts ON ts.trip_id = t.id
+        WHERE v.driver_id = :driverId
+          AND s.name = 'IN_PROGRESS'
+          AND s.scope = 'TRIP'
+          AND sh.start_datetime = (
+              SELECT MAX(sh2.start_datetime)
+              FROM state_history sh2
+              WHERE sh2.trip_id = t.id
+          )
+        LIMIT 1
+    """, nativeQuery = true)
+    Optional<Trip> findCurrentTripByDriver(@Param("driverId") Long driverId);
+
+
+
 }

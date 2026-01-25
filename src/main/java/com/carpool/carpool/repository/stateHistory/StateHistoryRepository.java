@@ -14,10 +14,10 @@ public interface StateHistoryRepository extends JpaRepository<StateHistory, Long
 
     Optional<StateHistory> findTopByTripAndFinishDateTimeIsNotNullOrderByFinishDateTimeDesc(Trip trip);
 
-    StateHistory findTopByReservationIdOrderByStartDateTimeDesc(Long idReservation);
-
     Optional<StateHistory> findByReservationIdAndFinishDateTimeIsNull(Long idReservation);
-    
+
+    Optional<StateHistory> findByTripIdAndFinishDateTimeIsNull(Long idTrip);
+
     @Query("""
         SELECT COUNT(sh) > 0 FROM StateHistory sh 
         WHERE sh.trip = :trip 
@@ -26,7 +26,7 @@ public interface StateHistoryRepository extends JpaRepository<StateHistory, Long
         AND sh.finishDateTime IS NULL
     """)
     boolean isCurrentState(@Param("trip") Trip trip, @Param("name") String name, @Param("scope") ScopeEnum scope);
-    
+
     @Query("""
         SELECT sh FROM StateHistory sh 
         WHERE sh.trip = :trip 

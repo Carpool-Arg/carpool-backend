@@ -47,6 +47,31 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
             @Param("arrivalTime") LocalDateTime arrivalTime
     );
 
+    /**
+     * Query para obtener las reservas en un estado que se pasa por parametros que finalizar en una parada intermedia
+     * cuyo id tambien se pasa por parametros
+     * @param tripId viaje al que pertenece la parada intermedia
+     * @param tripStopId id de la parada intermedia de la cual se quiere obtener las reservas que finalizar alli
+     * @param stateName estado por el que se quiere filtrar
+     * @return
+     */
+    @Query("""
+        SELECT r
+        FROM Reservation r
+        JOIN StateHistory sh ON sh.reservation.id = r.id
+        JOIN sh.state s
+        WHERE r.trip.id = :tripId
+        AND r.destinationCity.id = :tripStopId
+        AND s.name = :stateName
+        AND sh.finishDateTime IS NULL
+    """)
+    List<Reservation> findReservationsByTripAndDestinationAndState(
+            @Param("tripId") Long tripId,
+            @Param("tripStopId") Long tripStopId,
+            @Param("stateName") String stateName
+    );
+
+
     @Query("""
         SELECT r FROM Reservation r 
         JOIN StateHistory sh ON sh.reservation.id = r.id

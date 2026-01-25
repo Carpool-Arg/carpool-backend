@@ -2,14 +2,18 @@ package com.carpool.carpool.service.trip;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
+import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
 import com.carpool.carpool.dto.trip.TripDriverDTO;
 import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
@@ -39,15 +43,19 @@ import com.carpool.carpool.repository.reservation.ReservationRepository;
 import com.carpool.carpool.repository.state.StateRepository;
 import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
 import com.carpool.carpool.repository.trip.TripRepository;
+import com.carpool.carpool.repository.trip.stop.TripStopRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.repository.vehicle.VehicleRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.parameters.IParametersService;
 import com.carpool.carpool.service.reservation.IReservationService;
+import com.carpool.carpool.service.state.StateTransitionService;
+import com.carpool.carpool.service.reservation.IReservationService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
 import com.carpool.carpool.service.notification.INotificationService;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -63,12 +71,15 @@ public class TripImplementation implements ITripService {
     private final StateRepository stateRepository;
     private final StateHistoryRepository stateHistoryRepository;
     private final CityRepository cityRepository;
-    private final IParametersService settingService;
     private final ReservationRepository reservationRepository;
+    private final TripStopRepository tripStopRepository;
+    private final IParametersService settingService;
     private final IReservationService reservationService;
     private final INotificationService notificationService;
+    private final StateTransitionService stateTransitionService;
 
     private static final String STATE_ACCEPTED = "ACCEPTED";
+
 
     @Override
     @Transactional
@@ -324,6 +335,81 @@ public class TripImplementation implements ITripService {
         return ResponseUtils.buildOKResponse(List.of("¡Viaje iniciado! Que tengas un buen recorrido."), null);
     }
 
+    @Override
+    public Response<CurrentTripResponseDTO> getCurrentTrip(){
+        Driver driver = getAuthenticatedDriver();
+        Trip currentTrip = tripRepository.findCurrentTripByDriver(driver.getId())
+            .orElseThrow(() -> new EntityNotFoundException("El chofer no tiene un viaje en curso en este momento."));
+
+        return ResponseUtils.buildOKResponse(List.of("Viaje en curso recuperado con éxito"), tripMapper.covertTripToCurrentTripResponseDTO(currentTrip));
+    }
+
+    @Override
+    public Response<Void> arriveTripStop(TripArriveRequestDTO tripArriveRequestDTO){
+        Driver driver = getAuthenticatedDriver();
+
+        Trip currentTrip = tripRepository.findCurrentTripByDriver(driver.getId())
+            .orElseThrow(() -> new EntityNotFoundException("El chofer no tiene un viaje en curso en este momento."));
+
+
+        TripStop stop = currentTrip.getTripStops().stream()
+            .filter(ts -> ts.getId() == tripArriveRequestDTO.getIdTripStop())
+            .findFirst()
+            .orElseThrow(() ->
+                new EntityNotFoundException("Parada no encontrada en el viaje")
+        );
+
+        validateStopOrderToClose(currentTrip, stop);
+
+        List<Reservation> reservations = reservationRepository.findReservationsByTripAndDestinationAndState(currentTrip.getId(), stop.getId(), "IN_PROGRESS");
+
+        if(reservations != null && !reservations.isEmpty()){
+            reservations.forEach(reservation ->reservationService.finishTripReservation(reservation));
+        }
+
+        stop.setArrivalDateTime(LocalDateTime.now());
+        tripStopRepository.save(stop);
+        if(stop.isDestination()){
+            return finishTrip(currentTrip);
+        }else{
+            return ResponseUtils.buildOKResponse(List.of("Llegada a parada registrada con éxito.") , null);
+        }
+    }
+
+    private Response<Void> finishTrip(Trip trip){
+        stateTransitionService.transition(trip, ScopeEnum.TRIP, "IN_PROGRESS", "FINISHED");
+        return ResponseUtils.buildOKResponse(List.of("Viaje finalizado con éxito") , null);
+    }
+
+    /**
+     * Metodo que se utiliza para validar el orden de una parda intermedia que se quiere cerrar para un viaje
+     * Las paradas se deben cerrar en orden y no se puede cerrar si la anterior no tiene horario de llegada.
+     * A su vez no es posible iniciar un vijae con este endpoint, solamente cerrar desde la segunda parada intermedia hasta
+     * el destino
+     */
+    private void validateStopOrderToClose(Trip trip, TripStop stopToClose) {
+
+        Optional<TripStop> lastClosedStop = trip.getTripStops().stream()
+                .filter(ts -> ts.getArrivalDateTime() != null)
+                .max(Comparator.comparingInt(TripStop::getStopOrder));
+
+        if (lastClosedStop.isEmpty()) {
+
+            throw new ConflictException(
+                "No hay ninguna parada cerrada hasta el momento."
+            );
+
+        }
+
+        int expectedOrder = lastClosedStop.get().getStopOrder() + 1;
+
+        if (stopToClose.getStopOrder() != expectedOrder) {
+            throw new ConflictException(
+                "Orden inválido. Debe cerrarse la parada con orden " + expectedOrder
+            );
+        }
+    }
+
     /**
      * Validaciones del viaje en general. Comprobamos aspectos como:
      * - Que el vehiculo con el id ingresado sea del chofer que inicio el viaje
@@ -331,7 +417,7 @@ public class TripImplementation implements ITripService {
      * - Que la cantidad de asientos ingresada no sea mayor a la cantidad de
      * asientos que estaban definidos para ese vehiculo
      * - Que el equipaje ingresado este dentro de los posibles valores (ENUM)
-     * 
+     *
      * @param vehicle        El vehiculo obtenido con el ID ingresado en la request
      * @param tripRequestDTO la request para cargar el viaje
      * @throws ConflictException si alguna de las validaciones falla
@@ -361,7 +447,7 @@ public class TripImplementation implements ITripService {
      * -Que el origen y el destino del viaje no son la misma ciudad
      * -Que hay un solo origen y un solo destino en toda la lista de paradas
      * -Que cada ciudad esta solo una vez en la lista de paradas
-     * 
+     *
      * @param tripStops la lista de paradas de un viaje
      * @throws ConflictException si alguna de las validaciones falla
      */
@@ -404,7 +490,7 @@ public class TripImplementation implements ITripService {
     /**
      * Realizamos una validacion para comporbar que el orden de las paradas no se
      * repite
-     * 
+     *
      * @param tripStops la lista de paradas del viaje
      * @throws ConflictException si la validacion falla
      */
@@ -421,7 +507,7 @@ public class TripImplementation implements ITripService {
 
     /**
      * Obtiene el chofer autenticado en el contexto de seguridad.
-     * 
+     *
      * @return El chofer autenticado en el contexto de seguridad.
      * @throws ConflictException si el usuario autenticado no se encuentra o no
      *                           tiene un perfil de chofer asociado.
@@ -441,7 +527,7 @@ public class TripImplementation implements ITripService {
     /**
      * Obtiene el ID del usuario autenticado en el contexto de seguridad. Sirve para
      * excluir al usuario de los resultados en las busquedas de viajes.
-     * 
+     *
      * @return El ID del usuario autenticado en el contexto de seguridad.
      */
     private Long getAuthenticatedUserId() {
@@ -455,7 +541,7 @@ public class TripImplementation implements ITripService {
 
     /**
      * Actualiza el estado de un viaje.
-     * 
+     *
      * @param trip      el viaje a actualizar
      * @param stateName el nombre del estado
      */
@@ -481,7 +567,7 @@ public class TripImplementation implements ITripService {
 
     /**
      * Cancela un viaje automaticamente.
-     * 
+     *
      * @param trip el viaje a cancelar
      */
     private void cancelTripAutomatically(Trip trip) {
@@ -490,7 +576,7 @@ public class TripImplementation implements ITripService {
 
     /**
      * Cancela todas las reservas de un viaje.
-     * 
+     *
      * @param trip el viaje a cancelar
      */
     private void cancelAllReservations(Trip trip) {
@@ -503,7 +589,7 @@ public class TripImplementation implements ITripService {
 
     /**
      * Inicia todas las reservas de un viaje.
-     * 
+     *
      * @param trip el viaje a iniciar
      */
     private void startTripReservation(Trip trip) {
@@ -517,7 +603,7 @@ public class TripImplementation implements ITripService {
 
     /**
      * Notifica a los pasajeros de un viaje.
-     * 
+     *
      * @param trip  el viaje a notificar
      * @param event el evento de notificacion
      */

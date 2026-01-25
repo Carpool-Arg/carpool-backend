@@ -5,6 +5,7 @@ import com.carpool.carpool.dto.reservation.ReservationResponseDTO;
 import com.carpool.carpool.dto.reservation.ReservationUpdateRequestDTO;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.UnauthorizedException;
+import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 
@@ -42,15 +43,21 @@ public interface IReservationService {
     Response<Void> updateStateReservation(ReservationUpdateRequestDTO reservationUpdateRequestDTO);
 
     /**
-     * Método para que cambia el estado de las reservas a IN_PROGRESS que señala el inicio de un viaje. 
-     * @param reservationId id de la reserva del usuario para un viaje. 
+     * Método para que cambia el estado de las reservas a IN_PROGRESS que señala el inicio de un viaje.
+     * @param reservationId id de la reserva del usuario para un viaje.
      */
     void startTripReservation(Long reservationId);
 
     /**
-     * Método que cancela la reserva de un viaje, en caso de que el viaje no salga y se de, de baja por motivos de inpuntualidad.  
+     * Método que cancela la reserva de un viaje, en caso de que el viaje no salga y se de, de baja por motivos de inpuntualidad.
      * @param reservationId
      * @param reason
      */
     void cancelBySystem(Long reservationId);
+
+    /**
+     * Metodo para finalizar una reserva de un viaje
+     * @param reservation
+     */
+    void finishTripReservation(Reservation reservation);
 }

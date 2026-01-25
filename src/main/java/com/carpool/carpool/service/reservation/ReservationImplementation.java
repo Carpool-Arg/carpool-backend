@@ -1,5 +1,21 @@
 package com.carpool.carpool.service.reservation;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+
 import com.carpool.carpool.dto.reservation.CreateReservationRequestDTO;
 import com.carpool.carpool.dto.reservation.ReservationDTO;
 import com.carpool.carpool.dto.reservation.ReservationResponseDTO;
@@ -27,26 +43,13 @@ import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.notification.INotificationService;
+import com.carpool.carpool.service.state.StateTransitionService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
 
+
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -61,6 +64,7 @@ public class ReservationImplementation implements IReservationService{
     private final INotificationService notificationService;
     private final IMediaService mediaService;
     private final CityRepository cityRepository;
+    private final StateTransitionService stateTransitionService;
 
     private static final String STATE_PENDING = "PENDING";
 
@@ -158,9 +162,9 @@ public class ReservationImplementation implements IReservationService{
             throw new ResourceNotFoundException("La reserva no existe");
         }
 
-        StateHistory lastestStateReservation = stateHistoryRepository.findTopByReservationIdOrderByStartDateTimeDesc(reservation.getId());
+        StateHistory lastestStateReservation = stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservation.getId()).orElseThrow(() -> new ConflictException("La reserva no tiene un estado actual."));
         if(!STATE_PENDING.equals(lastestStateReservation.getState().getName())){
-            throw new ConflictException("No se puede realizar acciones a la reserva ya que se encuentra en un estado final");
+            throw new ConflictException("No se puede realizar acciones a la reserva ya que la misma no esta pendiente.");
         }
         lastestStateReservation.setFinishDateTime(LocalDateTime.now());
         Trip trip = reservation.getTrip();
@@ -220,6 +224,12 @@ public class ReservationImplementation implements IReservationService{
         return ResponseUtils.buildOKResponse(List.of("Total calculado con exito"), TripCostUtils.calculateTripTotal(startCity, destinationCity, trip));
     }
 
+
+    @Override
+    public void finishTripReservation(Reservation reservation){
+        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, "IN_PROGRESS", "UNPAID");
+    }
+
     @Override
     public void startTripReservation(Long reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
@@ -260,7 +270,7 @@ public class ReservationImplementation implements IReservationService{
                     sh.setFinishDateTime(now);
                     stateHistoryRepository.save(sh);
                 });
-        
+
         StateHistory newHistory = StateHistory.builder()
                 .reservation(reservation)
                 .state(cancelledState)
