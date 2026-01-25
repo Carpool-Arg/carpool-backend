@@ -296,17 +296,13 @@ public class TripImplementation implements ITripService {
     }
 
     @Override
-    public Response<Void> startTrip(Long tripId) {
+    @Transactional
+    public Response<CurrentTripResponseDTO> startTrip(Long tripId) {
         Trip trip = tripRepository.findTripWithAllDetails(tripId)
                 .orElseThrow(() -> new ResourceNotFoundException("Viaje no encontrado."));
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime scheduledStart = trip.getStartTripDateTime();
-
-        boolean isClosed = stateHistoryRepository.isCurrentState(trip, "CLOSED", ScopeEnum.TRIP);
-        if (!isClosed) {
-            throw new ConflictException("Solo se puede iniciar un viaje que esté en estado 'CERRADO'.");
-        }
 
         if (now.isBefore(scheduledStart.minusMinutes(30))) {
             throw new ConflictException("Todavía es muy temprano. Podés iniciar el viaje hasta 30 minutos antes de las "
@@ -314,25 +310,26 @@ public class TripImplementation implements ITripService {
         }
 
         if (now.isAfter(scheduledStart.plusMinutes(15))) {
-            cancelTripAutomatically(trip);
+            stateTransitionService.transition(trip, ScopeEnum.TRIP, "CLOSED", "CANCELLED");
             cancelAllReservations(trip);
             notifyPassengers(trip, NotificationEventEnum.TRIP_CANCELLED_BY_SYSTEM);
-            return ResponseUtils.buildErrorResponse(List.of(
-                    "El tiempo límite para iniciar el viaje ha expirado (máximo 15 min de demora). El viaje ha sido cancelado automáticamente."));
+            throw new ConflictException("El tiempo límite para iniciar el viaje ha expirado. El viaje ha sido cancelado automáticamente.");     
         }
 
         TripStop startStop = trip.getTripStops().stream()
-                .filter(ts -> ts.getStopOrder() == 1)
+                .filter(ts -> ts.getStopOrder() == 1) 
                 .findFirst()
                 .orElseThrow(() -> new ConflictException("No se encontró la parada inicial del viaje."));
 
-        startStop.setArrivalDateTime(LocalDateTime.now());
+        startStop.setArrivalDateTime(now); 
+        stateTransitionService.transition(trip, ScopeEnum.TRIP, "CLOSED", "IN_PROGRESS");
 
-        updateTripState(trip, "IN_PROGRESS");
         this.startTripReservation(trip);
         notifyPassengers(trip, NotificationEventEnum.TRIP_STARTED);
 
-        return ResponseUtils.buildOKResponse(List.of("¡Viaje iniciado! Que tengas un buen recorrido."), null);
+        CurrentTripResponseDTO responseDTO = tripMapper.covertTripToCurrentTripResponseDTO(trip);
+        
+        return ResponseUtils.buildOKResponse(List.of("¡Viaje iniciado! Que tengas un buen recorrido."), responseDTO);
     }
 
     @Override
