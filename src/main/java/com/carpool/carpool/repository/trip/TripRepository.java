@@ -227,7 +227,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                 AND s.name = 'IN_PROGRESS'
     """, nativeQuery = true)
     boolean hasTripInProgress(@Param("driverId") Long driverId);
-    List<Trip> findTripsByDriverIdWithCurrentStateCreateTrip(@Param("driverId") Long driverId);
 
     /**
      * Consulta que devuelve el viaje en progreso de un chofer, si es que lo tiene
