@@ -73,19 +73,6 @@ public class ReservationController {
     }
 
     @Operation(
-            summary = "Aceptar-Rechazar una reserva de un viaje"
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Reservas aceptada-cancelada con éxito"),
-            @ApiResponse(responseCode = "404", description = "Recurso no encontrado"),
-            @ApiResponse(responseCode = "409", description = "Cupo de asientos ocupados", content = @Content),
-    })
-    @PutMapping
-    public ResponseEntity<Response<Void>> updateReservation(@Valid @RequestBody ReservationUpdateRequestDTO reservationUpdateRequestDTO){
-        return new ResponseEntity<>(reservationService.updateStateReservation(reservationUpdateRequestDTO), HttpStatus.OK);
-    }
-
-    @Operation(
             summary = "Pagar la reserva con estado UNPAID del usuario en sesión"
     )
     @ApiResponses({
@@ -96,8 +83,21 @@ public class ReservationController {
             @ApiResponse(responseCode = "404", description = "Recurso no encontrado"),
             @ApiResponse(responseCode = "409", description = "Errores de validaciones", content = @Content),
     })
-    @PostMapping
+    @PostMapping("/payment")
     public ResponseEntity<Response<Void>> payReservation(){
         return new ResponseEntity<>(reservationService.payReservation(), HttpStatus.CREATED);
+    }
+
+    @Operation(
+            summary = "Aceptar-Rechazar una reserva de un viaje"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reservas aceptada-cancelada con éxito"),
+            @ApiResponse(responseCode = "404", description = "Recurso no encontrado"),
+            @ApiResponse(responseCode = "409", description = "Cupo de asientos ocupados", content = @Content),
+    })
+    @PutMapping
+    public ResponseEntity<Response<Void>> updateReservation(@Valid @RequestBody ReservationUpdateRequestDTO reservationUpdateRequestDTO){
+        return new ResponseEntity<>(reservationService.updateStateReservation(reservationUpdateRequestDTO), HttpStatus.OK);
     }
 }

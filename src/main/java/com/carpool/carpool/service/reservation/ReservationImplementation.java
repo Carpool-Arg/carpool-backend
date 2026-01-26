@@ -221,7 +221,9 @@ public class ReservationImplementation implements IReservationService{
                 ));
 
         //Cambiar de estado la reserva a completed
-        return null;
+        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, "UNPAID", "COMPLETED");
+
+        return ResponseUtils.buildOKResponse(List.of("Pago realizado con éxito!"), null);
     }
 
     @Override
@@ -238,10 +240,11 @@ public class ReservationImplementation implements IReservationService{
         return ResponseUtils.buildOKResponse(List.of("Total calculado con exito"), TripCostUtils.calculateTripTotal(startCity, destinationCity, trip));
     }
 
-
     @Override
     public void finishTripReservation(Reservation reservation){
         stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, "IN_PROGRESS", "UNPAID");
+        notificationService.send(reservation.getUser(), NotificationEventEnum.RESERVATION_UNPAID, reservation);
+
     }
     /**
      * Validaciones relacionadas al viaje. Comprobamos lo siguiente:
