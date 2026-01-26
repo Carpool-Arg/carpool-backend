@@ -71,5 +71,22 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
             @Param("stateName") String stateName
     );
 
-
+    /**
+     * Obtiene la reserva del usuario que se encuentra actualmente en estado UNPAID.
+     *
+     * @param userId id del usuario
+     * @return reserva con estado UNPAID si existe
+     */
+    @Query("""
+        SELECT r
+        FROM Reservation r
+        JOIN StateHistory sh ON sh.reservation.id = r.id
+        JOIN sh.state s
+        WHERE r.user.id = :userId
+          AND s.name = 'UNPAID'
+          AND sh.finishDateTime IS NULL
+    """)
+    Optional<Reservation> findUnpaidReservationByUserId(
+            @Param("userId") Long userId
+    );
 }

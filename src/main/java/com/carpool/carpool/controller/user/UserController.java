@@ -113,7 +113,7 @@ public class UserController {
             @ApiResponse(responseCode = "401", description = "No autorizado")
     })
     @GetMapping("/debtor")
-    public ResponseEntity<Response<Boolean>> getDebtUser() {
+    public ResponseEntity<Response<UserDebtResponseDTO>> getDebtUser() {
         return new ResponseEntity<>(userDebtService.isDebtor(), HttpStatus.OK);
     }
 

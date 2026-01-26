@@ -207,6 +207,22 @@ public class ReservationImplementation implements IReservationService{
     }
 
     @Override
+    public Response<Void> payReservation() {
+        //Validaciones de usuario
+        User userAuth = this.getAuthenticatedActiveUser();
+
+        //Buscar la reserva en estado UNPAID del usuario
+        Reservation reservation = reservationRepository
+                .findUnpaidReservationByUserId(userAuth.getId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "El usuario no tiene una reserva pendiente de pago"
+                ));
+
+        //Cambiar de estado la reserva a completed
+        return null;
+    }
+
+    @Override
     public Response<Double> calculateTotal(Long idTrip, Long idStartCity, Long idDestinationCity){
         Trip trip = tripRepository.findById(idTrip)
             .orElseThrow(()->new ResourceNotFoundException("El viaje no existe."));

@@ -1,5 +1,6 @@
 package com.carpool.carpool.service.user.debt;
 
+import com.carpool.carpool.dto.user.UserDebtResponseDTO;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.response.Response;
 
@@ -27,5 +28,5 @@ public interface IUserDebtService {
      * @return {@code true} si el usuario posee deuda pendiente,
      *         {@code false} en caso contrario
      */
-    Response<Boolean> isDebtor();
+    Response<UserDebtResponseDTO> isDebtor();
 }
