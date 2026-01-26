@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class UserDebtResponseDTO {
-    private Long reservationId;
     private Double total;
     private Boolean debtUser;
     private Boolean expired;

@@ -23,7 +23,6 @@ public interface StateHistoryRepository extends JpaRepository<StateHistory, Long
 
     @Query("""
     SELECT new com.carpool.carpool.dto.user.UserDebtResponseDTO(
-        r.id,
         r.total,
         true,
         (s.name = 'EXPIRED')

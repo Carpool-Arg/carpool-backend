@@ -79,6 +79,21 @@ public class EmailMessageUtils {
                         "Esperamos que pronto encuentres otro viaje que se adapte a vos \uD83D\uDE4C";
         public static final String MESSAGE_FOOTER_RESERVATION_REJECTED = "El equipo de Carpool";
 
+        // RESERVATION UNPAID - VIAJE REALIZADO
+        public static final String SUBJECT_EMAIL_RESERVATION_UNPAID = "Tenés un pago pendiente por un viaje realizado";
+
+        public static final String TITLE_RESERVATION_UNPAID = "Hola {name},";
+
+        public static final String MESSAGE_RESERVATION_UNPAID = "Detectamos un pago pendiente correspondiente a un viaje que ya realizaste.<br><br>" +
+                        "El monto a abonar es de <strong>ARS {total}</strong>.<br><br>" +
+                        "Para poder seguir utilizando <strong>Carpool</strong> y acceder a nuevos viajes, necesitás regularizar este pago.";
+
+        public static final String BUTTON_RESERVATION_UNPAID = "Pagar viaje";
+
+        public static final String MESSAGE_FOOTER_RESERVATION_UNPAID = "Hasta que el pago sea realizado, algunas funcionalidades de la aplicación permanecerán bloqueadas.<br>" +
+                "Si el pago no es realizado en el plazo estimado, el mismo pasará a estar vencido y se bloqueará su cuenta de CARPOOL..<br>" +
+                        "Gracias por ayudarnos a mantener una comunidad justa y confiable.";
+
         // TRIP CLOSED AUTOMATICALLY
         public static final String SUBJECT_TRIP_CLOSED_AUTOMATICALLY = "Tu viaje ya esta listo para arrancar!";
         public static final String TITLE_TRIP_CLOSED_AUTOMATICALLY = "¡Hola, {name}!";

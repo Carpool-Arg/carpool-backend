@@ -19,7 +19,7 @@ public class WebSocketPolicyImplementation implements  INotificationDispatchPoli
     private final SimpUserRegistry userRegistry;
 
     @Override
-    public void execute(User user, NotificationPayloadDTO payload) {
+    public boolean execute(User user, NotificationPayloadDTO payload) {
         String username = user.getUsername();
         log.info("Enviando notificacion WS");
         log.info("Usuario: '{}'", username);
@@ -28,8 +28,8 @@ public class WebSocketPolicyImplementation implements  INotificationDispatchPoli
         SimpUser simpUser = userRegistry.getUser(username);
 
         if (simpUser == null) {
-            log.error("ERROR - Usuario '{}' NO está conectado al WS!", username);
-            return;
+            log.warn("Usuario '{}' offline en WS. Intentando siguiente canal...", username);
+            return false; // Falló el envío por este canal
         }
 
         messagingTemplate.convertAndSendToUser(
@@ -39,6 +39,7 @@ public class WebSocketPolicyImplementation implements  INotificationDispatchPoli
         );
 
         log.info("Notificación enviada mediante WS");
+        return true;
     }
 
     @Override

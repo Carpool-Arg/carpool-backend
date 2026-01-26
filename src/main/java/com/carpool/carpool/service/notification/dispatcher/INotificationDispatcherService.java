@@ -4,17 +4,23 @@ import com.carpool.carpool.dto.notificationPayload.NotificationPayloadDTO;
 import com.carpool.carpool.enums.dispatchPolicy.DispatchPolicyEnum;
 import com.carpool.carpool.model.user.User;
 
+/**
+ * Servicio ruteador encargado de delegar el envío de notificaciones al canal técnico correspondiente.
+ * <p>
+ * Actúa como un componente intermedio en la arquitectura de notificaciones, abstrayendo
+ * al orquestador de los detalles de implementación de cada canal (WS, Push, Email).
+ * </p>
+ */
 public interface INotificationDispatcherService {
     /**
      * Enruta y despacha una notificación al usuario basándose en la política definida.
-     * <p>
-     * La implementación de este método buscará en el registro de servicios
-     * de despacho ({@link INotificationDispatchPolicyService}) aquellos que
-     * coincidan con la {@code policy} y llamará a sus métodos {@code execute}.
      *
      * @param user    El usuario destinatario de la notificación.
-     * @param payload El payload estandarizado (título, cuerpo, etc.) a enviar.
-     * @param policy  La política que define qué canal(es) utilizar (p.ej., EMAIL, PUSH).
+     * @param payload El payload estandarizado (título, cuerpo, data) a enviar.
+     * @param policy  La política que define el canal técnico a utilizar.
+     * @return {@code true} si la notificación fue entregada con éxito por el canal;
+     * {@code false} si el canal no pudo realizar la entrega (ej. usuario desconectado del WebSocket),
+     * permitiendo así disparar mecanismos de fallback.
      */
-    void dispatch(User user, NotificationPayloadDTO payload, DispatchPolicyEnum policy);
+    boolean dispatch(User user, NotificationPayloadDTO payload, DispatchPolicyEnum policy);
 }

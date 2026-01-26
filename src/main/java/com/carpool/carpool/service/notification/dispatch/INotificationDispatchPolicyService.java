@@ -17,10 +17,11 @@ public interface INotificationDispatchPolicyService {
      *     </ul>
      *
      * @param user    El usuario que recibirá la notificación.
-     * @param payload El payload estandarizado que contiene el título, cuerpo y
-     * metadatos de la notificación a enviar.
+     * @param payload El payload estandarizado que contiene el título, cuerpo y metadatos de la notificación a enviar.
+     * @return {@code boolean} resultado sobre si se ejecutó bien o no
+     *
      */
-    void execute(User user, NotificationPayloadDTO payload);
+    boolean execute(User user, NotificationPayloadDTO payload);
 
     /**
      * Devuelve la política que esta implementación maneja.
