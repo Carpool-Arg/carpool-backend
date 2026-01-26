@@ -1,11 +1,9 @@
 --liquibase formatted sql
 
---changeset AgustinAnil:insercion_valor_state_reservation_02
-insert into state (name, scope) values ('ACCEPTED', 'RESERVATION');
-insert into state (name, scope) values ('REJECTED', 'RESERVATION');
-insert into state (name, scope) values ('IN_PROGRESS', 'RESERVATION');
-insert into state (name, scope) values ('CANCELLED', 'RESERVATION');
-insert into state (name, scope) values ('COMPLETED', 'RESERVATION');
-insert into state (name, scope) values ('IN_PROGRESS', 'RESERVATION');
-insert into state (name, scope) values ('UNPAID', 'RESERVATION');
-insert into state (name, scope) values ('EXPIRED', 'RESERVATION');
+--changeset GonzaloBaldassi:Insercion_Clases_Licencias
+INSERT INTO license_class (name, description) VALUES
+('B1', 'AUTOMOVILES, UTILITARIOS, CAMIONETAS Y CASAS RODANTES HASTA 3.500 KG DE PESO TOTAL.'),
+('B2', 'AUTOMOVILES, UTILITARIOS, CAMIONETAS Y CASAS RODANTES HASTA 3.500 KG DE PESO TOTAL. ACOPLADO O SEMIRREMOLQUE HASTA 750 KG.'),
+('D1', 'AUTOMOTORES PARA SERVICIOS DE TRANSPORTE DE PASAJEROS HASTA OCHO (8) PLAZAS, EXCLUIDO EL CONDUCTOR.'),
+('D2', 'AUTOMOTORES PARA SERVICIOS DE TRANSPORTE DE PASAJEROS DE MAS DE OCHO (8) PLAZAS Y HASTA VEINTE (20) PLAZAS, EXCLUIDO EL CONDUCTOR.'),
+('D3', 'AUTOMOTORES PARA SERVICIOS DE TRANSPORTE DE PASAJEROS DE MAS DE VEINTE (20) PLAZAS, EXCLUIDO EL CONDUCTOR.');

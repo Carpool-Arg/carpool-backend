@@ -56,7 +56,7 @@ import com.carpool.carpool.utils.TripCostUtils;
 import com.carpool.carpool.service.notification.INotificationService;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -159,7 +159,7 @@ public class TripImplementation implements ITripService {
         if (trips.isEmpty()) {
             return ResponseUtils.buildOKResponse(List.of("No existen viajes publicados por el chofer"), null);
         }
-
+        trips.stream().peek(System.out::println);
         List<TripDriverDTO> listTripDriver = tripMapper.convertTripToTripDriverResponseDTO(trips);
         TripDriverResponseDTO response = new TripDriverResponseDTO();
         response.setTrips(listTripDriver);
@@ -297,7 +297,7 @@ public class TripImplementation implements ITripService {
     }
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = ConflictException.class)
     public Response<CurrentTripResponseDTO> startTrip(Long tripId) {
         Trip trip = tripRepository.findTripWithAllDetails(tripId)
                 .orElseThrow(() -> new ResourceNotFoundException("Viaje no encontrado."));
