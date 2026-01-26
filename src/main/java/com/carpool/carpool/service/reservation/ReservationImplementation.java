@@ -43,6 +43,7 @@ import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.notification.INotificationService;
+import com.carpool.carpool.service.state.StateTransitionService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
 
@@ -61,6 +62,7 @@ public class ReservationImplementation implements IReservationService{
     private final INotificationService notificationService;
     private final IMediaService mediaService;
     private final CityRepository cityRepository;
+    private final StateTransitionService stateTransitionService;
 
     private static final String STATE_PENDING = "PENDING";
 
@@ -239,27 +241,7 @@ public class ReservationImplementation implements IReservationService{
 
     @Override
     public void finishTripReservation(Reservation reservation){
-        State stateUnpaid = stateRepository.findByNameAndScope("UNPAID", ScopeEnum.RESERVATION)
-            .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para iniciar una reserva."));
-
-        StateHistory actualStateHistory = stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservation.getId())
-            .orElseThrow(() -> new ConflictException("La reserva no tiene un estado actual"));
-
-        if(!actualStateHistory.getState().getName().equals("IN_PROGRESS")){
-            throw new ConflictException("La reserva con el ID " + reservation.getId() + " no está en progreso");
-        }
-
-        StateHistory stateHistory = StateHistory.builder()
-            .state(stateUnpaid)
-            .reservation(reservation)
-        .build();
-
-        actualStateHistory.setFinishDateTime(LocalDateTime.now());
-
-        stateHistoryRepository.save(actualStateHistory);
-        stateHistoryRepository.save(stateHistory);
-
-        notificationService.send(reservation.getUser(), NotificationEventEnum.RESERVATION_UNPAID, reservation);
+        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, "IN_PROGRESS", "UNPAID");
     }
     /**
      * Validaciones relacionadas al viaje. Comprobamos lo siguiente:

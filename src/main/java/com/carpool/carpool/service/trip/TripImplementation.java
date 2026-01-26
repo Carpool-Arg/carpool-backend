@@ -48,6 +48,7 @@ import com.carpool.carpool.repository.vehicle.VehicleRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.parameters.IParametersService;
 import com.carpool.carpool.service.reservation.IReservationService;
+import com.carpool.carpool.service.state.StateTransitionService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
 
@@ -71,6 +72,7 @@ public class TripImplementation implements ITripService{
     private final TripStopRepository tripStopRepository;
     private final IParametersService settingService;
     private final IReservationService reservationService;
+    private final StateTransitionService stateTransitionService;
 
     @Override
     @Transactional
@@ -310,27 +312,13 @@ public class TripImplementation implements ITripService{
     }
 
     private Response<Void> finishTrip(Trip trip){
-        StateHistory actualStateHistory = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(trip.getId()).orElseThrow(() -> new ConflictException("El viaje no tiene un estado actual"));
-
-        actualStateHistory.setFinishDateTime(LocalDateTime.now());
-
-        State stateFinished = stateRepository.findByNameAndScope("FINISHED", ScopeEnum.TRIP)
-            .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para finalizar el viaje."));
-
-        StateHistory stateHistory = StateHistory.builder()
-            .state(stateFinished)
-        .build();
-
-        stateHistory.setTrip(trip);
-        tripRepository.save(trip);
-        stateHistoryRepository.save(actualStateHistory);
-        stateHistoryRepository.save(stateHistory);
+        stateTransitionService.transition(trip, ScopeEnum.TRIP, "IN_PROGRESS", "FINISHED");
         return ResponseUtils.buildOKResponse(List.of("Viaje finalizado con éxito") , null);
     }
 
     /**
      * Metodo que se utiliza para validar el orden de una parda intermedia que se quiere cerrar para un viaje
-     * Las paradas se deben cerrar en orden y no se puede cerrar si la anterior no tiene horario de llegada.
+     * Las paradas se deben cerrar en orden y no se puede cerrar si la anterior no tiene horario de llegada. 
      * A su vez no es posible iniciar un vijae con este endpoint, solamente cerrar desde la segunda parada intermedia hasta
      * el destino
      */
@@ -483,6 +471,5 @@ public class TripImplementation implements ITripService{
             .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."))
             .getId();
     }
-
     
 }
