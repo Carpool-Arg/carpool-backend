@@ -8,3 +8,4 @@ insert into state (name, scope) values ('CANCELLED', 'RESERVATION');
 insert into state (name, scope) values ('COMPLETED', 'RESERVATION');
 insert into state (name, scope) values ('IN_PROGRESS', 'RESERVATION');
 insert into state (name, scope) values ('UNPAID', 'RESERVATION');
+insert into state (name, scope) values ('EXPIRED', 'RESERVATION');

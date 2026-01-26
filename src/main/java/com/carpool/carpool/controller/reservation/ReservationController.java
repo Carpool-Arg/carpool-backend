@@ -73,6 +73,22 @@ public class ReservationController {
     }
 
     @Operation(
+            summary = "Pagar la reserva con estado UNPAID del usuario en sesión"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reserva pagada con exito"),
+            @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado para pagar una reserva de viaje"),
+            @ApiResponse(responseCode = "404", description = "Recurso no encontrado"),
+            @ApiResponse(responseCode = "409", description = "Errores de validaciones", content = @Content),
+    })
+    @PostMapping("/payment")
+    public ResponseEntity<Response<Void>> payReservation(){
+        return new ResponseEntity<>(reservationService.payReservation(), HttpStatus.CREATED);
+    }
+
+    @Operation(
             summary = "Aceptar-Rechazar una reserva de un viaje"
     )
     @ApiResponses({

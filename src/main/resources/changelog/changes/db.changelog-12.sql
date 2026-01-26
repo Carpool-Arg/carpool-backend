@@ -5,3 +5,4 @@ insert into state (name, scope) values ('CLOSED', 'TRIP');
 insert into state (name, scope) values ('CANCELLED', 'TRIP');
 insert into state (name, scope) values ('IN_PROGRESS', 'TRIP');
 insert into state (name, scope) values ('FINISHED', 'TRIP');
+insert into state (name, scope) values ('CLOSED', 'TRIP');

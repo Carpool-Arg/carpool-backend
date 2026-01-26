@@ -56,6 +56,18 @@ public interface IReservationService {
     void cancelBySystem(Long reservationId);
 
     /**
+     * Procesa el pago de una reserva UNPAID.
+     * <p>
+     * Valida que la reserva exista, que pertenezca al usuario autenticado
+     * y que se encuentre en un estado pendiente de pago.
+     * En caso de éxito, la reserva es marcada como completada..
+     * </p>
+     * @throws ResourceNotFoundException
+     * @throws ConflictException
+     */
+    Response<Void> payReservation();
+
+    /**
      * Metodo para finalizar una reserva de un viaje
      * @param reservation
      */

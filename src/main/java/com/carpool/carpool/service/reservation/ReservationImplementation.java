@@ -211,6 +211,24 @@ public class ReservationImplementation implements IReservationService{
     }
 
     @Override
+    public Response<Void> payReservation() {
+        //Validaciones de usuario
+        User userAuth = this.getAuthenticatedActiveUser();
+
+        //Buscar la reserva en estado UNPAID del usuario
+        Reservation reservation = reservationRepository
+                .findUnpaidReservationByUserId(userAuth.getId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "El usuario no tiene una reserva pendiente de pago"
+                ));
+
+        //Cambiar de estado la reserva a completed
+        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, "UNPAID", "COMPLETED");
+
+        return ResponseUtils.buildOKResponse(List.of("Pago realizado con éxito!"), null);
+    }
+
+    @Override
     public Response<Double> calculateTotal(Long idTrip, Long idStartCity, Long idDestinationCity){
         Trip trip = tripRepository.findById(idTrip)
             .orElseThrow(()->new ResourceNotFoundException("El viaje no existe."));
@@ -224,10 +242,11 @@ public class ReservationImplementation implements IReservationService{
         return ResponseUtils.buildOKResponse(List.of("Total calculado con exito"), TripCostUtils.calculateTripTotal(startCity, destinationCity, trip));
     }
 
-
     @Override
     public void finishTripReservation(Reservation reservation){
         stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, "IN_PROGRESS", "UNPAID");
+        notificationService.send(reservation.getUser(), NotificationEventEnum.RESERVATION_UNPAID, reservation);
+
     }
 
     @Override

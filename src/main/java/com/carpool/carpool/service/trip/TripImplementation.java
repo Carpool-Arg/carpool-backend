@@ -81,6 +81,7 @@ public class TripImplementation implements ITripService {
     private static final String STATE_ACCEPTED = "ACCEPTED";
 
 
+
     @Override
     @Transactional
     public Response<Void> createTrip(TripRequestDTO tripRequestDTO) {
@@ -313,22 +314,22 @@ public class TripImplementation implements ITripService {
             stateTransitionService.transition(trip, ScopeEnum.TRIP, "CLOSED", "CANCELLED");
             cancelAllReservations(trip);
             notifyPassengers(trip, NotificationEventEnum.TRIP_CANCELLED_BY_SYSTEM);
-            throw new ConflictException("El tiempo límite para iniciar el viaje ha expirado. El viaje ha sido cancelado automáticamente.");     
+            throw new ConflictException("El tiempo límite para iniciar el viaje ha expirado. El viaje ha sido cancelado automáticamente.");
         }
 
         TripStop startStop = trip.getTripStops().stream()
-                .filter(ts -> ts.getStopOrder() == 1) 
+                .filter(ts -> ts.getStopOrder() == 1)
                 .findFirst()
                 .orElseThrow(() -> new ConflictException("No se encontró la parada inicial del viaje."));
 
-        startStop.setArrivalDateTime(now); 
+        startStop.setArrivalDateTime(now);
         stateTransitionService.transition(trip, ScopeEnum.TRIP, "CLOSED", "IN_PROGRESS");
 
         this.startTripReservation(trip);
         notifyPassengers(trip, NotificationEventEnum.TRIP_STARTED);
 
         CurrentTripResponseDTO responseDTO = tripMapper.covertTripToCurrentTripResponseDTO(trip);
-        
+
         return ResponseUtils.buildOKResponse(List.of("¡Viaje iniciado! Que tengas un buen recorrido."), responseDTO);
     }
 
@@ -437,6 +438,12 @@ public class TripImplementation implements ITripService {
         if (!BaggageEnum.contains(tripRequestDTO.getAvailableBaggage())) {
             throw new ConflictException("El tipo de equipaje es inválido.");
         }
+    }
+    public User getAuthenticatedActiveUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        return userRepository.findByUsernameAndDeletedAtIsNull(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
     }
 
     /**

@@ -69,6 +69,7 @@ public class SpringSecurityConfig {
         .requestMatchers("/password-change", "/password-change/**").permitAll()
         .requestMatchers(HttpMethod.POST, "/auth-google/**").permitAll()
         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+        .requestMatchers("/ws/**").permitAll()
         
         
         // Endpoints para roles específicos
@@ -85,7 +86,8 @@ public class SpringSecurityConfig {
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         )
         .addFilterBefore(new RecaptchaFilter(authRecaptchaService), UsernamePasswordAuthenticationFilter.class)
-        .addFilter(new JwtAuthenticationFilter(authenticationManager(),userRepository, userAccountService, emailImplementation, supportEmail, userTokenRepository, urlUnlockAccount))
+        .addFilter(new JwtAuthenticationFilter(authenticationManager(),userRepository, userAccountService, emailImplementation,
+                supportEmail, userTokenRepository, urlUnlockAccount))
         .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService, userRepository))
         .csrf(config-> config.disable())
         .cors(cors-> cors.configurationSource(corsConfigurationSource()))
