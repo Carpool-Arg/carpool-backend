@@ -334,13 +334,25 @@ public class TripImplementation implements ITripService {
     }
 
     @Override
-    public Response<CurrentTripResponseDTO> getCurrentTrip(){
+    public Response<CurrentTripResponseDTO> getCurrentTrip() {
         Driver driver = getAuthenticatedDriver();
-        Trip currentTrip = tripRepository.findCurrentTripByDriver(driver.getId())
-            .orElseThrow(() -> new EntityNotFoundException("El chofer no tiene un viaje en curso en este momento."));
 
-        return ResponseUtils.buildOKResponse(List.of("Viaje en curso recuperado con éxito"), tripMapper.covertTripToCurrentTripResponseDTO(currentTrip));
+        Optional<Trip> currentTripOpt =
+            tripRepository.findCurrentTripByDriver(driver.getId());
+
+        if (currentTripOpt.isEmpty()) {
+            return ResponseUtils.buildOKResponse(
+                List.of("El chofer no tiene un viaje en curso"),
+                null
+            );
+        }
+
+        return ResponseUtils.buildOKResponse(
+            List.of("Viaje en curso recuperado con éxito"),
+            tripMapper.covertTripToCurrentTripResponseDTO(currentTripOpt.get())
+        );
     }
+
 
     @Override
     public Response<Void> arriveTripStop(TripArriveRequestDTO tripArriveRequestDTO){
