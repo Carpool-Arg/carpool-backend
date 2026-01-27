@@ -225,6 +225,9 @@ public class ReservationImplementation implements IReservationService{
         //Cambiar de estado la reserva a completed
         stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, "UNPAID", "COMPLETED");
 
+        //Enviar email al chofer
+        notificationService.send(reservation.getTrip().getVehicle().getDriver().getUser(), NotificationEventEnum.RESERVATION_PAID, reservation);
+
         return ResponseUtils.buildOKResponse(List.of("Pago realizado con éxito!"), null);
     }
 

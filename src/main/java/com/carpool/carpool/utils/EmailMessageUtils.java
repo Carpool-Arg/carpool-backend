@@ -94,6 +94,22 @@ public class EmailMessageUtils {
                 "Si el pago no es realizado en el plazo estimado, el mismo pasará a estar vencido y se bloqueará su cuenta de CARPOOL..<br>" +
                         "Gracias por ayudarnos a mantener una comunidad justa y confiable.";
 
+        // RESERVATION PAID
+        public static final String SUBJECT_EMAIL_RESERVATION_PAID =
+                "Un pasajero pagó su reserva 🎉";
+
+        public static final String TITLE_RESERVATION_PAID =
+                "Hola {name},";
+
+        public static final String MESSAGE_RESERVATION_PAID =
+                "Queremos informarte que el pasajero {name} ya realizó el pago correspondiente a una reserva de tu viaje.<br><br>" +
+                        "El monto acreditado es de <strong>ARS {total}</strong>.<br><br>" +
+                        "El pago fue procesado correctamente y ya se encuentra registrado en <strong>Carpool</strong>.";
+
+        public static final String MESSAGE_FOOTER_RESERVATION_PAID =
+                "Podés consultar el detalle del viaje y el estado de tus reservas desde la aplicación.<br>" +
+                        "Gracias por confiar en <strong>Carpool</strong> y por ser parte de una comunidad de viajes compartidos.";
+
         // TRIP CLOSED AUTOMATICALLY
         public static final String SUBJECT_TRIP_CLOSED_AUTOMATICALLY = "Tu viaje ya esta listo para arrancar!";
         public static final String TITLE_TRIP_CLOSED_AUTOMATICALLY = "¡Hola, {name}!";
