@@ -2,8 +2,10 @@ package com.carpool.carpool.security.config;
 
 import java.util.Arrays;
 
+import com.carpool.carpool.repository.reservation.ReservationRepository;
 import com.carpool.carpool.repository.user.token.UserTokenRepository;
 import com.carpool.carpool.security.filter.RecaptchaFilter;
+import com.carpool.carpool.security.filter.ReservationStateFilter;
 import com.carpool.carpool.security.handler.JwtAuthenticationEntryPoint;
 import com.carpool.carpool.service.auth.blacklist.IAuthBlacklistService;
 import com.carpool.carpool.service.auth.recaptcha.IAuthRecaptchaService;
@@ -44,6 +46,7 @@ public class SpringSecurityConfig {
     private final UserRepository userRepository;
     private final IEmailService emailImplementation;
     private final UserTokenRepository userTokenRepository;
+    private final ReservationRepository reservationRepository;
 
     @Value("${unlock.account.url}")
     private String urlUnlockAccount;
@@ -89,6 +92,7 @@ public class SpringSecurityConfig {
         .addFilter(new JwtAuthenticationFilter(authenticationManager(),userRepository, userAccountService, emailImplementation,
                 supportEmail, userTokenRepository, urlUnlockAccount))
         .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService, userRepository))
+        .addFilterAfter(new ReservationStateFilter(reservationRepository, userRepository), JwtValidationFilter.class)
         .csrf(config-> config.disable())
         .cors(cors-> cors.configurationSource(corsConfigurationSource()))
         .sessionManagement(managment->managment.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

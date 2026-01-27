@@ -100,4 +100,23 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
     Optional<Reservation> findUnpaidReservationByUserId(
             @Param("userId") Long userId
     );
+
+    /**
+     * Obtiene la reserva del usuario que se encuentra actualmente en estado EXPIRED.
+     *
+     * @param userId id del usuario
+     * @return reserva con estado EXPIRED si existe
+     */
+    @Query("""
+    SELECT r
+    FROM Reservation r
+    JOIN StateHistory sh ON sh.reservation.id = r.id
+    JOIN sh.state s
+    WHERE r.user.id = :userId
+      AND s.name = 'EXPIRED'
+      AND sh.finishDateTime IS NULL
+""")
+    Optional<Reservation> findExpiredReservationByUserId(
+            @Param("userId") Long userId
+    );
 }
