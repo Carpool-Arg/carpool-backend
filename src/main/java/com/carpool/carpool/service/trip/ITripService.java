@@ -99,11 +99,11 @@ public interface ITripService {
      * y de las reservas del mismo viaje.
      *
      * @param tripId Id del viaje a iniciar
-     * @return Response<CurrentTripResponseDTO> devolviendo el viaje iniciado
+     * @return Response<Void> 
      * @throws ResourceNotFoundException
      * @throws ConflictException
      */
-    Response<CurrentTripResponseDTO> startTrip(Long tripId);
+    Response<Void> startTrip(Long tripId);
 
     /**
      * Metodo para devolver el viaje en progreso de un chofer

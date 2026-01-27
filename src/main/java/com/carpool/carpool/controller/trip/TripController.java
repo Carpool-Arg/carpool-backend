@@ -194,8 +194,8 @@ public class TripController {
             @ApiResponse(responseCode = "409", description = "Conflicto con el horario o el estado del viaje", content = @Content)
     })
     @PostMapping("/start")
-    public ResponseEntity<Response<CurrentTripResponseDTO>> startTrip(@Valid @RequestBody TripStartRequestDTO tripStartRequestDTO) {
-        Response<CurrentTripResponseDTO> response = tripService.startTrip(tripStartRequestDTO.getTripId());
+    public ResponseEntity<Response<Void>> startTrip(@Valid @RequestBody TripStartRequestDTO tripStartRequestDTO) {
+        Response<Void> response = tripService.startTrip(tripStartRequestDTO.getTripId());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

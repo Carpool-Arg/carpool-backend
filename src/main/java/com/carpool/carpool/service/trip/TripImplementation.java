@@ -50,7 +50,6 @@ import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.parameters.IParametersService;
 import com.carpool.carpool.service.reservation.IReservationService;
 import com.carpool.carpool.service.state.StateTransitionService;
-import com.carpool.carpool.service.reservation.IReservationService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
 import com.carpool.carpool.service.notification.INotificationService;
@@ -297,8 +296,8 @@ public class TripImplementation implements ITripService {
     }
 
     @Override
-    @Transactional(noRollbackFor = ConflictException.class)
-    public Response<CurrentTripResponseDTO> startTrip(Long tripId) {
+    @Transactional
+    public Response<Void> startTrip(Long tripId) {
         Trip trip = tripRepository.findTripWithAllDetails(tripId)
                 .orElseThrow(() -> new ResourceNotFoundException("Viaje no encontrado."));
 
@@ -311,26 +310,24 @@ public class TripImplementation implements ITripService {
         }
 
         if (now.isAfter(scheduledStart.plusMinutes(15))) {
-            stateTransitionService.transition(trip, ScopeEnum.TRIP, "CLOSED", "CANCELLED");
-            cancelAllReservations(trip);
             notifyPassengers(trip, NotificationEventEnum.TRIP_CANCELLED_BY_SYSTEM);
-            throw new ConflictException("El tiempo límite para iniciar el viaje ha expirado. El viaje ha sido cancelado automáticamente.");
+            stateTransitionService.transition(trip, ScopeEnum.TRIP, "CLOSED", "CANCELLED");
+            cancelAllReservations(trip);            
+            return ResponseUtils.buildErrorResponse(List.of("El tiempo límite para iniciar el viaje ha expirado (máximo 15 min de demora). El viaje ha sido cancelado automáticamente."));
         }
 
         TripStop startStop = trip.getTripStops().stream()
-                .filter(ts -> ts.getStopOrder() == 1)
-                .findFirst()
-                .orElseThrow(() -> new ConflictException("No se encontró la parada inicial del viaje."));
+            .filter(ts -> ts.getStopOrder() == 1)
+            .findFirst()
+            .orElseThrow(() -> new ConflictException("No se encontró la parada inicial del viaje."));
 
         startStop.setArrivalDateTime(now);
+        notifyPassengers(trip, NotificationEventEnum.TRIP_STARTED);
+
         stateTransitionService.transition(trip, ScopeEnum.TRIP, "CLOSED", "IN_PROGRESS");
 
         this.startTripReservation(trip);
-        notifyPassengers(trip, NotificationEventEnum.TRIP_STARTED);
-
-        CurrentTripResponseDTO responseDTO = tripMapper.covertTripToCurrentTripResponseDTO(trip);
-
-        return ResponseUtils.buildOKResponse(List.of("¡Viaje iniciado! Que tengas un buen recorrido."), responseDTO);
+        return ResponseUtils.buildOKResponse(List.of("¡Viaje iniciado! Que tengas un buen recorrido."), null);
     }
 
     @Override
@@ -553,41 +550,6 @@ public class TripImplementation implements ITripService {
         return userRepository.findByUsernameAndDeletedAtIsNull(username)
                 .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."))
                 .getId();
-    }
-
-    /**
-     * Actualiza el estado de un viaje.
-     *
-     * @param trip      el viaje a actualizar
-     * @param stateName el nombre del estado
-     */
-    private void updateTripState(Trip trip, String stateName) {
-        State nextState = stateRepository.findByNameAndScope(stateName, ScopeEnum.TRIP)
-                .orElseThrow(() -> new IllegalStateException("Estado " + stateName + " no encontrado."));
-
-        LocalDateTime now = LocalDateTime.now();
-
-        stateHistoryRepository.findCurrentStateByTrip(trip)
-                .ifPresent(sh -> {
-                    sh.setFinishDateTime(now);
-                    stateHistoryRepository.save(sh);
-                });
-
-        StateHistory newHistory = StateHistory.builder()
-                .trip(trip)
-                .state(nextState)
-                .startDateTime(now)
-                .build();
-        stateHistoryRepository.save(newHistory);
-    }
-
-    /**
-     * Cancela un viaje automaticamente.
-     *
-     * @param trip el viaje a cancelar
-     */
-    private void cancelTripAutomatically(Trip trip) {
-        updateTripState(trip, "CANCELLED");
     }
 
     /**
