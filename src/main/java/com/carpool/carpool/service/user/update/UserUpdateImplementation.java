@@ -30,7 +30,7 @@ import static com.carpool.carpool.utils.EmailMessageUtils.CONFIRM_EMAIL_CHANGE;
 import static com.carpool.carpool.utils.EmailMessageUtils.MESSAGE_EMAIL_CHANGE;
 import static com.carpool.carpool.utils.EmailMessageUtils.MESSAGE_FOOTER_EMAIL_CHANGE;
 import static com.carpool.carpool.utils.EmailMessageUtils.SUBJECT_EMAIL_CHANGE;
-import static com.carpool.carpool.utils.EmailMessageUtils.TITLE_EMAIL_CHANGE;
+import static com.carpool.carpool.utils.EmailMessageUtils.TITLE_GREETING;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -108,7 +108,7 @@ public class UserUpdateImplementation {
         emailService.sendEmail(
             emailRequestDTO.getEmail(),
             SUBJECT_EMAIL_CHANGE,
-            TITLE_EMAIL_CHANGE.replace("{name}", loggedUser.getName()),
+            TITLE_GREETING.replace("{name}", loggedUser.getName()),
             MESSAGE_EMAIL_CHANGE,
             null,
             confirmLink,

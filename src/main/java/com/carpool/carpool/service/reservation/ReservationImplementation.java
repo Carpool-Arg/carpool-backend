@@ -1,27 +1,13 @@
 package com.carpool.carpool.service.reservation;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-
 import com.carpool.carpool.dto.reservation.CreateReservationRequestDTO;
 import com.carpool.carpool.dto.reservation.ReservationDTO;
 import com.carpool.carpool.dto.reservation.ReservationResponseDTO;
 import com.carpool.carpool.dto.reservation.ReservationUpdateRequestDTO;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
+import com.carpool.carpool.enums.reservation.ReservationStateEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
+import com.carpool.carpool.enums.trip.TripStateEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.reservation.ReservationMapper;
@@ -49,17 +35,37 @@ import com.carpool.carpool.utils.TripCostUtils;
 
 
 import jakarta.transaction.Transactional;
+
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReservationImplementation implements IReservationService{
+
     private final TripRepository tripRepository;
     private final StateHistoryRepository stateHistoryRepository;
+    private final ReservationMapper reservationMapper;
     private final UserRepository userRepository;
     private final ReservationRepository reservationRepository;
     private final TripStopRepository  tripStopRepository;
-    private final ReservationMapper reservationMapper;
     private final StateRepository stateRepository;
     private final INotificationService notificationService;
     private final IMediaService mediaService;
@@ -156,47 +162,35 @@ public class ReservationImplementation implements IReservationService{
 
     @Override
     public Response<Void> updateStateReservation(ReservationUpdateRequestDTO reservationUpdateRequestDTO) {
+    	log.info("Iniciando actualizacion de estado de reserva");
+    	final var idReservation = reservationUpdateRequestDTO.getIdReservation();
+        final Reservation reservation = reservationRepository.getReferenceById(idReservation);
 
-        Reservation reservation = reservationRepository.getReferenceById(reservationUpdateRequestDTO.getIdReservation());
         if(reservation == null){
+        	log.error("No se pudo encontrar la reserva en la base de datos con el id: {}", idReservation);
             throw new ResourceNotFoundException("La reserva no existe");
         }
 
-        StateHistory lastestStateReservation = stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservation.getId()).orElseThrow(() -> new ConflictException("La reserva no tiene un estado actual."));
-        if(!STATE_PENDING.equals(lastestStateReservation.getState().getName())){
-            throw new ConflictException("No se puede realizar acciones a la reserva ya que la misma no esta pendiente.");
+        final StateHistory lastestStateReservation = stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservation.getId()).orElseThrow(() -> new ConflictException("La reserva no tiene un estado actual."));
+        final var currentStateReservation = lastestStateReservation.getState();
+        if(currentStateReservation.isFinish()){
+        	log.error("La reserva se encuentra en un estado final: {}", currentStateReservation.getName());
+            throw new ConflictException("No se puede realizar acciones a la reserva ya que se encuentra en un estado final");
         }
-        lastestStateReservation.setFinishDateTime(LocalDateTime.now());
-        Trip trip = reservation.getTrip();
 
-        State state = null;
-        NotificationEventEnum notification = null;
-        if(reservationUpdateRequestDTO.isReject()){
-            state = stateRepository.findByNameAndScope("REJECTED", ScopeEnum.RESERVATION)
-                    .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para cancelar la reserva."));
+        final Trip trip = reservation.getTrip();
 
-            notification = NotificationEventEnum.RESERVATION_REJECTED;
+        NotificationEventEnum notification = NotificationEventEnum.RESERVATION_REJECTED;
+        if(!reservationUpdateRequestDTO.isReject()){
+        	log.info("Iniciando el proceso para aceptar la reserva");
+        	acceptReservation(trip, reservation);
+        	notification = NotificationEventEnum.RESERVATION_ACCEPTED;
         }else{
-            state = stateRepository.findByNameAndScope("ACCEPTED", ScopeEnum.RESERVATION)
-                    .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para aceptar la reserva."));
-
-            final int discountAvailableSeat = trip.getCurrentAvailableSeats() - 1;
-            if(discountAvailableSeat < 0){
-                throw new ConflictException("Se alcanzó el cupo disponible, no se puede aceptar la reserva.");
-            }
-            trip.setCurrentAvailableSeats(discountAvailableSeat);
-            tripRepository.save(trip);
-            notification = NotificationEventEnum.RESERVATION_ACCEPTED;
+        	log.info("Iniciando el proceso para rechazar la reserva");
+        	stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, ReservationStateEnum.IN_PROGRESS.name(), ReservationStateEnum.REJECTED.name());
         }
-
-        StateHistory stateHistory = StateHistory.builder()
-                .reservation(reservation)
-                .state(state)
-                .build();
 
         reservationRepository.save(reservation);
-        stateHistoryRepository.save(lastestStateReservation);
-        stateHistoryRepository.save(stateHistory);
 
         this.notificationService.send(
                 reservation.getUser(),
@@ -208,6 +202,31 @@ public class ReservationImplementation implements IReservationService{
                 "Reserva %s con éxito",
                 reservationUpdateRequestDTO.isReject() ? "cancelada" : "aceptada");
         return ResponseUtils.buildOKResponse(List.of(message), null);
+    }
+
+    /**
+     * Metodo encargado de aceptar una reserva, realizar el cambio de estado y enviar la notificacion al conductor de que el viaje ya alcanzo el cupo maximo
+     * @param trip				El viaje al que se le realizaron las reservas
+     * @param reservation		Reserva realizada al viaje
+     */
+    private void acceptReservation(Trip trip, Reservation reservation) {
+    	final int discountAvailableSeat = trip.getCurrentAvailableSeats() - 1;
+        if(discountAvailableSeat < 0){
+        	log.error("El viaje ya alcanzo el cupo maximo. Asientos disponibles: [ {} ]", discountAvailableSeat);
+            throw new ConflictException("Se alcanzó el cupo disponible, no se puede aceptar la reserva.");
+        }
+        if(discountAvailableSeat == 0){
+        	stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, ReservationStateEnum.PENDING.name(), ReservationStateEnum.ACCEPTED.name());
+        	stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CREATED.name(), TripStateEnum.CLOSED.name());
+
+            this.notificationService.send(
+                    trip.getVehicle().getDriver().getUser(),
+                    NotificationEventEnum.TRIP_FULL,
+                    trip);
+        }
+
+        trip.setCurrentAvailableSeats(discountAvailableSeat);
+        tripRepository.save(trip);
     }
 
     @Override

@@ -251,7 +251,4 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         LIMIT 1
     """, nativeQuery = true)
     Optional<Trip> findCurrentTripByDriver(@Param("driverId") Long driverId);
-
-
-
 }

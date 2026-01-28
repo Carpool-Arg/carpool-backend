@@ -158,7 +158,7 @@ public class TripImplementation implements ITripService {
         if (trips.isEmpty()) {
             return ResponseUtils.buildOKResponse(List.of("No existen viajes publicados por el chofer"), null);
         }
-        trips.stream().peek(System.out::println);
+
         List<TripDriverDTO> listTripDriver = tripMapper.convertTripToTripDriverResponseDTO(trips);
         TripDriverResponseDTO response = new TripDriverResponseDTO();
         response.setTrips(listTripDriver);
@@ -312,7 +312,7 @@ public class TripImplementation implements ITripService {
         if (now.isAfter(scheduledStart.plusMinutes(15))) {
             notifyPassengers(trip, NotificationEventEnum.TRIP_CANCELLED_BY_SYSTEM);
             stateTransitionService.transition(trip, ScopeEnum.TRIP, "CLOSED", "CANCELLED");
-            cancelAllReservations(trip);            
+            cancelAllReservations(trip);
             return ResponseUtils.buildErrorResponse(List.of("El tiempo límite para iniciar el viaje ha expirado (máximo 15 min de demora). El viaje ha sido cancelado automáticamente."));
         }
 

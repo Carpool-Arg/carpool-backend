@@ -32,7 +32,7 @@ public class NewReservationNotificationImplementation implements INotificationCo
                 .pushTitle("¡Nueva Reserva!")
                 .pushBody(passengerName + " quiere unirse a tu viaje.")
                 .emailSubject(SUBJECT_EMAIL_NEW_RESERVATION)
-                .emailTitle(TITLE_NEW_RESERVATION.replace("{name}", reservation.getTrip().getVehicle().getDriver().getUser().getName()))
+                .emailTitle(TITLE_GREETING.replace("{name}", reservation.getTrip().getVehicle().getDriver().getUser().getName()))
                 .emailMessage(MESSAGE_NEW_RESERVATION.replace("{passengerName}", passengerName))
                 .emailOptionalMessage(null)
                 .emailButtonUrl(urlViewReservation.replace("{value}",String.valueOf(reservation.getTrip().getId())))

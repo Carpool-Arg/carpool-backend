@@ -30,7 +30,7 @@ public class RejectReservationNotificationImplementation implements INotificatio
                 .pushBody(String.format("%s, tu solicitud de reserva para el viaje de %s -> %s, fue rechazada.",
                         passengerName, reservation.getStartCity().getCity().getName(), reservation.getDestinationCity().getCity().getName()))
                 .emailSubject(SUBJECT_EMAIL_RESERVATION_REJECTED)
-                .emailTitle(TITLE_RESERVATION_REJECTED.replace("{name}", reservation.getUser().getName()))
+                .emailTitle(TITLE_GREETING.replace("{name}", reservation.getUser().getName()))
                 .emailMessage(MESSAGE_RESERVATION_REJECTED
                         .replace("{origin}", reservation.getStartCity().getCity().getName())
                         .replace("{destination}", reservation.getDestinationCity().getCity().getName())
