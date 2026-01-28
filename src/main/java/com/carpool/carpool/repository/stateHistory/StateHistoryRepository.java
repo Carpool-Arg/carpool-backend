@@ -1,16 +1,15 @@
 package com.carpool.carpool.repository.stateHistory;
 
-import com.carpool.carpool.enums.state.ScopeEnum;
-import com.carpool.carpool.dto.user.UserDebtResponseDTO;
-import com.carpool.carpool.model.stateHistory.StateHistory;
-import com.carpool.carpool.model.trip.Trip;
-import org.springframework.data.repository.query.Param;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Optional;
+import com.carpool.carpool.dto.user.UserDebtResponseDTO;
+import com.carpool.carpool.enums.state.ScopeEnum;
+import com.carpool.carpool.model.stateHistory.StateHistory;
+import com.carpool.carpool.model.trip.Trip;
 
 public interface StateHistoryRepository extends JpaRepository<StateHistory, Long> {
 	
@@ -22,7 +21,6 @@ public interface StateHistoryRepository extends JpaRepository<StateHistory, Long
 
     Optional<StateHistory> findByReservationIdAndFinishDateTimeIsNull(Long idReservation);
 
-    Optional<StateHistory> findByTripIdAndFinishDateTimeIsNull(Long idTrip);
 
     @Query("""
     SELECT new com.carpool.carpool.dto.user.UserDebtResponseDTO(
