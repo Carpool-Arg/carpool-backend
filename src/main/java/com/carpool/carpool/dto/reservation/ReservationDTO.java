@@ -1,10 +1,9 @@
 package com.carpool.carpool.dto.reservation;
 
-import com.carpool.carpool.model.trip.tripStop.TripStop;
+import java.time.LocalDateTime;
+
 import lombok.Builder;
 import lombok.Getter;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Builder

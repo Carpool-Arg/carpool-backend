@@ -6,6 +6,7 @@ import com.carpool.carpool.security.utils.JwtUtils;
 import com.carpool.carpool.utils.ResponseUtils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import static com.carpool.carpool.security.config.TokenJwtConfig.*;
 
@@ -15,8 +16,8 @@ import java.util.List;
  * Se encarga de validar el refresh token, verificar la blacklist y emitir un nuevo access token.
  */
 @Service
+@RequiredArgsConstructor
 public class AuthImplementation implements IAuthService{
-
     /**
      * Genera un nuevo access token a partir de un refresh token válido.
      *

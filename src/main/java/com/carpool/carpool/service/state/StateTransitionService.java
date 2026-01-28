@@ -40,7 +40,7 @@ public class StateTransitionService {
               .findFirst()
               .orElseThrow(() ->
                       new IllegalStateException("No existe handler para el scope " + scope));
-      
+
       final State newState = stateRepository
               .findByNameAndScope(newStateName, scope)
               .orElseThrow(() -> {
@@ -48,13 +48,13 @@ public class StateTransitionService {
             	  return new ResourceNotFoundException("No se encontró el estado " + newStateName);
               });
 
-      
+
       final StateHistory current = finder.findCurrent(entity)
               .orElseThrow(() -> {
             	  log.error("La entidad no cuenta con un estado actual");
             	  return new ConflictException("La entidad no tiene un estado actual");
               });
-      
+
       final var currentState = current.getState();
       if(currentState.isFinish()) {
     	  log.error("El estado actual en el que se encuentra el registro es un estado final");

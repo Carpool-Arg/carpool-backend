@@ -69,7 +69,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private final IUserAccountService userAccountService;
     private final IEmailService emailImplementation;
     private final UserTokenRepository userTokenRepository;
-
     private String currentUsername;
     private final String supportEmail;
 
@@ -137,7 +136,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         //Reseteamos la cantidad de intentos fallidos para ese usuario (a 0)
         userAccountService.resetFailedAttempts(user);
-
 
         // Extraer el nombre de usuario del usuario autenticado
         String username = authenticatedUser.getUsername();
