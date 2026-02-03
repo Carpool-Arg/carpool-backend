@@ -292,6 +292,14 @@ public class ReservationImplementation implements IReservationService{
     }
 
     @Override
+    public void cancelReservation(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada."));
+
+        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, "ACCEPTED", "CANCELLED");
+    }
+
+    @Override
     public void cancelBySystem(Long reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada con ID: " + reservationId));

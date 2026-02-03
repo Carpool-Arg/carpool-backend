@@ -3,6 +3,7 @@ package com.carpool.carpool.controller.trip;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.carpool.carpool.dto.trip.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,15 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
-import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
-import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
-import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
-import com.carpool.carpool.dto.trip.TripRequestDTO;
-import com.carpool.carpool.dto.trip.TripResponseDTO;
-import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
-import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
-import com.carpool.carpool.dto.trip.TripStartRequestDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.trip.ITripService;
 
@@ -196,6 +188,18 @@ public class TripController {
     @PostMapping("/start")
     public ResponseEntity<Response<Void>> startTrip(@Valid @RequestBody TripStartRequestDTO tripStartRequestDTO) {
         Response<Void> response = tripService.startTrip(tripStartRequestDTO.getTripId());
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Cancelar un viaje programado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Viaje cancelado con éxito"),
+            @ApiResponse(responseCode = "400", description = "Solicitud inválida", content = @Content),
+            @ApiResponse(responseCode = "404", description = "El viaje no existe", content = @Content),
+    })
+    @PostMapping("/cancell")
+    public ResponseEntity<Response<Void>> cancelTrip(@Valid @RequestBody TripCancellRequestDTO tripCancellRequestDTO) {
+        Response<Void> response = tripService.cancelTrip(tripCancellRequestDTO);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

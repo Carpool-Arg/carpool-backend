@@ -8,19 +8,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.carpool.carpool.dto.trip.*;
+import com.carpool.carpool.service.state.TripStateHistoryFinder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
-import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
-import com.carpool.carpool.dto.trip.TripDriverDTO;
-import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
-import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
-import com.carpool.carpool.dto.trip.TripRequestDTO;
-import com.carpool.carpool.dto.trip.TripResponseDTO;
-import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
-import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
@@ -76,6 +69,7 @@ public class TripImplementation implements ITripService {
     private final IReservationService reservationService;
     private final INotificationService notificationService;
     private final StateTransitionService stateTransitionService;
+    private final TripStateHistoryFinder tripStateHistoryFinder;
 
     private static final String STATE_ACCEPTED = "ACCEPTED";
 
@@ -328,6 +322,40 @@ public class TripImplementation implements ITripService {
 
         this.startTripReservation(trip);
         return ResponseUtils.buildOKResponse(List.of("¡Viaje iniciado! Que tengas un buen recorrido."), null);
+    }
+
+    @Override
+    @Transactional
+    public Response<Void> cancelTrip(TripCancellRequestDTO tripCancellRequestDTO) {
+        Trip trip = tripRepository.findTripWithAllDetails(tripCancellRequestDTO.getTripId())
+                .orElseThrow(() -> new ResourceNotFoundException("Viaje no encontrado."));
+
+        StateHistory currentState = tripStateHistoryFinder
+                .findCurrent(trip)
+                .orElseThrow(() ->
+                        new IllegalStateException("El viaje no tiene un estado actual")
+                );
+
+        String stateName = currentState.getState().getName();
+
+        if (!stateName.equals("CREATED") && !stateName.equals("CLOSED")) {
+            throw new ConflictException("No tienes permitido cancelar un viaje debido a su estado actual");
+        }
+
+        List<Reservation> acceptedReservations = reservationRepository.findByTripIdAndStateName(trip.getId(),
+                STATE_ACCEPTED);
+
+        if (acceptedReservations.isEmpty() && (tripCancellRequestDTO.getReason() == null || tripCancellRequestDTO.getReason().isBlank())){
+            throw new ConflictException("Este viaje cuenta con reservas activas, por lo que tenés que justificar el motivo de su cancelación.");
+        }
+
+        stateTransitionService.transition(trip, ScopeEnum.TRIP, stateName, "CANCELLED");
+
+        for (Reservation res : acceptedReservations) {
+            reservationService.cancelReservation(res.getId());
+        }
+
+        return ResponseUtils.buildOKResponse(List.of("Viaje cancelado con éxito."), null);
     }
 
     @Override
