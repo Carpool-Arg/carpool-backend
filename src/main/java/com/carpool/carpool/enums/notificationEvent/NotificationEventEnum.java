@@ -22,5 +22,6 @@ public enum NotificationEventEnum {
     TRIP_STARTED,
     RESERVATION_UNPAID,
     RESERVATION_PAID,
-    TRIP_FULL
+    TRIP_FULL,
+    TRIP_CANCELLED
 }

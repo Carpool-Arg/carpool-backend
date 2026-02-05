@@ -197,7 +197,7 @@ public class TripController {
             @ApiResponse(responseCode = "400", description = "Solicitud inválida", content = @Content),
             @ApiResponse(responseCode = "404", description = "El viaje no existe", content = @Content),
     })
-    @PostMapping("/cancell")
+    @PostMapping("/cancel")
     public ResponseEntity<Response<Void>> cancelTrip(@Valid @RequestBody TripCancellRequestDTO tripCancellRequestDTO) {
         Response<Void> response = tripService.cancelTrip(tripCancellRequestDTO);
         return new ResponseEntity<>(response, HttpStatus.OK);

@@ -345,14 +345,28 @@ public class TripImplementation implements ITripService {
         List<Reservation> acceptedReservations = reservationRepository.findByTripIdAndStateName(trip.getId(),
                 STATE_ACCEPTED);
 
-        if (acceptedReservations.isEmpty() && (tripCancellRequestDTO.getReason() == null || tripCancellRequestDTO.getReason().isBlank())){
-            throw new ConflictException("Este viaje cuenta con reservas activas, por lo que tenés que justificar el motivo de su cancelación.");
+        // Validar que si hay reservas activas, debe haber una razón
+        if (!acceptedReservations.isEmpty()) {
+            if (tripCancellRequestDTO.getReason() == null || tripCancellRequestDTO.getReason().isBlank()) {
+                throw new ConflictException("Este viaje cuenta con reservas activas, por lo que tenés que justificar el motivo de su cancelación.");
+            }
+            trip.setCancellationReason(tripCancellRequestDTO.getReason());
+        } else {
+            // Si no hay reservas, la razón es opcional pero si se proporciona, guardarla
+            if (tripCancellRequestDTO.getReason() != null && !tripCancellRequestDTO.getReason().isBlank()) {
+                trip.setCancellationReason(tripCancellRequestDTO.getReason());
+            }
         }
 
         stateTransitionService.transition(trip, ScopeEnum.TRIP, stateName, "CANCELLED");
 
         for (Reservation res : acceptedReservations) {
             reservationService.cancelReservation(res.getId());
+
+            this.notificationService.send(
+                    res.getUser(),
+                    NotificationEventEnum.TRIP_CANCELLED,
+                    trip);
         }
 
         return ResponseUtils.buildOKResponse(List.of("Viaje cancelado con éxito."), null);

@@ -25,12 +25,12 @@ public class TripCancelledBySystemNotificationImplementation implements INotific
         String destination = res.getDestinationCity().getCity().getName();
 
         return NotificationPayloadDTO.builder()
-                .pushTitle(PUSH_TITLE_TRIP_CANCELLED)
-                .pushBody(String.format(PUSH_BODY_TRIP_CANCELLED, destination))
-                .emailSubject(SUBJECT_TRIP_CANCELLED)
-                .emailTitle(TITLE_TRIP_CANCELLED)
-                .emailMessage(String.format(MESSAGE_TRIP_CANCELLED, destination))
-                .emailMessageFooter(FOOTER_TRIP_CANCELLED)
+                .pushTitle(PUSH_TITLE_TRIP_CANCELLED_BY_SYSTEM)
+                .pushBody(String.format(PUSH_BODY_TRIP_CANCELLED_BY_SYSTEM, destination))
+                .emailSubject(SUBJECT_TRIP_CANCELLED_BY_SYSTEM)
+                .emailTitle(TITLE_TRIP_CANCELLED_BY_SYSTEM)
+                .emailMessage(String.format(MESSAGE_TRIP_CANCELLED_BY_SYSTEM, destination))
+                .emailMessageFooter(FOOTER_TRIP_CANCELLED_BY_SYSTEM)
                 .build();
     }
 }
