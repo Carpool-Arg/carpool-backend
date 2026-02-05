@@ -100,8 +100,14 @@ public class User implements Serializable {
     @Column(name="last_failed_login_time")
     private Date lastFailedLoginTime;
 
-    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL,orphanRemoval = true)
-    private List<Review> reviews;
+    @Column(name="rating")
+    private double rating;
+
+    @OneToMany(mappedBy = "reviewerUser",cascade = CascadeType.ALL,orphanRemoval = true)
+    private List<Review> writtenReviews;
+
+    @OneToMany(mappedBy = "targetUser",cascade = CascadeType.ALL,orphanRemoval = true)
+    private List<Review> recievedReviews;
 
     @PrePersist
     protected void onCreate() {

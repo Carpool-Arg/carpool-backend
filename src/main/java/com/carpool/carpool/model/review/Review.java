@@ -39,11 +39,19 @@ public class Review {
 
   @ManyToOne
   @JoinColumn(
-    name = "user_id",
+    name = "target_user_id",
     referencedColumnName = "id",
     nullable = false
   )
-  private User user;
+  private User targetUser;
+
+  @ManyToOne
+  @JoinColumn(
+    name = "reviewer_user_id",
+    referencedColumnName = "id",
+    nullable = false
+  )
+  private User reviewerUser;
 
   @ManyToOne
   @JoinColumn(
