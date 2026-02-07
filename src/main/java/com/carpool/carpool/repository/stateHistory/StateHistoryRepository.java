@@ -1,7 +1,9 @@
 package com.carpool.carpool.repository.stateHistory;
 
+import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -53,5 +55,19 @@ public interface StateHistoryRepository extends JpaRepository<StateHistory, Long
         AND sh.reservation IS NULL
     """)
     Optional<StateHistory> findCurrentStateByTrip(@Param("trip") Trip trip);
+    
+	@Query("""
+			SELECT DISTINCT t
+			FROM Trip t
+			JOIN Reservation r ON r.trip = t
+			JOIN StateHistory sh ON sh.trip = t
+			JOIN State s ON s = sh.state
+			LEFT JOIN FETCH t.tripStops ts
+			WHERE r.user.id = :userId
+			  AND sh.finishDateTime IS NULL
+			  AND s.name IN :states
+			""")
+	List<Trip> findTripsByUserAndCurrentStates(@Param("userId") Long userId, @Param("states") List<String> states,
+			Pageable pageable);
 
 }

@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
 import com.carpool.carpool.dto.trip.TripDriverDTO;
+import com.carpool.carpool.dto.trip.TripHistoryResponseDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 
 import org.springframework.stereotype.Component;
@@ -108,14 +109,7 @@ public class TripMapper {
        
         List<TripStopResponseDTO> tripStopResponseDTOs = getTripstopResponseDTO(trip);
         
-        Vehicle vehicleEntity = trip.getVehicle();
-        VehicleResponseTripDTO vehicle = VehicleResponseTripDTO.builder()
-            .domain(vehicleEntity.getDomain())
-            .vehicleTypeName(vehicleEntity.getVehicleType().getName())
-            .brand(vehicleEntity.getBrand())
-            .model(vehicleEntity.getModel())
-            .color(vehicleEntity.getColor())
-            .build();
+        VehicleResponseTripDTO vehicleEntity =  mapVehicleToVehicleResponseDTO(trip.getVehicle());
 
         DriverSearchResponseDTO driverSearchDTO = DriverSearchResponseDTO.builder()
             .fullName(user.getName() + " " + user.getLastname()) 
@@ -127,13 +121,32 @@ public class TripMapper {
             .id(trip.getId())
             .driverInfo(driverSearchDTO)
             .tripStops(tripStopResponseDTOs)
-            .vehicle(vehicle)
+            .vehicle(vehicleEntity)
             .startDateTime(trip.getStartTripDateTime())
             .availableSeat(trip.getAvailableSeat())
             .currentAvailableSeats(trip.getCurrentAvailableSeats())
             .availableBaggage(trip.getAvailableBaggage().toString())
             .seatPrice(roundPrice(trip.getPublishedSeatPrice())) 
             .build();
+    }
+    
+    public TripHistoryResponseDTO convertTripToHistoryDTO(Trip trip) {
+
+        Driver driver = trip.getVehicle().getDriver();
+        User user = driver.getUser();
+        VehicleResponseTripDTO vehicleEntity =  mapVehicleToVehicleResponseDTO(trip.getVehicle());
+
+        return TripHistoryResponseDTO.builder()
+                .tripId(trip.getId())
+                .startDateTime(trip.getStartTripDateTime())
+                .driverName(user.getName() + " " + user.getLastname())
+                .driverProfileImage(
+                    mediaService.getProfilePictureUrlByUserId(user.getId())
+                )
+                .driverRating(driver.getRating())
+                .vehicle(vehicleEntity)
+                .tripStops(getTripstopResponseDTO(trip))
+                .build();
     }
 
     public CurrentTripResponseDTO covertTripToCurrentTripResponseDTO(Trip trip){
@@ -297,6 +310,16 @@ public class TripMapper {
             .orElseThrow(() -> new IllegalStateException(
                 "El viaje no tiene un estado actual"
             ));
+    }
+    
+    private VehicleResponseTripDTO mapVehicleToVehicleResponseDTO(Vehicle vehicleEntity) {
+        return VehicleResponseTripDTO.builder()
+                .domain(vehicleEntity.getDomain())
+                .vehicleTypeName(vehicleEntity.getVehicleType().getName())
+                .brand(vehicleEntity.getBrand())
+                .model(vehicleEntity.getModel())
+                .color(vehicleEntity.getColor())
+                .build();
     }
 
 }

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
 import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
 import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
+import com.carpool.carpool.dto.trip.TripHistoryResponseDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
@@ -78,6 +79,17 @@ public class TripController {
     public  Response<Void> checkTripAvailability(@RequestParam String startDateTime) {
         return tripService.checkTripAvailability(LocalDateTime.parse(startDateTime));
     }
+    
+    // TODO: ver los codigo http que se pueden retornar
+//	@Operation(summary = "Obtiene el historial de viajes de un pasajero")
+//	@ApiResponses({ @ApiResponse(responseCode = "200", description = "El viaje es posible"),
+//			@ApiResponse(responseCode = "400", description = "Solicitud inválida"), })
+//	@GetMapping("/history-trip-user")
+//	public Response<List<TripHistoryResponseDTO>> getHistoryTripUser(
+//		    @RequestParam(required = true) List<String> namesStateTrip,
+//		    @RequestParam(required = false, defaultValue = "0") int skip) {
+//		return tripService.getHistoryTripUser(namesStateTrip, skip);
+//	}
 
     @Operation(
             summary = "Obtener el feed inicial de viajes"

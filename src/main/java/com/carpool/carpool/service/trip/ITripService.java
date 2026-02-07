@@ -27,6 +27,14 @@ public interface ITripService {
      * @throws ResourceNotFoundException si el viaje no existe
      */
     Response<TripResponseDTO> getTripDetails(Long id);
+    
+    /**
+     * Metodo para obtener el historial de viajes de un pasajero
+     * @param namesStateTrip	Lista con nombre de estados de un viaje
+     * @param skip				Numero de pagina
+     * @return
+     */
+    Response<List<TripHistoryResponseDTO>> getHistoryTripUser(List<String> namesStateTrip, int skip);
 
     /**
      * Metodo para verificar la disponibilidad de un viaje.

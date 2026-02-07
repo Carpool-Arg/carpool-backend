@@ -11,11 +11,14 @@ import java.util.stream.Collectors;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
 import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
 import com.carpool.carpool.dto.trip.TripDriverDTO;
 import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
+import com.carpool.carpool.dto.trip.TripHistoryResponseDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
@@ -78,8 +81,6 @@ public class TripImplementation implements ITripService {
     private final StateTransitionService stateTransitionService;
 
     private static final String STATE_ACCEPTED = "ACCEPTED";
-
-
 
     @Override
     @Transactional
@@ -219,6 +220,35 @@ public class TripImplementation implements ITripService {
 
     }
 
+	@Override
+	public Response<List<TripHistoryResponseDTO>> getHistoryTripUser(List<String> namesStateTrip, int skip) {
+		
+		Long userId = getAuthenticatedUserId();
+		
+		 List<String> existingStates =
+		            stateRepository.findExistingStateNames(ScopeEnum.TRIP, namesStateTrip);
+		 
+		 if(existingStates.size() != namesStateTrip.size()) {
+			List<String> invalidStates = namesStateTrip.stream().filter(state -> !existingStates.contains(state)).toList();
+
+			throw new ResourceNotFoundException("Estados inválidos: " + String.join(", ", invalidStates));
+		 }
+		
+		List<Trip> trips = stateHistoryRepository.findTripsByUserAndCurrentStates(userId, namesStateTrip, getPageable(skip));
+		
+	    if(trips.isEmpty()){return ResponseUtils.buildOKResponse(List.of("El pasajero no cuenta con viajes"), List.of());}
+		
+	    List<TripHistoryResponseDTO> response =
+	            trips.stream()
+	                    .map(tripMapper::convertTripToHistoryDTO)
+	                    .toList();
+	    
+	    return ResponseUtils.buildOKResponse(
+	    		List.of("Viajes obtenidos correctamente"),
+	    		response
+	    );
+	}
+    
     @Override
     public Response<Boolean> isTripCreator(Long tripId) {
 
@@ -596,5 +626,16 @@ public class TripImplementation implements ITripService {
                     res);
         }
     }
+    
+    /**
+     * Permite crear un objeto {@link Pageable} para filtrar por paginado
+     * @param skip	Pagina que se desea obtener
+     * @return Objeto {@link Pageable}
+     */
+    private Pageable getPageable(int skip) {
+        final int PAGE_SIZE = 10;
+        int page = skip / PAGE_SIZE;
 
+        return PageRequest.of(page, PAGE_SIZE);
+      }
 }
