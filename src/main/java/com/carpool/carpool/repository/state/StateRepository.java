@@ -14,14 +14,11 @@ import org.springframework.data.jpa.repository.Query;
 public interface StateRepository extends JpaRepository<State, Long> {
     Optional<State> findByNameAndScope(String name, ScopeEnum scope);
     
-    @Query("""
-    		SELECT s.name
-    		FROM State s
-    		WHERE s.scope = :scope
-    		  AND s.name IN :names
-    		""")
-	List<String> findExistingStateNames(
-	        @Param("scope") ScopeEnum scope,
-	        @Param("names") List<String> names
-	);
+	@Query("""
+			SELECT s.name
+			FROM State s
+			WHERE s.scope = :scope
+			  AND s.name IN :names
+			""")
+	List<String> findExistingStateNames(@Param("scope") ScopeEnum scope, @Param("names") List<String> names);
 }

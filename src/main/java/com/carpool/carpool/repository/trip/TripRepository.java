@@ -254,30 +254,25 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     """, nativeQuery = true)
     Optional<Trip> findCurrentTripByDriver(@Param("driverId") Long driverId);
     
-    @Query(
-    	    value = """
-    	        SELECT DISTINCT t
-    	        FROM Trip t
-    	        JOIN Reservation r ON r.trip = t
-    	        JOIN StateHistory sh ON sh.trip = t
-    	        JOIN State s ON s = sh.state
-    	        WHERE r.user.id = :userId
-    	          AND sh.finishDateTime IS NULL
-    	          AND s.name IN :states
-    	    """,
-    	    countQuery = """
-    	        SELECT COUNT(DISTINCT t.id)
-    	        FROM Trip t
-    	        JOIN Reservation r ON r.trip = t
-    	        JOIN StateHistory sh ON sh.trip = t
-    	        JOIN State s ON s = sh.state
-    	        WHERE r.user.id = :userId
-    	          AND sh.finishDateTime IS NULL
-    	          AND s.name IN :states
-    	    """
-    	)
-    Page<Trip> findTripsByUserAndCurrentStates(
-    	    @Param("userId") Long userId,
-    	    @Param("states") List<String> states,
-    	    Pageable pageable);
+	@Query(value = """
+			    SELECT DISTINCT t
+			    FROM Trip t
+			    JOIN Reservation r ON r.trip = t
+			    JOIN StateHistory sh ON sh.trip = t
+			    JOIN State s ON s = sh.state
+			    WHERE r.user.id = :userId
+			      AND sh.finishDateTime IS NULL
+			      AND s.name IN :states
+			""", countQuery = """
+			    SELECT COUNT(DISTINCT t.id)
+			    FROM Trip t
+			    JOIN Reservation r ON r.trip = t
+			    JOIN StateHistory sh ON sh.trip = t
+			    JOIN State s ON s = sh.state
+			    WHERE r.user.id = :userId
+			      AND sh.finishDateTime IS NULL
+			      AND s.name IN :states
+			""")
+	Page<Trip> findTripsByUserAndCurrentStates(@Param("userId") Long userId, @Param("states") List<String> states,
+			Pageable pageable);
 }
