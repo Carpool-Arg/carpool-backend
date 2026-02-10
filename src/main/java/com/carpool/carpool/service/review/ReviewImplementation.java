@@ -37,7 +37,7 @@ public class ReviewImplementation implements IReviewService{
 
     List<Review> reviews = reviewRepository.findReviewsByTargetUser(driver.getUser().getId(),getPageable(orderBy, skip));
 
-    if(reviews.size() == 0){
+    if(reviews.isEmpty()){
       return ResponseUtils.buildOKResponse(List.of("El chofer no tiene reseñas"),null); 
     }
 
@@ -64,8 +64,8 @@ public class ReviewImplementation implements IReviewService{
     Sort sort = switch (type) {
         case "RATING_DESC" -> Sort.by("stars").descending();
         case "RATING_ASC"  -> Sort.by("stars").ascending();
-        case "RECENT"      -> Sort.by("created_at").descending();
-        default            -> Sort.by("created_at").descending();
+        case "RECENT"      -> Sort.by("createdAt").descending();
+        default            -> Sort.by("createdAt").descending();
     };
 
     return PageRequest.of(page, PAGE_SIZE, sort);

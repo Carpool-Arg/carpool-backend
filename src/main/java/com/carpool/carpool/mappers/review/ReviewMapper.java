@@ -13,13 +13,12 @@ public class ReviewMapper {
 
 
   public DriverReviewResponseDTO convertReviewToDriverReviewResponseDTO(Review review){
-    DriverReviewResponseDTO driverReviewResponseDTO = DriverReviewResponseDTO.builder()
+    return DriverReviewResponseDTO.builder()
       .reviewId(review.getId())
       .stars(review.getStars())
-      .createdAt(review.getCreated_at())
+      .createdAt(review.getCreatedAt())
       .description(review.getDescription())
-      .build();
+    .build();
 
-    return driverReviewResponseDTO;
   }
 }

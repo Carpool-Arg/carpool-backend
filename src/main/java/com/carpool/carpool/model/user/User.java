@@ -104,10 +104,10 @@ public class User implements Serializable {
     private double rating;
 
     @OneToMany(mappedBy = "reviewerUser",cascade = CascadeType.ALL,orphanRemoval = true)
-    private List<Review> writtenReviews;
+    private transient List<Review> writtenReviews;
 
     @OneToMany(mappedBy = "targetUser",cascade = CascadeType.ALL,orphanRemoval = true)
-    private List<Review> recievedReviews;
+    private transient List<Review> recievedReviews;
 
     @PrePersist
     protected void onCreate() {
