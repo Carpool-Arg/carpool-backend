@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.user.User;
-import com.google.auto.value.AutoValue.Builder;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,6 +16,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -39,11 +39,21 @@ public class Review {
 
   @ManyToOne
   @JoinColumn(
-    name = "user_id",
+    name = "target_user_id",
     referencedColumnName = "id",
     nullable = false
   )
-  private User user;
+
+  private User targetUser;
+
+  @ManyToOne
+  @JoinColumn(
+    name = "reviewer_user_id",
+    referencedColumnName = "id",
+    nullable = false
+  )
+
+  private User reviewerUser;
 
   @ManyToOne
   @JoinColumn(
@@ -51,6 +61,7 @@ public class Review {
     referencedColumnName = "id",
     nullable = false
   )
+
   private Trip trip;
 
   @Column(name = "created_at", nullable = false, updatable = false)
@@ -62,15 +73,14 @@ public class Review {
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
-
   @PrePersist
   protected void onCreate() {
-      this.created_at = LocalDateTime.now();
+    this.created_at = LocalDateTime.now();
   }
 
   @PreUpdate
   protected void onUpdate() {
-      this.updated_at = LocalDateTime.now();
+    this.updated_at = LocalDateTime.now();
   }
-    
 }
+
