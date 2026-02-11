@@ -4,6 +4,8 @@ import com.carpool.carpool.dto.notificationPayload.NotificationPayloadDTO;
 import com.carpool.carpool.enums.dispatchPolicy.DispatchPolicyEnum;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 
+import java.util.List;
+
 public interface INotificationContentService<T>{
     /**
      * Devuelve el evento de negocio específico que maneja la implementación.
@@ -30,6 +32,20 @@ public interface INotificationContentService<T>{
      * @return El {@link DispatchPolicyEnum} asociado a esta notificación.
      */
     DispatchPolicyEnum getPolicy();
+
+    /**
+     * Define la secuencia o estrategia de despacho, permitiendo mecanismos de fallback.
+     * <p>
+     * Por defecto, devuelve una lista que contiene únicamente la política definida en {@link #getPolicy()}.
+     * Si se requiere un flujo tipo "WebSocket -> Push then Email", esta es la función a sobrescribir
+     * en la implementación específica.
+     * </p>
+     *
+     * @return Una lista ordenada de {@link DispatchPolicyEnum} que representa la jerarquía de despacho.
+     */
+    default List<DispatchPolicyEnum> getDispatchStrategy() {
+        return List.of(getPolicy());
+    }
 
     /**
      * Construye el payload de notificación

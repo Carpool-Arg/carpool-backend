@@ -5,6 +5,7 @@ import com.carpool.carpool.dto.reservation.ReservationResponseDTO;
 import com.carpool.carpool.dto.reservation.ReservationUpdateRequestDTO;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.UnauthorizedException;
+import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 
@@ -15,6 +16,8 @@ public interface IReservationService {
      * @throws ResourceNotFoundException
      */
     Response<Void> createReservation(CreateReservationRequestDTO createReservationRequestDTO);
+
+    Response<Double> calculateTotal(Long idTrip, Long idStartCity, Long idDestinationCity);
 
     /**
      * Metodo encargado de obtener las reservas realizadas a un viaje. Solamente es accesible por aquellos usuarios que poseen el rol
@@ -38,4 +41,35 @@ public interface IReservationService {
      * @throws ConflictException
      */
     Response<Void> updateStateReservation(ReservationUpdateRequestDTO reservationUpdateRequestDTO);
+
+    /**
+     * Método para que cambia el estado de las reservas a IN_PROGRESS que señala el inicio de un viaje.
+     * @param reservationId id de la reserva del usuario para un viaje.
+     */
+    void startTripReservation(Long reservationId);
+
+    /**
+     * Método que cancela la reserva de un viaje, en caso de que el viaje no salga y se de, de baja por motivos de inpuntualidad.
+     * @param reservationId
+     * @param reason
+     */
+    void cancelBySystem(Long reservationId);
+
+    /**
+     * Procesa el pago de una reserva UNPAID.
+     * <p>
+     * Valida que la reserva exista, que pertenezca al usuario autenticado
+     * y que se encuentre en un estado pendiente de pago.
+     * En caso de éxito, la reserva es marcada como completada..
+     * </p>
+     * @throws ResourceNotFoundException
+     * @throws ConflictException
+     */
+    Response<Void> payReservation();
+
+    /**
+     * Metodo para finalizar una reserva de un viaje
+     * @param reservation
+     */
+    void finishTripReservation(Reservation reservation);
 }

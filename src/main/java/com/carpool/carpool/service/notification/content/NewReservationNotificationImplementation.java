@@ -4,12 +4,15 @@ import com.carpool.carpool.dto.notificationPayload.NotificationPayloadDTO;
 import com.carpool.carpool.enums.dispatchPolicy.DispatchPolicyEnum;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.model.reservation.Reservation;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import static com.carpool.carpool.utils.EmailMessageUtils.*;
 
 @Component
 public class NewReservationNotificationImplementation implements INotificationContentService<Reservation> {
+    @Value("${redirect.view.reservation}")
+    private String urlViewReservation;
 
     @Override
     public NotificationEventEnum getEvent() {
@@ -29,10 +32,10 @@ public class NewReservationNotificationImplementation implements INotificationCo
                 .pushTitle("¡Nueva Reserva!")
                 .pushBody(passengerName + " quiere unirse a tu viaje.")
                 .emailSubject(SUBJECT_EMAIL_NEW_RESERVATION)
-                .emailTitle(TITLE_NEW_RESERVATION.replace("{name}", reservation.getTrip().getVehicle().getDriver().getUser().getName()))
+                .emailTitle(TITLE_GREETING.replace("{name}", reservation.getTrip().getVehicle().getDriver().getUser().getName()))
                 .emailMessage(MESSAGE_NEW_RESERVATION.replace("{passengerName}", passengerName))
                 .emailOptionalMessage(null)
-                .emailButtonUrl("")
+                .emailButtonUrl(urlViewReservation.replace("{value}",String.valueOf(reservation.getTrip().getId())))
                 .emailButtonText(BUTTON_NEW_RESERVATION)
                 .emailMessageFooter(MESSAGE_FOOTER_NEW_RESERVATION)
                 .build();

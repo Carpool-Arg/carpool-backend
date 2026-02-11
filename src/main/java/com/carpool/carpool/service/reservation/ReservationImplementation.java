@@ -1,20 +1,40 @@
 package com.carpool.carpool.service.reservation;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+
 import com.carpool.carpool.dto.reservation.CreateReservationRequestDTO;
 import com.carpool.carpool.dto.reservation.ReservationDTO;
 import com.carpool.carpool.dto.reservation.ReservationResponseDTO;
 import com.carpool.carpool.dto.reservation.ReservationUpdateRequestDTO;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
+import com.carpool.carpool.enums.reservation.ReservationStateEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
+import com.carpool.carpool.enums.trip.TripStateEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.reservation.ReservationMapper;
+import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.state.State;
 import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.user.User;
+import com.carpool.carpool.repository.city.CityRepository;
 import com.carpool.carpool.repository.reservation.ReservationRepository;
 import com.carpool.carpool.repository.reservation.ReservationSpecification;
 import com.carpool.carpool.repository.state.StateRepository;
@@ -26,38 +46,30 @@ import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.filter.RecaptchaFilter;
 import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.notification.INotificationService;
+import com.carpool.carpool.service.state.StateTransitionService;
 import com.carpool.carpool.utils.ResponseUtils;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
+import com.carpool.carpool.utils.TripCostUtils;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReservationImplementation implements IReservationService{
+
     private final TripRepository tripRepository;
     private final StateHistoryRepository stateHistoryRepository;
+    private final ReservationMapper reservationMapper;
     private final UserRepository userRepository;
     private final ReservationRepository reservationRepository;
     private final TripStopRepository  tripStopRepository;
-    private final ReservationMapper reservationMapper;
     private final StateRepository stateRepository;
     private final INotificationService notificationService;
     private final IMediaService mediaService;
+    private final CityRepository cityRepository;
+    private final StateTransitionService stateTransitionService;
 
-    private static final String STATE_PENDING = "PENDING";
 
     @Override
     public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, Boolean baggage, String nameState, int page, int size) {
@@ -124,7 +136,8 @@ public class ReservationImplementation implements IReservationService{
                 userAuth,
                 trip,
                 tripStops[0],
-                tripStops[1]
+                tripStops[1],
+                TripCostUtils.calculateTripTotal(tripStops[0].getCity(), tripStops[1].getCity(), trip)
         );
 
         //Creacion de reserva
@@ -147,47 +160,35 @@ public class ReservationImplementation implements IReservationService{
 
     @Override
     public Response<Void> updateStateReservation(ReservationUpdateRequestDTO reservationUpdateRequestDTO) {
+    	log.info("Iniciando actualizacion de estado de reserva");
+    	final var idReservation = reservationUpdateRequestDTO.getIdReservation();
+        final Reservation reservation = reservationRepository.getReferenceById(idReservation);
 
-        Reservation reservation = reservationRepository.getReferenceById(reservationUpdateRequestDTO.getIdReservation());
         if(reservation == null){
+        	log.error("No se pudo encontrar la reserva en la base de datos con el id: {}", idReservation);
             throw new ResourceNotFoundException("La reserva no existe");
         }
 
-        StateHistory lastestStateReservation = stateHistoryRepository.findTopByReservationIdOrderByStartDateTimeDesc(reservation.getId());
-        if(!STATE_PENDING.equals(lastestStateReservation.getState().getName())){
+        final StateHistory lastestStateReservation = stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservation.getId()).orElseThrow(() -> new ConflictException("La reserva no tiene un estado actual."));
+        final var currentStateReservation = lastestStateReservation.getState();
+        if(currentStateReservation.isFinish()){
+        	log.error("La reserva se encuentra en un estado final: {}", currentStateReservation.getName());
             throw new ConflictException("No se puede realizar acciones a la reserva ya que se encuentra en un estado final");
         }
-        lastestStateReservation.setFinishDateTime(LocalDateTime.now());
-        Trip trip = reservation.getTrip();
 
-        State state = null;
-        NotificationEventEnum notification = null;
-        if(reservationUpdateRequestDTO.isReject()){
-            state = stateRepository.findByNameAndScope("REJECTED", ScopeEnum.RESERVATION)
-                    .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para cancelar la reserva."));
+        final Trip trip = reservation.getTrip();
 
-            notification = NotificationEventEnum.RESERVATION_REJECTED;
+        NotificationEventEnum notification = NotificationEventEnum.RESERVATION_REJECTED;
+        if(!reservationUpdateRequestDTO.isReject()){
+        	log.info("Iniciando el proceso para aceptar la reserva");
+        	acceptReservation(trip, reservation);
+        	notification = NotificationEventEnum.RESERVATION_ACCEPTED;
         }else{
-            state = stateRepository.findByNameAndScope("ACCEPTED", ScopeEnum.RESERVATION)
-                    .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para aceptar la reserva."));
-
-            final int discountAvailableSeat = trip.getCurrentAvailableSeats() - 1;
-            if(discountAvailableSeat < 0){
-                throw new ConflictException("Se alcanzó el cupo disponible, no se puede aceptar la reserva.");
-            }
-            trip.setCurrentAvailableSeats(discountAvailableSeat);
-            tripRepository.save(trip);
-            notification = NotificationEventEnum.RESERVATION_ACCEPTED;
+        	log.info("Iniciando el proceso para rechazar la reserva");
+        	stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, ReservationStateEnum.IN_PROGRESS.name(), ReservationStateEnum.REJECTED.name());
         }
 
-        StateHistory stateHistory = StateHistory.builder()
-                .reservation(reservation)
-                .state(state)
-                .build();
-
         reservationRepository.save(reservation);
-        stateHistoryRepository.save(lastestStateReservation);
-        stateHistoryRepository.save(stateHistory);
 
         this.notificationService.send(
                 reservation.getUser(),
@@ -199,6 +200,122 @@ public class ReservationImplementation implements IReservationService{
                 "Reserva %s con éxito",
                 reservationUpdateRequestDTO.isReject() ? "cancelada" : "aceptada");
         return ResponseUtils.buildOKResponse(List.of(message), null);
+    }
+
+    /**
+     * Metodo encargado de aceptar una reserva, realizar el cambio de estado y enviar la notificacion al conductor de que el viaje ya alcanzo el cupo maximo
+     * @param trip				El viaje al que se le realizaron las reservas
+     * @param reservation		Reserva realizada al viaje
+     */
+    private void acceptReservation(Trip trip, Reservation reservation) {
+    	final int discountAvailableSeat = trip.getCurrentAvailableSeats() - 1;
+        if(discountAvailableSeat < 0){
+        	log.error("El viaje ya alcanzo el cupo maximo. Asientos disponibles: [ {} ]", discountAvailableSeat);
+            throw new ConflictException("Se alcanzó el cupo disponible, no se puede aceptar la reserva.");
+        }
+        if(discountAvailableSeat == 0){
+        	stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CREATED.name(), TripStateEnum.CLOSED.name());
+
+            this.notificationService.send(
+                    trip.getVehicle().getDriver().getUser(),
+                    NotificationEventEnum.TRIP_FULL,
+                    trip);
+        }
+        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, ReservationStateEnum.PENDING.name(), ReservationStateEnum.ACCEPTED.name());
+        trip.setCurrentAvailableSeats(discountAvailableSeat);
+        tripRepository.save(trip);
+    }
+
+    @Override
+    public Response<Void> payReservation() {
+        //Validaciones de usuario
+        User userAuth = this.getAuthenticatedActiveUser();
+
+        //Buscar la reserva en estado UNPAID del usuario
+        Reservation reservation = reservationRepository
+                .findUnpaidReservationByUserId(userAuth.getId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "El usuario no tiene una reserva pendiente de pago"
+                ));
+
+        //Cambiar de estado la reserva a completed
+        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, "UNPAID", "COMPLETED");
+
+        //Enviar email al chofer
+        notificationService.send(reservation.getTrip().getVehicle().getDriver().getUser(), NotificationEventEnum.RESERVATION_PAID, reservation);
+
+        return ResponseUtils.buildOKResponse(List.of("Pago realizado con éxito!"), null);
+    }
+
+    @Override
+    public Response<Double> calculateTotal(Long idTrip, Long idStartCity, Long idDestinationCity){
+        Trip trip = tripRepository.findById(idTrip)
+            .orElseThrow(()->new ResourceNotFoundException("El viaje no existe."));
+
+        City startCity = cityRepository.findById(idStartCity)
+            .orElseThrow(()-> new ConflictException("No se pudo encontrar la ciudad de origen."));
+
+        City destinationCity = cityRepository.findById(idDestinationCity)
+            .orElseThrow(()-> new ConflictException("No se pudo encontrar la ciudad de destino."));
+
+        return ResponseUtils.buildOKResponse(List.of("Total calculado con exito"), TripCostUtils.calculateTripTotal(startCity, destinationCity, trip));
+    }
+
+    @Override
+    public void finishTripReservation(Reservation reservation){
+        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, "IN_PROGRESS", "UNPAID");
+        notificationService.send(reservation.getUser(), NotificationEventEnum.RESERVATION_UNPAID, reservation);
+
+    }
+
+    @Override
+    public void startTripReservation(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada."));
+
+        State inProgressState = stateRepository.findByNameAndScope("IN_PROGRESS", ScopeEnum.RESERVATION)
+                .orElseThrow(() -> new ResourceNotFoundException("Estado IN_PROGRESS no encontrado para RESERVATION."));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservationId)
+                .ifPresent(sh -> {
+                    sh.setFinishDateTime(now);
+                    stateHistoryRepository.save(sh);
+                });
+
+        StateHistory newHistory = StateHistory.builder()
+                .reservation(reservation)
+                .state(inProgressState)
+                .startDateTime(now)
+                .build();
+
+        stateHistoryRepository.save(newHistory);
+    }
+
+    @Override
+    public void cancelBySystem(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada con ID: " + reservationId));
+
+        State cancelledState = stateRepository.findByNameAndScope("CANCELLED", ScopeEnum.RESERVATION)
+                .orElseThrow(() -> new ResourceNotFoundException("Estado CANCELLED no encontrado para RESERVATION."));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservationId)
+                .ifPresent(sh -> {
+                    sh.setFinishDateTime(now);
+                    stateHistoryRepository.save(sh);
+                });
+
+        StateHistory newHistory = StateHistory.builder()
+                .reservation(reservation)
+                .state(cancelledState)
+                .startDateTime(now)
+                .build();
+
+        stateHistoryRepository.save(newHistory);
     }
 
     /**

@@ -29,7 +29,7 @@ public class AcceptReservationNotificationImplementation implements INotificatio
                 .pushBody(String.format("%s, tenés tu lugar asegurado para el viaje de %s > %s",
                         passengerName, reservation.getStartCity().getCity().getName(), reservation.getDestinationCity().getCity().getName()))
                 .emailSubject(SUBJECT_EMAIL_RESERVATION_ACCEPTED)
-                .emailTitle(TITLE_RESERVATION_ACCEPTED.replace("{name}", reservation.getUser().getName()))
+                .emailTitle(TITLE_GREETING.replace("{name}", reservation.getUser().getName()))
                 .emailMessage(MESSAGE_RESERVATION_ACCEPTED
                         .replace("{origin}", reservation.getStartCity().getCity().getName())
                         .replace("{destination}", reservation.getDestinationCity().getCity().getName())

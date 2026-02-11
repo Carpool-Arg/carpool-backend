@@ -3,11 +3,9 @@ package com.carpool.carpool.service.notification.dispatcher;
 import com.carpool.carpool.dto.notificationPayload.NotificationPayloadDTO;
 import com.carpool.carpool.enums.dispatchPolicy.DispatchPolicyEnum;
 import com.carpool.carpool.model.user.User;
-import com.carpool.carpool.service.notification.NotificationImplementation;
 import com.carpool.carpool.service.notification.dispatch.INotificationDispatchPolicyService;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,26 +16,30 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class NotificationDispatcherImplementation implements INotificationDispatcherService {
+    // Mapa que asocia cada política (WS, PUSH, EMAIL) con su implementación real
     private final Map<DispatchPolicyEnum, INotificationDispatchPolicyService> policyStrategies;
-    private static final Logger logger = LoggerFactory.getLogger(NotificationDispatcherImplementation.class);
 
     @Autowired
-    public  NotificationDispatcherImplementation(List<INotificationDispatchPolicyService> strategies) {
-        // Inyección de todas las estrategias de canal en un mapa para acceso
+    public NotificationDispatcherImplementation(List<INotificationDispatchPolicyService> strategies) {
+        // Transformamos la lista de servicios inyectados en un mapa para acceso O(1)
         this.policyStrategies = strategies.stream()
                 .collect(Collectors.toMap(INotificationDispatchPolicyService::getPolicy, Function.identity()));
     }
 
     @Override
-    public void dispatch(User user, NotificationPayloadDTO payload, DispatchPolicyEnum policy) {
+    public boolean dispatch(User user, NotificationPayloadDTO payload, DispatchPolicyEnum policy) {
+        // 1. Buscamos el servicio de envío correspondiente (ej. el de WebSocket)
         INotificationDispatchPolicyService strategy = policyStrategies.get(policy);
+
         if (strategy == null) {
-            throw new UnsupportedOperationException("Política de despacho no soportada: " + policy);
+            log.error("No se encontró una implementación para la política: {}", policy);
+            return false;
         }
 
-        logger.info("Dispatcher: strategy {}", strategy.getPolicy());
-        // Delega a la estrategia de canal correcta
-        strategy.execute(user, payload);
+        // 2. Intentamos el envío y retornamos el resultado (true/false)
+        // Esto es vital para saber si el fallback debe activarse
+        return strategy.execute(user, payload);
     }
 }

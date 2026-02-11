@@ -23,4 +23,7 @@ public class State {
     @Enumerated(EnumType.STRING)
     @Column(name="scope", nullable = false)
     private ScopeEnum scope;
+    
+    @Column(name="finish", nullable = false)
+    private boolean finish;
 }

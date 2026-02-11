@@ -30,25 +30,25 @@ public class User implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     private String name;
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     private String lastname;
 
-    @Column(nullable = false, unique = true, length = 25)
+    @Column(unique = true, length = 25)
     private String username;
 
     @Column(nullable = false, unique = true, length = 75)
     private String email;
 
-    @Column(nullable = false, length = 255)
+    @Column(length = 255)
     private String password;
 
-    @Column(nullable = false, unique = true, length = 8)
+    @Column(unique = true, length = 8)
     private String dni;
 
-    @Column(nullable = false, length = 25)
+    @Column(length = 25)
     private String phone;
 
     @Column(name = "birth_date")

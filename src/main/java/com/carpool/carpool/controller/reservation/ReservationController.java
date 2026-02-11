@@ -42,6 +42,21 @@ public class ReservationController {
     }
 
     @Operation(
+        summary = "Calcular total a pagar para una reserva"
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Total calculado con éxito",content = @Content)
+    })
+    @GetMapping("/calculate-total")
+    public ResponseEntity<Response<Double>> calculateTotal(
+        @RequestParam(required = true) @Positive(message = "El id del viaje debe ser mayor que 0") Long idTrip,
+        @RequestParam(required = false) Long idStartCity,
+        @RequestParam(required = false) Long idDestinationCity)
+    {
+        return new ResponseEntity<>(reservationService.calculateTotal(idTrip,idStartCity,idDestinationCity),HttpStatus.OK);     
+    }
+
+    @Operation(
             summary = "Solicitar una reserva de un viaje"
     )
     @ApiResponses({
@@ -55,6 +70,22 @@ public class ReservationController {
     @PostMapping
     public ResponseEntity<Response<Void>> createReservation(@Valid @RequestBody CreateReservationRequestDTO createReservationRequestDTO){
         return new ResponseEntity<>(reservationService.createReservation(createReservationRequestDTO), HttpStatus.CREATED);
+    }
+
+    @Operation(
+            summary = "Pagar la reserva con estado UNPAID del usuario en sesión"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reserva pagada con exito"),
+            @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado para pagar una reserva de viaje"),
+            @ApiResponse(responseCode = "404", description = "Recurso no encontrado"),
+            @ApiResponse(responseCode = "409", description = "Errores de validaciones", content = @Content),
+    })
+    @PostMapping("/payment")
+    public ResponseEntity<Response<Void>> payReservation(){
+        return new ResponseEntity<>(reservationService.payReservation(), HttpStatus.CREATED);
     }
 
     @Operation(

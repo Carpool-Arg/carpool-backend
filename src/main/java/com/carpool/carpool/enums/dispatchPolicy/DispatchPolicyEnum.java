@@ -13,5 +13,6 @@ public enum DispatchPolicyEnum{
     PUSH_THEN_EMAIL,
     EMAIL_ONLY,
     PUSH_ONLY,
-    PUSH_AND_EMAIL
+    PUSH_AND_EMAIL,
+    WEB_SOCKET
 }
