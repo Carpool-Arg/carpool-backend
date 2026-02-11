@@ -21,10 +21,12 @@ import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
 import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
 import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
+import com.carpool.carpool.dto.trip.TripUpdateRequestDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.enums.trip.BaggageEnum;
+import com.carpool.carpool.enums.trip.TripStateEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.trip.TripMapper;
@@ -57,9 +59,11 @@ import com.carpool.carpool.service.notification.INotificationService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TripImplementation implements ITripService {
 
     private final VehicleRepository vehicleRepository;
@@ -78,8 +82,6 @@ public class TripImplementation implements ITripService {
     private final StateTransitionService stateTransitionService;
 
     private static final String STATE_ACCEPTED = "ACCEPTED";
-
-
 
     @Override
     @Transactional
@@ -382,6 +384,33 @@ public class TripImplementation implements ITripService {
             return ResponseUtils.buildOKResponse(List.of("Llegada a parada registrada con éxito.") , null);
         }
     }
+    
+	@Override
+	public Response<Void> updateTrip(TripUpdateRequestDTO tripUpdateRequestDTO) {
+		
+		 Driver driver = getAuthenticatedDriver();
+		 
+		 final var idTrip = tripUpdateRequestDTO.getIdTrip();
+		 Trip trip = tripRepository.findById(idTrip)
+		            .orElseThrow(() -> {
+		            	log.error("No existe el viaje con id: {}", idTrip);
+		            	return new EntityNotFoundException("No existe un viaje");
+		            });
+		 
+		 final var currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(idTrip)
+		            .orElseThrow(() -> {
+		            	log.error("El viaje con id: {} no tiene un estado actual", idTrip);
+		            	return new EntityNotFoundException("El viaje no presenta un estado actual");
+		            });
+		 
+		 if(!TripStateEnum.CREATED.name().equals(currentStateTrip.getState().getName())) {
+			 throw new ConflictException("Solamente se pueden editar viajes que se encuentren en estado CREADO");
+		 }
+		 
+		 
+		// TODO Auto-generated method stub
+		return null;
+	}
 
     private Response<Void> finishTrip(Trip trip){
         stateTransitionService.transition(trip, ScopeEnum.TRIP, "IN_PROGRESS", "FINISHED");
@@ -596,5 +625,4 @@ public class TripImplementation implements ITripService {
                     res);
         }
     }
-
 }

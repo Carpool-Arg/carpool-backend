@@ -124,4 +124,7 @@ public interface ITripService {
      *         peticion
      */
     Response<Void> arriveTripStop(TripArriveRequestDTO tripArriveRequestDTO);
+    
+    Response<Void> updateTrip(TripUpdateRequestDTO tripUpdateRequestDTO);
+    
 }

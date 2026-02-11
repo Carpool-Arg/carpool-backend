@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,6 +23,7 @@ import com.carpool.carpool.dto.trip.TripResponseDTO;
 import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
 import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
 import com.carpool.carpool.dto.trip.TripStartRequestDTO;
+import com.carpool.carpool.dto.trip.TripUpdateRequestDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.trip.ITripService;
 
@@ -197,5 +199,18 @@ public class TripController {
     public ResponseEntity<Response<Void>> startTrip(@Valid @RequestBody TripStartRequestDTO tripStartRequestDTO) {
         Response<Void> response = tripService.startTrip(tripStartRequestDTO.getTripId());
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    
+    @Operation(
+            summary = "Aceptar-Rechazar una reserva de un viaje"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reservas aceptada-cancelada con éxito"),
+            @ApiResponse(responseCode = "404", description = "Recurso no encontrado"),
+            @ApiResponse(responseCode = "409", description = "Cupo de asientos ocupados", content = @Content),
+    })
+    @PutMapping
+    public ResponseEntity<Response<Void>> updateTrip(@Valid @RequestBody TripUpdateRequestDTO tripUpdateRequestDTO){
+        return new ResponseEntity<Response<Void>>(tripService.updateTrip(tripUpdateRequestDTO), HttpStatus.OK);
     }
 }
