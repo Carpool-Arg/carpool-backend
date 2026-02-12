@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.carpool.carpool.dto.user.UserDebtResponseDTO;
 import com.carpool.carpool.enums.state.ScopeEnum;
+import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
 
@@ -45,6 +46,15 @@ public interface StateHistoryRepository extends JpaRepository<StateHistory, Long
         AND sh.finishDateTime IS NULL
     """)
     boolean isCurrentState(@Param("trip") Trip trip, @Param("name") String name, @Param("scope") ScopeEnum scope);
+
+    @Query("""
+        SELECT COUNT(sh) > 0 FROM StateHistory sh 
+        WHERE sh.reservation = :reservation 
+        AND sh.state.name = :name 
+        AND sh.state.scope = :scope 
+        AND sh.finishDateTime IS NULL
+    """)
+    boolean isCurrentStateReservation(@Param("reservation") Reservation reservation, @Param("name") String name, @Param("scope") ScopeEnum scope);
 
     @Query("""
         SELECT sh FROM StateHistory sh 

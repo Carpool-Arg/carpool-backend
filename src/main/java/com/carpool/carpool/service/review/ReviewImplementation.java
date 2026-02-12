@@ -42,20 +42,21 @@ public class ReviewImplementation implements IReviewService {
     private final ReservationRepository reservationRepository;
     private final DriverRepository driverRepository;
     private final ReviewMapper reviewMapper;
+    private final ModerationService moderationService;
 
-    private static final List<String> FORBIDDEN_WORDS = List.of(
-        "boludo", "pelotudo", "otario", "otario de mierda", "gil",
-        "forro", "conchudo", "conchuda", "papudo", "papuda", "paporroto", "garca", "careta", "chanta", "turro",
-        "sorete", "sorete con patas", "pedazo de mierda", "mierda", "kpo", "kpo de mierda",
-        "hijo de puta", "hdp", "hijo de re mil puta", "la puta que te parió", "la puta que te remil parió", "la puta madre",
-        "la concha de tu madre", "la concha tuya", "la concha de tu hermana", "la concha de la lora", "uh la concha de la yuta",
-        "culo", "culeado", "qué culeado", "culeadazo", "orto", "que te den por el orto", "metételo en el orto",
-        "chupamedias", "chupapijas",
-        "gorreado", "no seas gorreado", "chomazo", "chomi", "ocote", "da ocote", "qué ocote", "chivazo", "mocazo",
-        "pijudo", "garcha", "mamón", "reventado", "trucho",
-        "¡andá a cagar, forro!", "¡qué pelotudo sos, loco!", "¡sos un sorete, eh!", "¡qué garca sos!", 
-        "¡otario, aprendé!", "¡papudo de mierda!", "¡no seas tan culeado!"
-    );
+    // private static final List<String> FORBIDDEN_WORDS = List.of(
+    //     "boludo", "pelotudo", "otario", "otario de mierda", "gil",
+    //     "forro", "conchudo", "conchuda", "papudo", "papuda", "paporroto", "garca", "careta", "chanta", "turro",
+    //     "sorete", "sorete con patas", "pedazo de mierda", "mierda", "kpo", "kpo de mierda",
+    //     "hijo de puta", "hdp", "hijo de re mil puta", "la puta que te parió", "la puta que te remil parió", "la puta madre",
+    //     "la concha de tu madre", "la concha tuya", "la concha de tu hermana", "la concha de la lora", "uh la concha de la yuta",
+    //     "culo", "culeado", "qué culeado", "culeadazo", "orto", "que te den por el orto", "metételo en el orto",
+    //     "chupamedias", "chupapijas",
+    //     "gorreado", "no seas gorreado", "chomazo", "chomi", "ocote", "da ocote", "qué ocote", "chivazo", "mocazo",
+    //     "pijudo", "garcha", "mamón", "reventado", "trucho",
+    //     "¡andá a cagar, forro!", "¡qué pelotudo sos, loco!", "¡sos un sorete, eh!", "¡qué garca sos!", 
+    //     "¡otario, aprendé!", "¡papudo de mierda!", "¡no seas tan culeado!"
+    // );
 
     @Override
     @Transactional
@@ -72,31 +73,37 @@ public class ReviewImplementation implements IReviewService {
                 });
 
         if (!stateHistoryRepository.isCurrentState(trip, "FINISHED", ScopeEnum.TRIP)) {
-            log.warn("Intento de reseña fallido: El viaje {} no está en estado FINISHED", trip.getId());
+            log.warn("Intento de reseña fallido: El viaje {} no está FINISHED", trip.getId());
             throw new ConflictException("Solo se puede reseñar un viaje que haya finalizado.");
         }
 
         if (reviewRepository.existsByReviewerUserIdAndTripId(userReviewer.getId(), trip.getId())) {
-            log.warn("Intento de reseña duplicada: Usuario {} ya reseñó el viaje {}", userReviewer.getId(), trip.getId());
+            log.warn("Intento de crear reseña duplicada: El usuario {} ya ha reseñado el viaje {}", userReviewer.getId(), trip.getId());
             throw new ConflictException("Ya has realizado una reseña para este viaje.");
         }
 
         Reservation reservation = reservationRepository.findReservationByUserAndTrip(userReviewer.getId(), trip.getId())
-                .orElseThrow(() -> new ConflictException("No tienes una reserva asociada a este viaje."));
+             .orElseThrow(() -> new ConflictException("No tienes una reserva asociada a este viaje."));
 
-        if (!stateHistoryRepository.isCurrentState(reservation.getTrip(), "COMPLETED", ScopeEnum.RESERVATION)) {
-            log.warn("Intento de reseña sin pago: Reserva {} del usuario {} no está COMPLETED", reservation.getId(), userReviewer.getId());
+        if (!stateHistoryRepository.isCurrentStateReservation(reservation, "COMPLETED", ScopeEnum.RESERVATION)) {
+            log.warn("Reserva {} no está COMPLETED", reservation.getId());
             throw new ConflictException("Solo se puede reseñar un viaje que hayas completado y abonado.");
         }
 
         log.debug("Validaciones exitosas. Aplicando filtro de palabras a la descripción.");
-        String cleanDescription = filterBadWords(reviewRequestDTO.getDescription());
+        
+        if (moderationService.isToxic(reviewRequestDTO.getDescription())) {
+            log.warn("Reseña bloqueada por contenido ofensivo (IA). Usuario: {}", userReviewer.getUsername());
+            throw new ConflictException("Tu comentario ha sido detectado como ofensivo. Por favor, mantén el respeto.");
+        }
+
+        log.debug("Validaciones de seguridad y contenido exitosas.");
 
         User targetUser = trip.getVehicle().getDriver().getUser();
 
         Review review = Review.builder()
                 .stars(reviewRequestDTO.getStars())
-                .description(cleanDescription)
+                .description(reviewRequestDTO.getDescription())
                 .reviewerUser(userReviewer)
                 .targetUser(targetUser)
                 .trip(trip)
@@ -168,17 +175,17 @@ public class ReviewImplementation implements IReviewService {
                 .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."));
     }
 
-    /**
-     * Reemplaza palabras prohibidas en el texto con asteriscos. La comparación es case-insensitive.
-     * @param text El texto a filtrar
-     * @return El texto filtrado, con las palabras prohibidas reemplazadas por "***". Si el texto es null o está en blanco, se devuelve sin cambios.
-     */
-    private String filterBadWords(String text) {
-        if (text == null || text.isBlank()) return text;
-        String filtered = text;
-        for (String word : FORBIDDEN_WORDS) {
-            filtered = filtered.replaceAll("(?i)" + word, "***");
-        }
-        return filtered;
-    }
+    // /**
+    //  * Reemplaza palabras prohibidas en el texto con asteriscos. La comparación es case-insensitive.
+    //  * @param text El texto a filtrar
+    //  * @return El texto filtrado, con las palabras prohibidas reemplazadas por "***". Si el texto es null o está en blanco, se devuelve sin cambios.
+    //  */
+    // private String filterBadWords(String text) {
+    //     if (text == null || text.isBlank()) return text;
+    //     String filtered = text;
+    //     for (String word : FORBIDDEN_WORDS) {
+    //         filtered = filtered.replaceAll("(?i)" + word, "***");
+    //     }
+    //     return filtered;
+    // }
 }

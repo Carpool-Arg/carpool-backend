@@ -5,7 +5,6 @@ import com.carpool.carpool.dto.review.ReviewResponseDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.review.IReviewService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
