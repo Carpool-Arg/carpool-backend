@@ -26,7 +26,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
      * @param userId ID del usuario para el cual se desea calcular el promedio de rating
      * @return El promedio de estrellas recibido por el usuario, o null si no tiene reseñas
      */
-   @Query("""
+    @Query("""
         SELECT AVG(r.stars) 
         FROM Review r 
         WHERE r.targetUser.id = :userId 
@@ -40,4 +40,5 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
      * @return Lista de reseñas recibidas por el usuario target, sin incluir las reseñas eliminadas
      */
     List<Review> findByTargetUserIdAndDeletedAtIsNull(Long targetUserId);
+    
 }

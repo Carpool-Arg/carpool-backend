@@ -24,6 +24,30 @@ public class ReviewController {
 
     private final IReviewService reviewService;
 
+
+    @Operation(
+        summary = "Obtener reseñas de un usuario",
+        description = "Devuelve la lista de reseñas recibidas por un usuario específico (chofer)."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de reseñas obtenida correctamente"),
+        @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    })
+    @GetMapping("/target/{targetUserId}")
+    public ResponseEntity<Response<List<ReviewResponseDTO>>> getReviewsByTargetUser(
+            @PathVariable Long targetUserId) {
+        
+        Response<List<ReviewResponseDTO>> serviceResponse = reviewService.getReviewsByTargetUser(targetUserId);
+        return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
+    }
+
+
+    
+    @GetMapping("/can-review/{tripId}")
+    public ResponseEntity<Response<Boolean>> canReview(@PathVariable("tripId") Long tripId) {
+        return ResponseEntity.ok(reviewService.canUserReviewTrip(tripId));
+    }
+    
     @Operation(
         summary = "Crear una nueva reseña",
         description = "Permite a un pasajero reseñar a un chofer tras finalizar un viaje abonado. Valida estados de viaje y evita duplicados."
@@ -42,19 +66,5 @@ public class ReviewController {
         return new ResponseEntity<>(serviceResponse, HttpStatus.CREATED);
     }
 
-    @Operation(
-        summary = "Obtener reseñas de un usuario",
-        description = "Devuelve la lista de reseñas recibidas por un usuario específico (chofer)."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Lista de reseñas obtenida correctamente"),
-        @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
-    })
-    @GetMapping("/target/{targetUserId}")
-    public ResponseEntity<Response<List<ReviewResponseDTO>>> getReviewsByTargetUser(
-            @PathVariable Long targetUserId) {
-        
-        Response<List<ReviewResponseDTO>> serviceResponse = reviewService.getReviewsByTargetUser(targetUserId);
-        return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
-    }
+    
 }

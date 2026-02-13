@@ -92,6 +92,7 @@ public class ReviewImplementation implements IReviewService {
 
         log.debug("Validaciones exitosas. Aplicando filtro de palabras a la descripción.");
         
+
         if (moderationService.isToxic(reviewRequestDTO.getDescription())) {
             log.warn("Reseña bloqueada por contenido ofensivo (IA). Usuario: {}", userReviewer.getUsername());
             throw new ConflictException("Tu comentario ha sido detectado como ofensivo. Por favor, mantén el respeto.");
@@ -137,6 +138,27 @@ public class ReviewImplementation implements IReviewService {
                 .toList();
 
         return ResponseUtils.buildOKResponse(List.of("Reseñas obtenidas con éxito"), responseList);
+    }
+
+    @Override
+    public Response<Boolean> canUserReviewTrip(Long tripId) {
+        User user = GetAuthenticatedUser();
+        
+        
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new ResourceNotFoundException("Viaje no encontrado"));
+
+
+        boolean belongsToTrip = reservationRepository.existsByUserIdAndTripId(user.getId(), tripId);
+        
+        boolean isFinished = stateHistoryRepository.isCurrentState(trip, "FINISHED", ScopeEnum.TRIP);
+
+        boolean result = belongsToTrip && isFinished;
+
+        log.info("Verificación canReview: Usuario {}, Viaje {}, Resultado: {}", 
+                user.getUsername(), tripId, result);
+        
+        return ResponseUtils.buildOKResponse(List.of("Usuario habilitado para dejar su reseña sobre el viaje " + tripId), result);
     }
 
     /**

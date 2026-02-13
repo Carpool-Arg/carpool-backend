@@ -4,6 +4,8 @@ import java.util.List;
 
 import com.carpool.carpool.dto.review.ReviewRequestDTO;
 import com.carpool.carpool.dto.review.ReviewResponseDTO;
+import com.carpool.carpool.exception.ConflictException;
+import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.response.Response;
 
 
@@ -25,4 +27,7 @@ public interface IReviewService {
      * @throws ResourceNotFoundException si el usuario target no existe.
      */
     Response<List<ReviewResponseDTO>> getReviewsByTargetUser(Long targetUserId);
+
+
+    Response<Boolean> canUserReviewTrip(Long tripId);
 }
