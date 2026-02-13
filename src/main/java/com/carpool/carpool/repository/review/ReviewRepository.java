@@ -26,13 +26,13 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
      * @param userId ID del usuario para el cual se desea calcular el promedio de rating
      * @return El promedio de estrellas recibido por el usuario, o null si no tiene reseñas
      */
-    @Query("""
-        SELECT AVG(r.stars) 
+   @Query("""
+        SELECT COUNT(r), SUM(r.stars) 
         FROM Review r 
         WHERE r.targetUser.id = :userId 
         AND r.deletedAt IS NULL
-        """)
-    Double getAverageRatingByUserId(@Param("userId") Long userId);
+    """)
+    Object getReviewStatsByUserId(@Param("userId") Long userId);
 
     /**
      * Obtiene la lista de reseñas recibidas por un usuario específico (chofer), excluyendo las reseñas marcadas como eliminadas.

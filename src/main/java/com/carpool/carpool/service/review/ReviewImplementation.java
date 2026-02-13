@@ -108,13 +108,11 @@ public class ReviewImplementation implements IReviewService {
     public Response<Boolean> canUserReviewTrip(Long tripId) {
         User user = GetAuthenticatedUser();
         
-        
         Trip trip = tripRepository.findById(tripId)
                 .orElseThrow(() -> {
                     log.error("Error: No se encontró el viaje con ID {}", tripId);
                     return new ResourceNotFoundException("Viaje no encontrado");
                 });
-
 
         boolean belongsToTrip = reservationRepository.existsByUserIdAndTripId(user.getId(), tripId);
         boolean isFinished = stateHistoryRepository.isCurrentState(trip, "FINISHED", ScopeEnum.TRIP);
@@ -129,21 +127,28 @@ public class ReviewImplementation implements IReviewService {
      * @throws ResourceNotFoundException si no se encuentra el perfil de chofer asociado al usuario
      */
     private void updateDriverRating(Long userId) {
-        log.debug("Recalculando rating para el chofer asociado al usuario ID: {}", userId);
-        Double average = reviewRepository.getAverageRatingByUserId(userId);
+        log.debug("Recalculando rating con base 5 para el usuario ID: {}", userId);
         
-        if (average != null) {
-            double roundedAverage = Math.round(average * 10.0) / 10.0;
-            
-            Driver driver = driverRepository.findByUserId(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Perfil de chofer no encontrado"));
-            
-            log.info("Actualizando rating del chofer {}. Anterior: {}, Nuevo: {}", userId, driver.getRating(), roundedAverage);
-            driver.setRating(roundedAverage);
-            driverRepository.save(driver);
-        } else {
-            log.warn("No se pudo calcular el promedio para el usuario ID: {} (average es null)", userId);
-        }
+        Object result = reviewRepository.getReviewStatsByUserId(userId);
+        Object[] stats = (Object[]) result;
+
+        long count = (stats[0] != null) ? ((Number) stats[0]).longValue() : 0L;
+        double sum = (stats[1] != null) ? ((Number) stats[1]).doubleValue() : 0.0;
+
+        double totalSum = 5.0 + sum; 
+        long totalCount = 1 + count;
+
+        double average = totalSum / totalCount;
+        double roundedAverage = Math.round(average * 10.0) / 10.0;
+
+        Driver driver = driverRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Perfil de chofer no encontrado"));
+
+        log.info("Rating Chofer {}. Reseñas: {}. Suma: {}. Promedio: {}", 
+                userId, count, sum, roundedAverage);
+
+        driver.setRating(roundedAverage);
+        driverRepository.save(driver);
     }
 
     /**
