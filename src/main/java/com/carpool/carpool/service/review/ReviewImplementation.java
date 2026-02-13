@@ -32,11 +32,12 @@ public class ReviewImplementation implements IReviewService{
   
   @Override
   public Response<List<DriverReviewResponseDTO>> getDriverReviews(Long driverId, int skip, String orderBy) {
-
+    log.info("Iniciando la recuperacion de las reservas del chofer con el id: {}",driverId);
     Driver driver = driverRepository.findById(driverId).orElseThrow(() -> new ResourceNotFoundException("El chofer no existe."));
 
     List<Review> reviews = reviewRepository.findReviewsByTargetUser(driver.getUser().getId(),getPageable(orderBy, skip));
-
+    
+    log.info("Reseñas obtenidas con exito. Cantidad: {}",reviews.size());
     if(reviews.isEmpty()){
       return ResponseUtils.buildOKResponse(List.of("El chofer no tiene reseñas"),null); 
     }
