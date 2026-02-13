@@ -113,6 +113,7 @@ public class User implements Serializable {
     protected void onCreate() {
         this.created_at = LocalDateTime.now();
         this.failedAttempts = 0;
+        this.rating = 5;
     }
 
     @PreUpdate
