@@ -28,6 +28,11 @@ public interface IReviewService {
      */
     Response<List<ReviewResponseDTO>> getReviewsByTargetUser(Long targetUserId);
 
-
+    /**
+     * Verifica si un usuario autenticado puede dejar una reseña para un viaje específico.
+     * @param tripId Verifica si un usuario autenticado puede dejar una reseña para un viaje específico.
+     * @return Response que contiene un booleano indicando si el usuario puede dejar una reseña para el viaje, o un error si la verificación falla.
+     * @throws ResourceNotFoundException si el viaje con {@code tripId} no existe.
+     */
     Response<Boolean> canUserReviewTrip(Long tripId);
 }
