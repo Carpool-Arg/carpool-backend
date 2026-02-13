@@ -21,14 +21,6 @@ public interface IReviewService {
     Response<ReviewResponseDTO> createReview(ReviewRequestDTO reviewRequestDTO);
 
     /**
-     * Obtiene la lista de reseñas recibidas por un usuario específico (chofer). Solo se devuelven las reseñas que no han sido marcadas como eliminadas.
-     * @param targetUserId ID del usuario target (chofer) para el cual se desean obtener las reseñas
-     * @return Response que contiene la lista de ReviewResponseDTO con las reseñas recibidas por el usuario target, o un error si el usuario no existe.
-     * @throws ResourceNotFoundException si el usuario target no existe.
-     */
-    Response<List<ReviewResponseDTO>> getReviewsByTargetUser(Long targetUserId);
-
-    /**
      * Verifica si un usuario autenticado puede dejar una reseña para un viaje específico.
      * @param tripId Verifica si un usuario autenticado puede dejar una reseña para un viaje específico.
      * @return Response que contiene un booleano indicando si el usuario puede dejar una reseña para el viaje, o un error si la verificación falla.

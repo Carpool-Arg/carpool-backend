@@ -105,25 +105,6 @@ public class ReviewImplementation implements IReviewService {
     }
 
     @Override
-    public Response<List<ReviewResponseDTO>> getReviewsByTargetUser(Long targetUserId) {
-        log.info("Consultando reseñas para el usuario target ID: {}", targetUserId);
-        
-        if (!userRepository.existsById(targetUserId)) {
-            log.error("Error: Usuario target ID {} no existe", targetUserId);
-            throw new ResourceNotFoundException("Usuario no encontrado");
-        }
-
-        List<Review> reviews = reviewRepository.findByTargetUserIdAndDeletedAtIsNull(targetUserId);
-        log.debug("Se encontraron {} reseñas para el usuario {}", reviews.size(), targetUserId);
-
-        List<ReviewResponseDTO> responseList = reviews.stream()
-                .map(reviewMapper::convertReviewToReviewResponseDTO)
-                .toList();
-
-        return ResponseUtils.buildOKResponse(List.of("Reseñas obtenidas con éxito"), responseList);
-    }
-
-    @Override
     public Response<Boolean> canUserReviewTrip(Long tripId) {
         User user = GetAuthenticatedUser();
         

@@ -14,8 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @Tag(name = "Reseñas", description = "Operaciones relacionadas con las reseñas entre usuarios")
 @RequestMapping("/reviews")
@@ -26,23 +24,14 @@ public class ReviewController {
 
 
     @Operation(
-        summary = "Obtener reseñas de un usuario",
-        description = "Devuelve la lista de reseñas recibidas por un usuario específico (chofer)."
+        summary = "Verificar si se puede reseñar un viaje",
+        description = "Valida si el usuario actual puede reseñar al conductor de un viaje específico"
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Lista de reseñas obtenida correctamente"),
-        @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+        @ApiResponse(responseCode = "200", description = "Validación completada exitosamente"),
+        @ApiResponse(responseCode = "404", description = "Viaje no encontrado"),
+        @ApiResponse(responseCode = "401", description = "No autorizado para acceder a este recurso")
     })
-    @GetMapping("/target/{targetUserId}")
-    public ResponseEntity<Response<List<ReviewResponseDTO>>> getReviewsByTargetUser(
-            @PathVariable Long targetUserId) {
-        
-        Response<List<ReviewResponseDTO>> serviceResponse = reviewService.getReviewsByTargetUser(targetUserId);
-        return new ResponseEntity<>(serviceResponse, HttpStatus.OK);
-    }
-
-
-    
     @GetMapping("/can-review/{tripId}")
     public ResponseEntity<Response<Boolean>> canReview(@PathVariable("tripId") Long tripId) {
         return ResponseEntity.ok(reviewService.canUserReviewTrip(tripId));
