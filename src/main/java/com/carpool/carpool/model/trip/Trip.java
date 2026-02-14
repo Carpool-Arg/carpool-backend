@@ -1,6 +1,7 @@
 package com.carpool.carpool.model.trip;
 
 import com.carpool.carpool.enums.trip.BaggageEnum;
+import com.carpool.carpool.model.review.Review;
 import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.vehicle.Vehicle;
@@ -69,6 +70,9 @@ public class Trip {
     @Column(name="kilometer_price", nullable = false)
     private double kilometerPrice;
 
+    @OneToMany(mappedBy = "trip",cascade = CascadeType.ALL,orphanRemoval = true)
+    private List<Review> reviews;
+    
     @ManyToOne
     @JoinColumn(
             name = "vehicle_id",
