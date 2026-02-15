@@ -1,29 +1,56 @@
 package com.carpool.carpool.controller.review;
 
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.validation.Valid;
+
+import com.carpool.carpool.dto.review.DriverReviewResponseDTO;
 import com.carpool.carpool.dto.review.ReviewRequestDTO;
 import com.carpool.carpool.dto.review.ReviewResponseDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.review.IReviewService;
+
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
-@Tag(name = "Reseñas", description = "Operaciones relacionadas con las reseñas entre usuarios")
-@RequestMapping("/reviews")
+@Tag(name="Review", description ="Operaciones relacionadas con las reseñas")
+@RequestMapping("/review")
 @RequiredArgsConstructor
 public class ReviewController {
 
-    private final IReviewService reviewService;
+  private final IReviewService reviewService;
 
+  @Operation(
+    summary = "Obtener las reservas paginadas de un chofer"
+  )
+  @ApiResponses({
+          @ApiResponse(responseCode = "200", description = "Reseñas obtenidas con éxito", content = @Content),
+  })
+  @GetMapping("/driver")
+  public ResponseEntity<Response<List<DriverReviewResponseDTO>>> getDriverReviews(
+    @RequestParam(required = true) Long driverId,
+    @RequestParam(required = false, defaultValue = "0") int skip,
+    @RequestParam(required = false, defaultValue = "RECENT") String orderBy
+  ){
+    return new ResponseEntity<>(reviewService.getDriverReviews(driverId, skip, orderBy), HttpStatus.OK);
+  }
 
-    @Operation(
+  @Operation(
         summary = "Verificar si se puede reseñar un viaje",
         description = "Valida si el usuario actual puede reseñar al conductor de un viaje específico"
     )
@@ -54,6 +81,4 @@ public class ReviewController {
         Response<ReviewResponseDTO> serviceResponse = reviewService.createReview(reviewRequestDTO);
         return new ResponseEntity<>(serviceResponse, HttpStatus.CREATED);
     }
-
-    
 }

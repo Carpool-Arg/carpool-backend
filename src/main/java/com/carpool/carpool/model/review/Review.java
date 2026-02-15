@@ -65,22 +65,22 @@ public class Review {
   private Trip trip;
 
   @Column(name = "created_at", nullable = false, updatable = false)
-  private LocalDateTime created_at;
+  private LocalDateTime createdAt;
 
   @Column(name = "updated_at")
-  private LocalDateTime updated_at;
+  private LocalDateTime updatedAt;
 
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
   @PrePersist
   protected void onCreate() {
-    this.created_at = LocalDateTime.now();
+    this.createdAt = LocalDateTime.now();
   }
 
   @PreUpdate
   protected void onUpdate() {
-    this.updated_at = LocalDateTime.now();
+    this.updatedAt = LocalDateTime.now();
   }
 }
 

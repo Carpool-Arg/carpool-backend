@@ -100,16 +100,20 @@ public class User implements Serializable {
     @Column(name="last_failed_login_time")
     private Date lastFailedLoginTime;
 
-    @OneToMany(mappedBy = "targetUser", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Review> reviewsReceived;
+    @Column(name="rating")
+    private double rating;
 
-    @OneToMany(mappedBy = "reviewerUser", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Review> reviewsAuthored;
+    @OneToMany(mappedBy = "reviewerUser",cascade = CascadeType.ALL,orphanRemoval = true)
+    private transient List<Review> writtenReviews;
+
+    @OneToMany(mappedBy = "targetUser",cascade = CascadeType.ALL,orphanRemoval = true)
+    private transient List<Review> recievedReviews;
 
     @PrePersist
     protected void onCreate() {
         this.created_at = LocalDateTime.now();
         this.failedAttempts = 0;
+        this.rating = 5;
     }
 
     @PreUpdate

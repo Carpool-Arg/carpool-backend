@@ -118,6 +118,7 @@ public class TripMapper {
             .build();
 
         DriverSearchResponseDTO driverSearchDTO = DriverSearchResponseDTO.builder()
+            .driverId(driver.getId())
             .fullName(user.getName() + " " + user.getLastname()) 
             .profileImageUrl(profilePictureUrl)
             .rating(driver.getRating()) 
