@@ -8,6 +8,7 @@ import java.util.List;
 
 import com.carpool.carpool.enums.user.UserGenderEnum;
 import com.carpool.carpool.enums.user.UserStateEnum;
+import com.carpool.carpool.model.review.Review;
 import com.carpool.carpool.model.role.Role;
 import com.carpool.carpool.validators.genderValidEnum.GenderValidEnum;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -99,10 +100,20 @@ public class User implements Serializable {
     @Column(name="last_failed_login_time")
     private Date lastFailedLoginTime;
 
+    @Column(name="rating")
+    private double rating;
+
+    @OneToMany(mappedBy = "reviewerUser",cascade = CascadeType.ALL,orphanRemoval = true)
+    private transient List<Review> writtenReviews;
+
+    @OneToMany(mappedBy = "targetUser",cascade = CascadeType.ALL,orphanRemoval = true)
+    private transient List<Review> recievedReviews;
+
     @PrePersist
     protected void onCreate() {
         this.created_at = LocalDateTime.now();
         this.failedAttempts = 0;
+        this.rating = 5;
     }
 
     @PreUpdate
