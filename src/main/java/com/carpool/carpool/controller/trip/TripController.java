@@ -33,16 +33,16 @@ public class TripController {
 
     private final ITripService tripService;
 
-        @Operation(summary = "Obtener viajes creados por un chofer")
-        @ApiResponses({
-                        @ApiResponse(responseCode = "200", description = "Listado de viajes obtenidos con éxito"),
-                        @ApiResponse(responseCode = "401", description = "El usuario no inició sesión", content = @Content),
-        })
-        @GetMapping
-        public ResponseEntity<Response<TripDriverResponseDTO>> getTrips(
-                        @RequestParam(defaultValue = "CREATED") List<String> tripState) {
-                return new ResponseEntity<>(tripService.getTrips(tripState), HttpStatus.OK);
-        }
+    @Operation(summary = "Obtener viajes creados por un chofer")
+    @ApiResponses({
+                    @ApiResponse(responseCode = "200", description = "Listado de viajes obtenidos con éxito"),
+                    @ApiResponse(responseCode = "401", description = "El usuario no inició sesión", content = @Content),
+    })
+    @GetMapping
+    public ResponseEntity<Response<TripDriverResponseDTO>> getTrips(
+                    @RequestParam(defaultValue = "CREATED") List<String> tripState) {
+            return new ResponseEntity<>(tripService.getTrips(tripState), HttpStatus.OK);
+    }
 
     @Operation(
             summary = "Visualizar los detalles de un viaje específico"
