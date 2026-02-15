@@ -116,9 +116,26 @@ public class ReviewImplementation implements IReviewService {
 
         boolean belongsToTrip = reservationRepository.existsByUserIdAndTripId(user.getId(), tripId);
         boolean isFinished = stateHistoryRepository.isCurrentState(trip, "FINISHED", ScopeEnum.TRIP);
-        boolean result = belongsToTrip && isFinished;
- 
-        return ResponseUtils.buildOKResponse(List.of("Usuario habilitado para dejar su reseña sobre el viaje " + tripId), result);
+        boolean alreadyReviewed = reviewRepository.existsByReviewerUserIdAndTripId(user.getId(), tripId);
+
+        // Usuario no pertence al viaje o no existe 
+        if (!belongsToTrip || !isFinished) {
+            String msg = "El usuario no está habilitado para reseñar este viaje.";
+            log.warn("Check canReview - Fallo: {}, Usuario: {}", msg, user.getUsername());
+            return ResponseUtils.buildOKResponse(List.of(msg), false);
+        }
+
+        // El usuario ya reseñó este viaje 
+        if (alreadyReviewed) {
+            String msg = "El usuario ya ha dejado una reseña para el viaje.";
+            log.info("Check canReview - Fallo: {}, Usuario: {}", msg, user.getUsername());
+            return ResponseUtils.buildOKResponse(List.of(msg), false);
+        }
+
+        // El usuario puede reseñar el viaje 
+        String msg = "Usuario habilitado para dejar su reseña sobre el viaje.";
+        log.info("Check canReview - Éxito: {}, Usuario: {}", msg, user.getUsername());
+        return ResponseUtils.buildOKResponse(List.of(msg), true);
     }
 
     /**

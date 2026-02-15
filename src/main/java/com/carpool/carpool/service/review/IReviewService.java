@@ -1,7 +1,5 @@
 package com.carpool.carpool.service.review;
 
-import java.util.List;
-
 import com.carpool.carpool.dto.review.ReviewRequestDTO;
 import com.carpool.carpool.dto.review.ReviewResponseDTO;
 import com.carpool.carpool.exception.ConflictException;
@@ -21,8 +19,8 @@ public interface IReviewService {
     Response<ReviewResponseDTO> createReview(ReviewRequestDTO reviewRequestDTO);
 
     /**
-     * Verifica si un usuario autenticado puede dejar una reseña para un viaje específico.
-     * @param tripId Verifica si un usuario autenticado puede dejar una reseña para un viaje específico.
+     * Metodo que permite verificar si un usuario puede dejar una reseña para un viaje específico.
+     * @param tripId ID del viaje a verificar.
      * @return Response que contiene un booleano indicando si el usuario puede dejar una reseña para el viaje, o un error si la verificación falla.
      * @throws ResourceNotFoundException si el viaje con {@code tripId} no existe.
      */
