@@ -11,6 +11,7 @@ import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
 import com.carpool.carpool.dto.trip.TripDriverDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 
+import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
 import org.springframework.stereotype.Component;
 
 import com.carpool.carpool.dto.driver.DriverSearchResponseDTO;
@@ -41,6 +42,7 @@ import lombok.RequiredArgsConstructor;
 public class TripMapper {   
     private final CityRepository cityRepository;
     private final IMediaService mediaService;
+    private final StateHistoryRepository stateHistoryRepository;
     final double AVERAGE_SPEED_KMH = 80.0; // Velocidad promedio en km/h
     
     public Trip convertTripRequestDTOToTrip(TripRequestDTO tripRequestDTO, Vehicle vehicle){ 
@@ -157,6 +159,10 @@ public class TripMapper {
 
         return listTrips.stream()
                 .map(trip -> {
+
+                    boolean hasReservations =
+                            stateHistoryRepository.hasAcceptedReservations(trip.getId());
+
                     Vehicle vehicle = trip.getVehicle();
 
                     VehicleResponseTripDTO vehicleDTO = VehicleResponseTripDTO.builder()
@@ -182,7 +188,7 @@ public class TripMapper {
                     LocalDateTime estimatedArrivalDate = trip.getTripStops().stream()
                             .filter(TripStop::isDestination)
                             .findFirst()
-                            .map(ts -> ts.getEstimatedArrivalDateTime())
+                            .map(TripStop::getEstimatedArrivalDateTime)
                             .orElse(null);
 
                     return TripDriverDTO.builder()
@@ -190,15 +196,17 @@ public class TripMapper {
                             .vehicle(vehicleDTO)
                             .startDateTime(trip.getStartTripDateTime())
                             .availableSeat(trip.getAvailableSeat())
+                            .currentAvailableSeats(trip.getCurrentAvailableSeats())
                             .startCity(startCity)
                             .destinationCity(destinationCity)
-                            .currentAvailableSeats(trip.getCurrentAvailableSeats())
                             .availableBaggage(trip.getAvailableBaggage().getTypeBaggage())
                             .seatPrice(roundPrice(trip.getSeatPrice() - trip.getDriverPriceDiscount()))
                             .estimatedArrivalDateTime(estimatedArrivalDate)
                             .tripState(getCurrentTripStatusName(trip))
+                            .hasReservations(hasReservations)
                             .build();
-                }).toList();
+                })
+                .toList();
     }
 
     public TripSearchResponseDTO converTripToTripSearchResponseDTO(Trip trip, double total) {

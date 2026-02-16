@@ -33,44 +33,58 @@ public class StateTransitionService {
             String expectedCurrentState,
             String newStateName
     ) {
-      @SuppressWarnings("unchecked")
-      StateHistoryFinder<T> finder = finders.stream()
-              .filter(f -> f.getScope() == scope)
-              .map(f -> (StateHistoryFinder<T>) f)
-              .findFirst()
-              .orElseThrow(() ->
-                      new IllegalStateException("No existe handler para el scope " + scope));
+        transitionInternal(entity, scope, List.of(expectedCurrentState), newStateName);
+    }
 
-      final State newState = stateRepository
-              .findByNameAndScope(newStateName, scope)
-              .orElseThrow(() -> {
-            	  log.error("No se pudo obtener el estado: {} de la base de datos", newStateName);
-            	  return new ResourceNotFoundException("No se encontró el estado " + newStateName);
-              });
+    @Transactional
+    public <T> void transition(
+            T entity,
+            ScopeEnum scope,
+            List<String> expectedCurrentStates,
+            String newStateName
+    ) {
+        transitionInternal(entity, scope, expectedCurrentStates, newStateName);
+    }
 
+    private <T> void transitionInternal(
+            T entity,
+            ScopeEnum scope,
+            List<String> expectedCurrentStates,
+            String newStateName
+    ) {
 
-      final StateHistory current = finder.findCurrent(entity)
-              .orElseThrow(() -> {
-            	  log.error("La entidad no cuenta con un estado actual");
-            	  return new ConflictException("La entidad no tiene un estado actual");
-              });
+        @SuppressWarnings("unchecked")
+        StateHistoryFinder<T> finder = finders.stream()
+                .filter(f -> f.getScope() == scope)
+                .map(f -> (StateHistoryFinder<T>) f)
+                .findFirst()
+                .orElseThrow(() ->
+                        new IllegalStateException("No existe handler para el scope " + scope));
 
-      final var currentState = current.getState();
-      if(currentState.isFinish()) {
-    	  log.error("El estado actual en el que se encuentra el registro es un estado final");
-    	  throw new ConflictException("El estado actual es un estado final");
-      }
+        final State newState = stateRepository
+                .findByNameAndScope(newStateName, scope)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontró el estado " + newStateName));
 
-      if (!currentState.getName().equals(expectedCurrentState)) {
-    	  log.error("El estado esperado: {} no coincide con el estado actual en el que se encuentra la entidad: {}", expectedCurrentState, currentState.getName());
-          throw new ConflictException("El estado actual no es " + expectedCurrentState);
-      }
+        final StateHistory current = finder.findCurrent(entity)
+                .orElseThrow(() -> new ConflictException("La entidad no tiene un estado actual"));
 
-      current.setFinishDateTime(LocalDateTime.now());
+        final var currentState = current.getState();
 
-      StateHistory next = finder.buildNew(newState, entity);
+        if (currentState.isFinish()) {
+            throw new ConflictException("El estado actual es un estado final");
+        }
 
-      stateHistoryRepository.save(current);
-      stateHistoryRepository.save(next);
+        if (!expectedCurrentStates.contains(currentState.getName())) {
+            throw new ConflictException(
+                    "El estado actual no permite esta transición. Estados permitidos: " + expectedCurrentStates
+            );
+        }
+
+        current.setFinishDateTime(LocalDateTime.now());
+
+        StateHistory next = finder.buildNew(newState, entity);
+
+        stateHistoryRepository.save(current);
+        stateHistoryRepository.save(next);
     }
 }

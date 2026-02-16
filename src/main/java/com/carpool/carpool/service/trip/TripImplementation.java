@@ -8,19 +8,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.carpool.carpool.dto.trip.*;
+import com.carpool.carpool.enums.reservation.ReservationStateEnum;
+import com.carpool.carpool.enums.trip.TripStateEnum;
+import com.carpool.carpool.service.state.TripStateHistoryFinder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
-import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
-import com.carpool.carpool.dto.trip.TripDriverDTO;
-import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
-import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
-import com.carpool.carpool.dto.trip.TripRequestDTO;
-import com.carpool.carpool.dto.trip.TripResponseDTO;
-import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
-import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
@@ -60,6 +56,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TripImplementation implements ITripService {
 
     private final VehicleRepository vehicleRepository;
@@ -76,6 +73,7 @@ public class TripImplementation implements ITripService {
     private final IReservationService reservationService;
     private final INotificationService notificationService;
     private final StateTransitionService stateTransitionService;
+    private final TripStateHistoryFinder tripStateHistoryFinder;
 
     private static final String STATE_ACCEPTED = "ACCEPTED";
 
@@ -311,7 +309,7 @@ public class TripImplementation implements ITripService {
 
         if (now.isAfter(scheduledStart.plusMinutes(15))) {
             notifyPassengers(trip, NotificationEventEnum.TRIP_CANCELLED_BY_SYSTEM);
-            stateTransitionService.transition(trip, ScopeEnum.TRIP, "CLOSED", "CANCELLED");
+            stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CLOSED.name(), TripStateEnum.CANCELLED.name());
             cancelAllReservations(trip);
             return ResponseUtils.buildErrorResponse(List.of("El tiempo límite para iniciar el viaje ha expirado (máximo 15 min de demora). El viaje ha sido cancelado automáticamente."));
         }
@@ -324,10 +322,62 @@ public class TripImplementation implements ITripService {
         startStop.setArrivalDateTime(now);
         notifyPassengers(trip, NotificationEventEnum.TRIP_STARTED);
 
-        stateTransitionService.transition(trip, ScopeEnum.TRIP, "CLOSED", "IN_PROGRESS");
+        stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CLOSED.name(),TripStateEnum.IN_PROGRESS.name());
 
         this.startTripReservation(trip);
         return ResponseUtils.buildOKResponse(List.of("¡Viaje iniciado! Que tengas un buen recorrido."), null);
+    }
+
+    @Override
+    @Transactional
+    public Response<Void> cancelTrip(TripCancellRequestDTO tripCancellRequestDTO) {
+        log.info("Iniciando cancelación de viaje. tripId={}", tripCancellRequestDTO.getTripId());
+        Trip trip = tripRepository.findTripWithAllDetails(tripCancellRequestDTO.getTripId())
+                .orElseThrow(() -> {
+                    log.error("Viaje no encontrado. tripId={}", tripCancellRequestDTO.getTripId());
+                    return new ResourceNotFoundException("Viaje no encontrado.");
+                });
+
+        log.info("Buscando reservas aceptadas");
+        List<Reservation> acceptedReservations = reservationRepository.findByTripIdAndStateName(trip.getId(),
+                STATE_ACCEPTED);
+
+        // Validar que si hay reservas activas, debe haber una razón
+        if (!acceptedReservations.isEmpty()) {
+            if (tripCancellRequestDTO.getReason() == null || tripCancellRequestDTO.getReason().isBlank()) {
+                throw new ConflictException("Este viaje cuenta con reservas activas, por lo que tenés que justificar el motivo de su cancelación.");
+            }
+            trip.setCancellationReason(tripCancellRequestDTO.getReason());
+        } else {
+            // Si no hay reservas, la razón es opcional pero si se proporciona, guardarla
+            if (tripCancellRequestDTO.getReason() != null && !tripCancellRequestDTO.getReason().isBlank()) {
+                trip.setCancellationReason(tripCancellRequestDTO.getReason());
+            }
+        }
+
+        log.info("Buscando reservas pendientes");
+        List<Reservation> pendingReservations = reservationRepository.findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
+        List<Reservation> reservationsToCancel = new ArrayList<>();
+        reservationsToCancel.addAll(acceptedReservations);
+        reservationsToCancel.addAll(pendingReservations);
+
+        log.info("Iniciando cambio de estado");
+        stateTransitionService.transition(trip, ScopeEnum.TRIP, List.of(TripStateEnum.CREATED.name(), TripStateEnum.CLOSED.name()), TripStateEnum.CANCELLED.name());
+
+        for (Reservation res : reservationsToCancel) {
+
+            log.info("Cancelando reserva {} del viaje {}",
+                    res.getId(), trip.getId());
+
+            reservationService.cancelReservation(res.getId());
+
+            this.notificationService.send(
+                    res.getUser(),
+                    NotificationEventEnum.TRIP_CANCELLED,
+                    trip);
+        }
+
+        return ResponseUtils.buildOKResponse(List.of("Viaje cancelado con éxito."), null);
     }
 
     @Override
@@ -371,7 +421,7 @@ public class TripImplementation implements ITripService {
         List<Reservation> reservations = reservationRepository.findReservationsByTripAndDestinationAndState(currentTrip.getId(), stop.getId(), "IN_PROGRESS");
 
         if(reservations != null && !reservations.isEmpty()){
-            reservations.forEach(reservation ->reservationService.finishTripReservation(reservation));
+            reservations.forEach(reservationService::finishTripReservation);
         }
 
         stop.setArrivalDateTime(LocalDateTime.now());
