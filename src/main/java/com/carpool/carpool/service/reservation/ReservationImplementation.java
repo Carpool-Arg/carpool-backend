@@ -297,16 +297,14 @@ public class ReservationImplementation implements IReservationService{
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada."));
 
-
-        StateHistory currentState = this.stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservationId).orElseThrow(
-                () -> new ResourceNotFoundException("Estado actual no encontrado.")
-        );
-
-        if (!("PENDING".equals(currentState.getState().getName()) || "ACCEPTED".equals(currentState.getState().getName()))){
-            throw  new ConflictException("No fue posible cancelar la reserva debido a su estado actual. ");
-        }
-
-        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, currentState.getState().getName(), ReservationStateEnum.CANCELLED.name());
+        stateTransitionService.transition(
+                reservation,
+                ScopeEnum.RESERVATION,
+                List.of(
+                        ReservationStateEnum.PENDING.name(),
+                        ReservationStateEnum.ACCEPTED.name()
+                ),
+                ReservationStateEnum.CANCELLED.name());
     }
 
     @Override

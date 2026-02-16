@@ -12,6 +12,7 @@ import com.carpool.carpool.dto.trip.*;
 import com.carpool.carpool.enums.reservation.ReservationStateEnum;
 import com.carpool.carpool.enums.trip.TripStateEnum;
 import com.carpool.carpool.service.state.TripStateHistoryFinder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -55,6 +56,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TripImplementation implements ITripService {
 
     private final VehicleRepository vehicleRepository;
@@ -329,21 +331,14 @@ public class TripImplementation implements ITripService {
     @Override
     @Transactional
     public Response<Void> cancelTrip(TripCancellRequestDTO tripCancellRequestDTO) {
+        log.info("Iniciando cancelación de viaje. tripId={}", tripCancellRequestDTO.getTripId());
         Trip trip = tripRepository.findTripWithAllDetails(tripCancellRequestDTO.getTripId())
-                .orElseThrow(() -> new ResourceNotFoundException("Viaje no encontrado."));
+                .orElseThrow(() -> {
+                    log.error("Viaje no encontrado. tripId={}", tripCancellRequestDTO.getTripId());
+                    return new ResourceNotFoundException("Viaje no encontrado.");
+                });
 
-        StateHistory currentState = tripStateHistoryFinder
-                .findCurrent(trip)
-                .orElseThrow(() ->
-                        new IllegalStateException("El viaje no tiene un estado actual")
-                );
-
-        String stateName = currentState.getState().getName();
-
-        if (!stateName.equals(TripStateEnum.CREATED.name()) && !stateName.equals(TripStateEnum.CLOSED.name())) {
-            throw new ConflictException("No tienes permitido cancelar un viaje debido a su estado actual");
-        }
-
+        log.info("Buscando reservas aceptadas");
         List<Reservation> acceptedReservations = reservationRepository.findByTripIdAndStateName(trip.getId(),
                 STATE_ACCEPTED);
 
@@ -360,14 +355,20 @@ public class TripImplementation implements ITripService {
             }
         }
 
+        log.info("Buscando reservas pendientes");
         List<Reservation> pendingReservations = reservationRepository.findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
         List<Reservation> reservationsToCancel = new ArrayList<>();
         reservationsToCancel.addAll(acceptedReservations);
         reservationsToCancel.addAll(pendingReservations);
 
-        stateTransitionService.transition(trip, ScopeEnum.TRIP, stateName, TripStateEnum.CANCELLED.name());
+        log.info("Iniciando cambio de estado");
+        stateTransitionService.transition(trip, ScopeEnum.TRIP, List.of(TripStateEnum.CREATED.name(), TripStateEnum.CLOSED.name()), TripStateEnum.CANCELLED.name());
 
         for (Reservation res : reservationsToCancel) {
+
+            log.info("Cancelando reserva {} del viaje {}",
+                    res.getId(), trip.getId());
+
             reservationService.cancelReservation(res.getId());
 
             this.notificationService.send(
