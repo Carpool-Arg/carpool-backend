@@ -183,7 +183,7 @@ public class ReservationImplementation implements IReservationService{
         	notification = NotificationEventEnum.RESERVATION_ACCEPTED;
         }else{
         	log.info("Iniciando el proceso para rechazar la reserva");
-        	stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, ReservationStateEnum.IN_PROGRESS.name(), ReservationStateEnum.REJECTED.name());
+        	stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, ReservationStateEnum.PENDING.name(), ReservationStateEnum.REJECTED.name());
         }
 
         reservationRepository.save(reservation);
@@ -237,7 +237,7 @@ public class ReservationImplementation implements IReservationService{
                 ));
 
         //Cambiar de estado la reserva a completed
-        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, "UNPAID", "COMPLETED");
+        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION,ReservationStateEnum.UNPAID.name(),ReservationStateEnum.COMPLETED.name());
 
         //Enviar email al chofer
         notificationService.send(reservation.getTrip().getVehicle().getDriver().getUser(), NotificationEventEnum.RESERVATION_PAID, reservation);
@@ -261,7 +261,7 @@ public class ReservationImplementation implements IReservationService{
 
     @Override
     public void finishTripReservation(Reservation reservation){
-        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, "IN_PROGRESS", "UNPAID");
+        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION,ReservationStateEnum.IN_PROGRESS.name(), ReservationStateEnum.UNPAID.name());
         notificationService.send(reservation.getUser(), NotificationEventEnum.RESERVATION_UNPAID, reservation);
 
     }
@@ -271,7 +271,7 @@ public class ReservationImplementation implements IReservationService{
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada."));
 
-        State inProgressState = stateRepository.findByNameAndScope("IN_PROGRESS", ScopeEnum.RESERVATION)
+        State inProgressState = stateRepository.findByNameAndScope(ReservationStateEnum.IN_PROGRESS.name(), ScopeEnum.RESERVATION)
                 .orElseThrow(() -> new ResourceNotFoundException("Estado IN_PROGRESS no encontrado para RESERVATION."));
 
         LocalDateTime now = LocalDateTime.now();
@@ -293,10 +293,20 @@ public class ReservationImplementation implements IReservationService{
 
     @Override
     public void cancelReservation(Long reservationId) {
+
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada."));
 
-        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, "ACCEPTED", "CANCELLED");
+
+        StateHistory currentState = this.stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservationId).orElseThrow(
+                () -> new ResourceNotFoundException("Estado actual no encontrado.")
+        );
+
+        if (!("PENDING".equals(currentState.getState().getName()) || "ACCEPTED".equals(currentState.getState().getName()))){
+            throw  new ConflictException("No fue posible cancelar la reserva debido a su estado actual. ");
+        }
+
+        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, currentState.getState().getName(), ReservationStateEnum.CANCELLED.name());
     }
 
     @Override
@@ -304,7 +314,7 @@ public class ReservationImplementation implements IReservationService{
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada con ID: " + reservationId));
 
-        State cancelledState = stateRepository.findByNameAndScope("CANCELLED", ScopeEnum.RESERVATION)
+        State cancelledState = stateRepository.findByNameAndScope(ReservationStateEnum.CANCELLED.name(), ScopeEnum.RESERVATION)
                 .orElseThrow(() -> new ResourceNotFoundException("Estado CANCELLED no encontrado para RESERVATION."));
 
         LocalDateTime now = LocalDateTime.now();

@@ -33,28 +33,23 @@ public class TripCancelledNotificationImplementation implements INotificationCon
                 .map(ts -> ts.getCity().getName())
                 .orElse("desconocido");
 
+
+        String baseMessage = MESSAGE_TRIP_CANCELLED
+                .replace("{origin}", origin)
+                .replace("{destination}", destination)
+                .replace("{driver}", driver);
+
+        String reason = trip.getCancellationReason();
+
+        if (reason != null && !reason.isBlank()) {
+            baseMessage += MESSAGE_TRIP_CANCELLED_REASON
+                    .replace("{reason}", reason);
+        }
+
         return NotificationPayloadDTO.builder()
                 .emailSubject(SUBJECT_TRIP_CANCELLED)
                 .emailTitle(TITLE_TRIP_CANCELLED)
-                .emailMessage(
-                        MESSAGE_TRIP_CANCELLED
-                                .replace(
-                                        "{origin}",
-                                        origin
-                                )
-                                .replace(
-                                        "{destination}",
-                                        destination
-                                )
-                                .replace(
-                                        "{driver}",
-                                        driver
-                                )
-                                .replace(
-                                        "{reason}",
-                                        trip.getCancellationReason()
-                                )
-                )
+                .emailMessage(baseMessage)
                 .emailMessageFooter(FOOTER_TRIP_CANCELLED)
                 .build();
     }

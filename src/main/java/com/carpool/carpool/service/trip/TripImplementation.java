@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.carpool.carpool.dto.trip.*;
+import com.carpool.carpool.enums.reservation.ReservationStateEnum;
 import com.carpool.carpool.service.state.TripStateHistoryFinder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -358,9 +359,14 @@ public class TripImplementation implements ITripService {
             }
         }
 
+        List<Reservation> pendingReservations = reservationRepository.findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
+        List<Reservation> reservationsToCancel = new ArrayList<>();
+        reservationsToCancel.addAll(acceptedReservations);
+        reservationsToCancel.addAll(pendingReservations);
+
         stateTransitionService.transition(trip, ScopeEnum.TRIP, stateName, "CANCELLED");
 
-        for (Reservation res : acceptedReservations) {
+        for (Reservation res : reservationsToCancel) {
             reservationService.cancelReservation(res.getId());
 
             this.notificationService.send(

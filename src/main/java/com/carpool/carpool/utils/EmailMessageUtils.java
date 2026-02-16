@@ -137,7 +137,7 @@ public class EmailMessageUtils {
     // --- TRIP CANCELLED ---
     public static final String SUBJECT_TRIP_CANCELLED = "Aviso de Viaje Cancelado - Carpool";
     public static final String TITLE_TRIP_CANCELLED = "Lamentamos informarte que tu reserva ha sido cancelada";
-    public static final String MESSAGE_TRIP_CANCELLED = "El viaje que tenías reservado desde <strong>{origin}</strong> con destino a <strong>{destination}</strong> fue cancelado por el conductor {driver}. " +
-                    "El motivo informado fue el siguiente: {reason}.";
+    public static final String MESSAGE_TRIP_CANCELLED = "El viaje que tenías reservado desde <strong>{origin}</strong> con destino a <strong>{destination}</strong> fue cancelado por el conductor {driver}.";
+    public static final String MESSAGE_TRIP_CANCELLED_REASON = " El motivo informado fue el siguiente: {reason}.";
     public static final String FOOTER_TRIP_CANCELLED = "Sabemos que esto puede generar inconvenientes. Te invitamos a buscar otro viaje disponible o a contactarnos si necesitas ayuda.";
 }
