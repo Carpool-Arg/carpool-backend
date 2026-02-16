@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import com.carpool.carpool.dto.trip.*;
 import com.carpool.carpool.enums.reservation.ReservationStateEnum;
+import com.carpool.carpool.enums.trip.TripStateEnum;
 import com.carpool.carpool.service.state.TripStateHistoryFinder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -306,7 +307,7 @@ public class TripImplementation implements ITripService {
 
         if (now.isAfter(scheduledStart.plusMinutes(15))) {
             notifyPassengers(trip, NotificationEventEnum.TRIP_CANCELLED_BY_SYSTEM);
-            stateTransitionService.transition(trip, ScopeEnum.TRIP, "CLOSED", "CANCELLED");
+            stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CLOSED.name(), TripStateEnum.CANCELLED.name());
             cancelAllReservations(trip);
             return ResponseUtils.buildErrorResponse(List.of("El tiempo límite para iniciar el viaje ha expirado (máximo 15 min de demora). El viaje ha sido cancelado automáticamente."));
         }
@@ -319,7 +320,7 @@ public class TripImplementation implements ITripService {
         startStop.setArrivalDateTime(now);
         notifyPassengers(trip, NotificationEventEnum.TRIP_STARTED);
 
-        stateTransitionService.transition(trip, ScopeEnum.TRIP, "CLOSED", "IN_PROGRESS");
+        stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CLOSED.name(),TripStateEnum.IN_PROGRESS.name());
 
         this.startTripReservation(trip);
         return ResponseUtils.buildOKResponse(List.of("¡Viaje iniciado! Que tengas un buen recorrido."), null);
@@ -339,7 +340,7 @@ public class TripImplementation implements ITripService {
 
         String stateName = currentState.getState().getName();
 
-        if (!stateName.equals("CREATED") && !stateName.equals("CLOSED")) {
+        if (!stateName.equals(TripStateEnum.CREATED.name()) && !stateName.equals(TripStateEnum.CLOSED.name())) {
             throw new ConflictException("No tienes permitido cancelar un viaje debido a su estado actual");
         }
 
@@ -364,7 +365,7 @@ public class TripImplementation implements ITripService {
         reservationsToCancel.addAll(acceptedReservations);
         reservationsToCancel.addAll(pendingReservations);
 
-        stateTransitionService.transition(trip, ScopeEnum.TRIP, stateName, "CANCELLED");
+        stateTransitionService.transition(trip, ScopeEnum.TRIP, stateName, TripStateEnum.CANCELLED.name());
 
         for (Reservation res : reservationsToCancel) {
             reservationService.cancelReservation(res.getId());
@@ -419,7 +420,7 @@ public class TripImplementation implements ITripService {
         List<Reservation> reservations = reservationRepository.findReservationsByTripAndDestinationAndState(currentTrip.getId(), stop.getId(), "IN_PROGRESS");
 
         if(reservations != null && !reservations.isEmpty()){
-            reservations.forEach(reservation ->reservationService.finishTripReservation(reservation));
+            reservations.forEach(reservationService::finishTripReservation);
         }
 
         stop.setArrivalDateTime(LocalDateTime.now());
