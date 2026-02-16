@@ -27,7 +27,8 @@ public interface StateHistoryRepository extends JpaRepository<StateHistory, Long
     SELECT new com.carpool.carpool.dto.user.UserDebtResponseDTO(
         r.total,
         true,
-        (s.name = 'EXPIRED')
+        (s.name = 'EXPIRED'),
+        r.trip.id
     )
     FROM StateHistory sh
     JOIN sh.reservation r
