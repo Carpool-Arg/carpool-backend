@@ -22,6 +22,17 @@ public interface StateHistoryRepository extends JpaRepository<StateHistory, Long
 
     Optional<StateHistory> findByReservationIdAndFinishDateTimeIsNull(Long idReservation);
 
+    @Query("""
+        SELECT CASE WHEN COUNT(sh) > 0 THEN true ELSE false END
+        FROM StateHistory sh
+        JOIN sh.reservation r
+        JOIN sh.state s
+        WHERE r.trip.id = :tripId
+          AND sh.finishDateTime IS NULL
+          AND s.scope = "RESERVATION"
+          AND s.name = 'ACCEPTED'
+    """)
+    boolean hasAcceptedReservations(@Param("tripId") Long tripId);
 
     @Query("""
     SELECT new com.carpool.carpool.dto.user.UserDebtResponseDTO(
