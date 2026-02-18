@@ -1,5 +1,6 @@
 package com.carpool.carpool.repository.stateHistory;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -53,4 +54,13 @@ public interface StateHistoryRepository extends JpaRepository<StateHistory, Long
         AND sh.reservation IS NULL
     """)
     Optional<StateHistory> findCurrentStateByTrip(@Param("trip") Trip trip);
+
+	@Query("""
+			    SELECT sh
+			    FROM StateHistory sh
+			    WHERE sh.trip.id IN :tripIds
+			    AND sh.finishDateTime IS NULL
+			    AND sh.reservation IS NULL
+			""")
+	List<StateHistory> findCurrentStatesByTripIds(@Param("tripIds") List<Long> tripIds);
 }

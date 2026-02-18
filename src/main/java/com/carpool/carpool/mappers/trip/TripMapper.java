@@ -27,6 +27,8 @@ import com.carpool.carpool.enums.trip.BaggageEnum;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.model.driver.Driver;
 import com.carpool.carpool.model.province.city.City;
+import com.carpool.carpool.model.reservation.Reservation;
+import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.user.User;
@@ -130,7 +132,7 @@ public class TripMapper {
             .build();
     }
     
-    public TripHistoryResponseDTO convertTripToHistoryDTO(Trip trip) {
+    public TripHistoryResponseDTO convertTripToHistoryDTO(Trip trip, Reservation reservation, StateHistory stateHistory) {
 
         Driver driver = trip.getVehicle().getDriver();
         User user = driver.getUser();
@@ -140,12 +142,13 @@ public class TripMapper {
                 .tripId(trip.getId())
                 .startDateTime(trip.getStartTripDateTime())
                 .driverName(user.getName() + " " + user.getLastname())
-                .driverProfileImage(
-                    mediaService.getProfilePictureUrlByUserId(user.getId())
-                )
+                .driverProfileImage(mediaService.getProfilePictureUrlByUserId(user.getId()))
                 .driverRating(driver.getRating())
                 .vehicle(vehicleEntity)
-                .tripStops(getTripstopResponseDTO(trip))
+                .startCity(reservation.getStartCity().getCity().getName())
+                .destinationCity(reservation.getDestinationCity().getCity().getName())
+                .seatPrice(reservation.getTotal())
+                .tripState(stateHistory.getState().getName())
                 .build();
     }
 

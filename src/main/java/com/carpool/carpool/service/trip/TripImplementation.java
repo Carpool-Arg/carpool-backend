@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.security.core.Authentication;
@@ -20,6 +22,7 @@ import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
 import com.carpool.carpool.dto.trip.TripDriverDTO;
 import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
 import com.carpool.carpool.dto.trip.TripHistoryResponseDTO;
+import com.carpool.carpool.dto.trip.TripHistoryUserDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
@@ -225,31 +228,65 @@ public class TripImplementation implements ITripService {
     }
 
 	@Override
-	public Response<List<TripHistoryResponseDTO>> getHistoryTripUser(List<String> namesStateTrip, int skip) {
+	public Response<TripHistoryUserDTO> getHistoryTripUser(List<String> namesStateTrip, int skip) {
 		
 		Long userId = getAuthenticatedUserId();
 		log.info("Iniciando busqueda de historial de viajes para usuario con id: {}", userId);
 		
 		 List<String> existingStates = stateRepository.findExistingStateNames(ScopeEnum.TRIP, namesStateTrip);
 		 
+		 // Se valida la existencia de los estados
 		 if(existingStates.size() != namesStateTrip.size()) {
 			List<String> invalidStates = namesStateTrip.stream().filter(state -> !existingStates.contains(state)).toList();
 
 			throw new BadRequestException("Estados inválidos: " + String.join(", ", invalidStates));
 		 }
 		
+		// Se buscan los viajes  del usuario con el estado correspondiente
 		Page<Trip> tripsPage = tripRepository.findTripsByUserAndCurrentStates(userId, namesStateTrip, getPageable(skip));
 		log.info("Cantidad de historial de viajes obtenidos: [{}]", tripsPage.getTotalElements());
 		List<Trip> trips = tripsPage.getContent();
 		
-	    if(trips.isEmpty()){return ResponseUtils.buildOKResponse(List.of("El pasajero no cuenta con viajes"), List.of());}
+	    if(trips.isEmpty()){return ResponseUtils.buildOKResponse(List.of("El pasajero no cuenta con viajes"), null);}
 		
+	    // Se obtienen los id de los viajes
+	    List<Long> tripIds = trips.stream().map(Trip::getId).toList();
+	    
+	    // Se obtienen los estados actuales de cada viaje
+	    List<StateHistory> currentStates = stateHistoryRepository.findCurrentStatesByTripIds(tripIds);
+	    
+	    // Se obtienen las reservas del usuario en cada viaje
+	    List<Reservation> reservations = reservationRepository.findByTripIdInAndUserId(tripIds, userId);
+	    
+	    Map<Long, StateHistory> stateMap =
+	            currentStates.stream()
+	                    .collect(Collectors.toMap(
+	                            sh -> sh.getTrip().getId(),
+	                            Function.identity()
+	                    ));
+	    
+	    Map<Long, Reservation> reservationMap =
+	            reservations.stream()
+	                    .collect(Collectors.toMap(
+	                            r -> r.getTrip().getId(),
+	                            Function.identity()
+	                    ));
+	    
 	    log.info("Iniciando mappeo de response a DTO");
-	    List<TripHistoryResponseDTO> response =
+	    List<TripHistoryResponseDTO> tripDtos =
 	            trips.stream()
-	                    .map(tripMapper::convertTripToHistoryDTO)
+	                    .map(trip -> tripMapper.convertTripToHistoryDTO(
+	                            trip,
+	                            reservationMap.get(trip.getId()),
+	                            stateMap.get(trip.getId())
+	                    ))
 	                    .toList();
 	    log.info("Operacion completada con exito");
+	    
+	    TripHistoryUserDTO response =
+	            TripHistoryUserDTO.builder()
+	                    .trips(tripDtos)
+	                    .build();
 	    
 	    return ResponseUtils.buildOKResponse(
 	    		List.of("Viajes obtenidos correctamente"),

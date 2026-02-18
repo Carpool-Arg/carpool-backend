@@ -32,9 +32,9 @@ public interface ITripService {
      * Metodo para obtener el historial de viajes de un pasajero
      * @param namesStateTrip	Lista con nombre de estados de un viaje
      * @param skip				Numero de pagina
-     * @return
+     * @return Response {@link TripHistoryUserDTO} que contiene el historial de viajes del pasajero
      */
-    Response<List<TripHistoryResponseDTO>> getHistoryTripUser(List<String> namesStateTrip, int skip);
+    Response<TripHistoryUserDTO> getHistoryTripUser(List<String> namesStateTrip, int skip);
 
     /**
      * Metodo para verificar la disponibilidad de un viaje.
