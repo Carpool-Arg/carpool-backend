@@ -1,5 +1,6 @@
 package com.carpool.carpool.service.trip;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -31,6 +32,7 @@ import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.enums.trip.BaggageEnum;
 import com.carpool.carpool.exception.ConflictException;
+import com.carpool.carpool.exception.ForbiddenException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.trip.TripMapper;
 import com.carpool.carpool.model.driver.Driver;
@@ -439,29 +441,92 @@ public class TripImplementation implements ITripService {
         }
     }
     
+	// TODO: actualizar criterios de aceptacion en JIRA con lo que escribi en
+	// Sublime
 	@Override
 	public Response<Void> updateTrip(TripUpdateRequestDTO tripUpdateRequestDTO) {
-		
-		 Driver driver = getAuthenticatedDriver();
-		 
-		 final var idTrip = tripUpdateRequestDTO.getIdTrip();
-		 Trip trip = tripRepository.findById(idTrip)
-		            .orElseThrow(() -> {
-		            	log.error("No existe el viaje con id: {}", idTrip);
-		            	return new EntityNotFoundException("No existe un viaje");
-		            });
-		 
-		 final var currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(idTrip)
-		            .orElseThrow(() -> {
-		            	log.error("El viaje con id: {} no tiene un estado actual", idTrip);
-		            	return new EntityNotFoundException("El viaje no presenta un estado actual");
-		            });
-		 
-		 if(!TripStateEnum.CREATED.name().equals(currentStateTrip.getState().getName())) {
-			 throw new ConflictException("Solamente se pueden editar viajes que se encuentren en estado CREADO");
-		 }
-		 
-		 
+
+		final var idTrip = tripUpdateRequestDTO.getIdTrip();
+		Trip trip = tripRepository.findById(idTrip).orElseThrow(() -> {
+			log.error("No existe el viaje con id: {}", idTrip);
+			return new EntityNotFoundException("El viaje que desea modificar no existe.");
+		});
+
+		Driver driver = getAuthenticatedDriver();
+
+		// Se valida que el viaje pertenezca al chofer
+		if (!driver.getId().equals(trip.getVehicle().getDriver().getId())) {
+			log.error("El chofer con ID: {} esta intentando modificar un viaje que no le pertenece", driver.getId());
+			throw new ForbiddenException("El viaje que desea modificar no le pertenece.");
+		}
+
+		final var currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(idTrip)
+				.orElseThrow(() -> {
+					log.error("El viaje con id: {} no tiene un estado actual", idTrip);
+					return new EntityNotFoundException("El viaje no presenta un estado actual");
+				});
+
+		if (!TripStateEnum.CREATED.name().equals(currentStateTrip.getState().getName())) {
+			throw new ConflictException("Solamente se pueden editar viajes que se encuentren en estado CREADO");
+		}
+
+		// Se valida que exista alguna reserva para el viaje
+		if (reservationRepository.existsByTripId(tripUpdateRequestDTO.getIdTrip())) {
+			throw new ConflictException("No puede modificar el viaje ya que este cuenta con al menos una reserva.");
+		}
+
+		LocalDateTime now = LocalDateTime.now();
+		Duration duration = Duration.between(now, trip.getStartTripDateTime());
+
+		// No tiene viajes, se valida que el horario actual no se encuentre dentro de
+		// las 12 horas del inicio del viaje
+		if (duration.isNegative() || duration.toHours() < 12) {
+			log.error(
+					"El viaje se encuentra dentro de las 12 horas de la salida. Horario de inicio del viaje: {}, horario actual: {}",
+					trip.getStartTripDateTime(), now);
+			throw new ConflictException(
+					"El viaje no puede ser editado dentro de las 12 horas siguientes al inicio del mismo.");
+		}
+
+		// Se valida que la nueva fecha sea futura y tenga al menos 12 horas desde el
+		// momento actual
+		if (tripUpdateRequestDTO.getStartDateTime() != null) {
+			final var newStartDateTime = tripUpdateRequestDTO.getStartDateTime();
+			Duration newDuration = Duration.between(now, newStartDateTime);
+
+			if (newDuration.isNegative() || newDuration.toHours() < 12) {
+				throw new ConflictException("La nueva fecha debe tener al menos 12 horas desde el momento actual.");
+			}
+
+			trip.setStartTripDateTime(newStartDateTime);
+		}
+
+		// Se realizan validaciones para cambiar el vehiculo
+		Vehicle finalVehicle = trip.getVehicle();
+		Integer finalSeatCapacity = trip.getAvailableSeat();
+
+		if (tripUpdateRequestDTO.getIdVehicle() != null) {
+			Vehicle vehicle = vehicleRepository.findById(tripUpdateRequestDTO.getIdVehicle()).orElseThrow(() -> {
+				log.error("El vehiculo con id: {} no existe", tripUpdateRequestDTO.getIdVehicle());
+				return new EntityNotFoundException("El vehiculo no existe.");
+			});
+
+			if (!vehicle.getDriver().getId().equals(driver.getId())) {
+				throw new ForbiddenException("No puede asignar un vehículo que no le pertenece.");
+			}
+
+			finalVehicle = vehicle;
+		}
+
+		if (tripUpdateRequestDTO.getAvailableSeat() != null) {
+			finalSeatCapacity = tripUpdateRequestDTO.getAvailableSeat();
+		}
+		// que la cantidad no supere a la que tiene el vehiculo
+//		int reservedSeats = reservationRepository.countReservedSeatsByTripId(trip.getId());
+//		if (finalSeatCapacity < reservedSeats) {
+//			throw new ConflictException("La nueva capacidad no puede ser menor a los asientos ya reservados.");
+//		}
+
 		// TODO Auto-generated method stub
 		return null;
 	}

@@ -22,13 +22,13 @@ public class TripUpdateRequestDTO {
     private LocalDateTime startDateTime;
 
     @Min(value = 1, message = "Debe indicar una cantidad correcta de asientos.")
-    private int availableSeat;
+    private Integer availableSeat;
 
     @Min(value = 1, message = "Debe indicar una cantidad de asientos válida.")
     private String availableBaggage;
 
     @DecimalMin(value = "1.0", message = "El precio debe tener un valor minimo de $ 1.0")
-    private double seatPrice;
+    private Double seatPrice;
 
     @Min(value = 1, message = "Debe indicar un id válido.")
     private Long idVehicle;

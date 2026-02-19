@@ -119,4 +119,8 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
     Optional<Reservation> findExpiredReservationByUserId(
             @Param("userId") Long userId
     );
+    
+    boolean existsByTripId(Long tripId);
+        
+    int countReservedSeatsByTripId(Long tripId);
 }
