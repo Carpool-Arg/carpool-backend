@@ -110,6 +110,7 @@ public class TripMapper {
         
         Vehicle vehicleEntity = trip.getVehicle();
         VehicleResponseTripDTO vehicle = VehicleResponseTripDTO.builder()
+        	.id(vehicleEntity.getId())
             .domain(vehicleEntity.getDomain())
             .vehicleTypeName(vehicleEntity.getVehicleType().getName())
             .brand(vehicleEntity.getBrand())
@@ -298,5 +299,4 @@ public class TripMapper {
                 "El viaje no tiene un estado actual"
             ));
     }
-
 }
