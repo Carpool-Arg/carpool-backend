@@ -106,6 +106,17 @@ public interface ITripService {
     Response<Void> startTrip(Long tripId);
 
     /**
+     * Metodo para cancelar un viaje, cambiando el estado del mismo
+     * y de las reservas del mismo viaje.
+     *
+     * @param TripCancellRequestDTO ID y motivo de la cancelacion si corresponde
+     * @return Response<Void>
+     * @throws ResourceNotFoundException
+     * @throws ConflictException
+     */
+    Response<Void> cancelTrip(TripCancellRequestDTO tripCancellRequestDTO);
+
+    /**
      * Metodo para devolver el viaje en progreso de un chofer
      * 
      * @return CurrentTripResponseDTO que contiene todos los datos necesarios del

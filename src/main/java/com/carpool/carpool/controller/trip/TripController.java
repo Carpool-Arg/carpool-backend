@@ -3,6 +3,7 @@ package com.carpool.carpool.controller.trip;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.carpool.carpool.dto.trip.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
 import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
 import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
@@ -43,16 +43,16 @@ public class TripController {
 
     private final ITripService tripService;
 
-        @Operation(summary = "Obtener viajes creados por un chofer")
-        @ApiResponses({
-                        @ApiResponse(responseCode = "200", description = "Listado de viajes obtenidos con éxito"),
-                        @ApiResponse(responseCode = "401", description = "El usuario no inició sesión", content = @Content),
-        })
-        @GetMapping
-        public ResponseEntity<Response<TripDriverResponseDTO>> getTrips(
-                        @RequestParam(defaultValue = "CREATED") List<String> tripState) {
-                return new ResponseEntity<>(tripService.getTrips(tripState), HttpStatus.OK);
-        }
+    @Operation(summary = "Obtener viajes creados por un chofer")
+    @ApiResponses({
+                    @ApiResponse(responseCode = "200", description = "Listado de viajes obtenidos con éxito"),
+                    @ApiResponse(responseCode = "401", description = "El usuario no inició sesión", content = @Content),
+    })
+    @GetMapping
+    public ResponseEntity<Response<TripDriverResponseDTO>> getTrips(
+                    @RequestParam(defaultValue = "CREATED") List<String> tripState) {
+            return new ResponseEntity<>(tripService.getTrips(tripState), HttpStatus.OK);
+    }
 
     @Operation(
             summary = "Visualizar los detalles de un viaje específico"
@@ -212,5 +212,17 @@ public class TripController {
     @PutMapping
     public ResponseEntity<Response<Void>> updateTrip(@Valid @RequestBody TripUpdateRequestDTO tripUpdateRequestDTO){
         return new ResponseEntity<Response<Void>>(tripService.updateTrip(tripUpdateRequestDTO), HttpStatus.OK);
+    }
+        
+    @Operation(summary = "Cancelar un viaje programado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Viaje cancelado con éxito"),
+            @ApiResponse(responseCode = "400", description = "Solicitud inválida", content = @Content),
+            @ApiResponse(responseCode = "404", description = "El viaje no existe", content = @Content)
+    })
+    @PostMapping("/cancel")
+    public ResponseEntity<Response<Void>> cancelTrip(@Valid @RequestBody TripCancellRequestDTO tripCancellRequestDTO) {
+        Response<Void> response = tripService.cancelTrip(tripCancellRequestDTO);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
