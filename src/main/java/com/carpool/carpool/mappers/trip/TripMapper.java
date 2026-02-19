@@ -161,7 +161,7 @@ public class TripMapper {
                 .map(trip -> {
 
                     boolean hasReservations =
-                            stateHistoryRepository.hasAcceptedReservations(trip.getId());
+                            stateHistoryRepository.hasActiveReservations(trip.getId());
 
                     Vehicle vehicle = trip.getVehicle();
 
