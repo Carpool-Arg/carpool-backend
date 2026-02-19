@@ -108,17 +108,25 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
      * @return reserva con estado EXPIRED si existe
      */
     @Query("""
-    SELECT r
-    FROM Reservation r
-    JOIN StateHistory sh ON sh.reservation.id = r.id
-    JOIN sh.state s
-    WHERE r.user.id = :userId
-      AND s.name = 'EXPIRED'
-      AND sh.finishDateTime IS NULL
-""")
+        SELECT r
+        FROM Reservation r
+        JOIN StateHistory sh ON sh.reservation.id = r.id
+        JOIN sh.state s
+        WHERE r.user.id = :userId
+        AND s.name = 'EXPIRED'
+        AND sh.finishDateTime IS NULL
+    """)
     Optional<Reservation> findExpiredReservationByUserId(
             @Param("userId") Long userId
     );
     
     List<Reservation> findByTripIdInAndUserId(List<Long> tripIds, Long userId);
+
+    /**
+     * Valida que un usuario pertenezca a un viaje especifico 
+     * @param userId
+     * @param tripId
+     * @return
+     */
+    boolean existsByUserIdAndTripId(Long userId, Long tripId);
 }

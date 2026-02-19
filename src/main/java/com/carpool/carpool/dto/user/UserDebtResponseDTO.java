@@ -13,4 +13,5 @@ public class UserDebtResponseDTO {
     private Double total;
     private Boolean debtUser;
     private Boolean expired;
+    private Long tripId;
 }

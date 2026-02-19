@@ -132,22 +132,35 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         @Param("now") LocalDateTime now);
 
     @Query(value = """
-        SELECT t.* 
-        FROM trip t
-        JOIN state_history sh ON sh.trip_id = t.id
-        JOIN state s ON s.id = sh.state_id
-        JOIN vehicles v ON v.id = t.vehicle_id
-        JOIN trip_stop ts ON ts.trip_id = t.id AND ts.is_destination = true
-        WHERE v.driver_id = :driverId
-          AND s.name IN (:tripState)
-          AND s.scope = 'TRIP'
-          AND sh.start_datetime = (
-              SELECT MAX(sh2.start_datetime)
-              FROM state_history sh2
-              WHERE sh2.trip_id = t.id
-          )
-    """, nativeQuery = true)
-    List<Trip> findTripsByDriverIdWithCurrentStateTrip(@Param("driverId") Long driverId, @Param("tripState") List<String> tripState);
+    SELECT DISTINCT t.*
+    FROM trip t
+    JOIN state_history sh ON sh.trip_id = t.id
+    JOIN state s ON s.id = sh.state_id
+    JOIN vehicles v ON v.id = t.vehicle_id
+    JOIN trip_stop ts ON ts.trip_id = t.id AND ts.is_destination = true
+        
+    LEFT JOIN reservation r ON r.trip_id = t.id
+    LEFT JOIN state_history sh_r 
+        ON sh_r.reservation_id = r.id 
+       AND sh_r.finish_datetime IS NULL
+    LEFT JOIN state s_r 
+        ON s_r.id = sh_r.state_id
+       AND s_r.scope = 'RESERVATION'
+       AND s_r.name = 'ACCEPTED'
+
+    WHERE v.driver_id = :driverId
+      AND s.name IN (:tripState)
+      AND s.scope = 'TRIP'
+      AND sh.start_datetime = (
+          SELECT MAX(sh2.start_datetime)
+          FROM state_history sh2
+          WHERE sh2.trip_id = t.id
+      )
+""", nativeQuery = true)
+    List<Trip> findTripsByDriverIdWithCurrentStateTrip(
+            @Param("driverId") Long driverId,
+            @Param("tripState") List<String> tripState
+    );
 
     @Query("""
             Select t from Trip t

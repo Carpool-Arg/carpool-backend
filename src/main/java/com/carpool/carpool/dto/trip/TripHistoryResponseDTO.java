@@ -20,4 +20,5 @@ public class TripHistoryResponseDTO {
     private String destinationCity;
     private double seatPrice;
     private String tripState;
+    private boolean reviewed;
 }
