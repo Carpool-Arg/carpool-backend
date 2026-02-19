@@ -29,9 +29,9 @@ public interface StateHistoryRepository extends JpaRepository<StateHistory, Long
         WHERE r.trip.id = :tripId
           AND sh.finishDateTime IS NULL
           AND s.scope = "RESERVATION"
-          AND s.name = 'ACCEPTED'
+          AND (s.name = 'ACCEPTED' OR s.name = 'PENDING')
     """)
-    boolean hasAcceptedReservations(@Param("tripId") Long tripId);
+    boolean hasActiveReservations(@Param("tripId") Long tripId);
 
     @Query("""
     SELECT new com.carpool.carpool.dto.user.UserDebtResponseDTO(

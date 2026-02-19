@@ -342,8 +342,11 @@ public class TripImplementation implements ITripService {
         List<Reservation> acceptedReservations = reservationRepository.findByTripIdAndStateName(trip.getId(),
                 STATE_ACCEPTED);
 
+        log.info("Buscando reservas pendientes");
+        List<Reservation> pendingReservations = reservationRepository.findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
+
         // Validar que si hay reservas activas, debe haber una razón
-        if (!acceptedReservations.isEmpty()) {
+        if (!acceptedReservations.isEmpty() || !pendingReservations.isEmpty())  {
             if (tripCancellRequestDTO.getReason() == null || tripCancellRequestDTO.getReason().isBlank()) {
                 throw new ConflictException("Este viaje cuenta con reservas activas, por lo que tenés que justificar el motivo de su cancelación.");
             }
@@ -355,8 +358,6 @@ public class TripImplementation implements ITripService {
             }
         }
 
-        log.info("Buscando reservas pendientes");
-        List<Reservation> pendingReservations = reservationRepository.findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
         List<Reservation> reservationsToCancel = new ArrayList<>();
         reservationsToCancel.addAll(acceptedReservations);
         reservationsToCancel.addAll(pendingReservations);
