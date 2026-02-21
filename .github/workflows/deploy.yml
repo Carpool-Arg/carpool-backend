@@ -1,0 +1,56 @@
+name: Deploy Carpool Backend
+
+on:
+  # Deploy normal: se dispara automáticamente con push a la rama de deploy
+  push:
+    branches:
+      - SRG-98/deploy
+
+  # Deploy con reset de DB: se dispara manualmente desde GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      reset_db:
+        description: '¿Resetear la base de datos? (ejecuta deploy-reset-db.sh)'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+jobs:
+  deploy:
+    name: Deploy al servidor
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Deploy normal (sin reset de DB)
+        if: ${{ github.event_name == 'push' || inputs.reset_db == 'false' }}
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 149.50.146.99
+          port: 5084
+          username: root
+          password: ${{ secrets.DEPLOY_SSH_PASSWORD }}
+          script: |
+            cd /root/DeployDonWeb/carpool-backend
+            chmod +x deploy.sh
+            export GPG_PASSPHRASE="${{ secrets.GPG_PASSPHRASE }}"
+            ./deploy.sh
+
+      - name: Deploy con reset de DB
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.reset_db == 'true' }}
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 149.50.146.99
+          port: 5084
+          username: root
+          password: ${{ secrets.DEPLOY_SSH_PASSWORD }}
+          script: |
+            cd /root/DeployDonWeb/carpool-backend
+            chmod +x deploy-reset-db.sh
+            export GPG_PASSPHRASE="${{ secrets.GPG_PASSPHRASE }}"
+            ./deploy-reset-db.sh
