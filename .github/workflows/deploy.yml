@@ -35,7 +35,6 @@ jobs:
           port: 5084
           username: root
           password: ${{ secrets.DEPLOY_SSH_PASSWORD }}
-          envs: GPG_PASSPHRASE
           script: |
             cd /root/DeployDonWeb/carpool-backend
             chmod +x deploy.sh
@@ -44,8 +43,6 @@ jobs:
       - name: Deploy con reset de DB
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.reset_db == 'true' }}
         uses: appleboy/ssh-action@v1.0.3
-        env:
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         with:
           host: 149.50.146.99
           port: 5084

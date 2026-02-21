@@ -19,12 +19,7 @@ git branch | tee -a "$LOG_FILE"
 echo "Haciendo pull de la rama..." | tee -a "$LOG_FILE"
 git pull | tee -a "$LOG_FILE"
 
-echo "Desencriptando application.properties.gpg..." | tee -a "$LOG_FILE"
-if [ -z "${GPG_PASSPHRASE:-}" ]; then
-  echo "Error: GPG_PASSPHRASE no está definida." | tee -a "$LOG_FILE"
-  exit 1
-fi
-echo "$GPG_PASSPHRASE" > /tmp/.gpg_pass
+echo "Desencriptando application.properties..." | tee -a "$LOG_FILE"
 gpg --batch --yes --passphrase-file /root/.gpg_passphrase --pinentry-mode loopback --decrypt -o "$APP_PROPS" "$GPG_FILE"
 echo "application.properties generado." | tee -a "$LOG_FILE"
 
