@@ -3,8 +3,6 @@
 set -e
 
 DEPLOY_DIR="/root/DeployDonWeb/carpool-backend"
-GPG_FILE="$DEPLOY_DIR/src/main/resources/application.properties.gpg"
-APP_PROPS="$DEPLOY_DIR/src/main/resources/application.properties"
 LOG_FILE="/root/deploy-reset-db.log"
 
 echo "========================================" | tee -a "$LOG_FILE"
@@ -18,10 +16,6 @@ git branch | tee -a "$LOG_FILE"
 
 echo "Haciendo pull de la rama..." | tee -a "$LOG_FILE"
 git pull | tee -a "$LOG_FILE"
-
-echo "Desencriptando application.properties..." | tee -a "$LOG_FILE"
-gpg --batch --yes --passphrase-file /root/.gpg_passphrase --pinentry-mode loopback --decrypt -o "$APP_PROPS" "$GPG_FILE"
-echo "application.properties generado." | tee -a "$LOG_FILE"
 
 echo "Bajando contenedores..." | tee -a "$LOG_FILE"
 docker-compose down | tee -a "$LOG_FILE"
