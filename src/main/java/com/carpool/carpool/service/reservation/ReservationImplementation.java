@@ -122,8 +122,19 @@ public class ReservationImplementation implements IReservationService{
         }
 
         Optional<Reservation> existingReservation = reservationRepository.findReservationByUserAndTrip(userAuth.getId(), trip.getId());
+    
         if (existingReservation.isPresent()) {
-            throw new ConflictException("Ya tenés una reserva asociada para este viaje, no se permiten múltiples solicitudes.");
+            // Obtenemos el estado actual de esa reserva existente
+            StateHistory currentSh = stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(existingReservation.get().getId())
+                    .orElseThrow(() -> new ConflictException("Error al recuperar el estado de la reserva existente."));
+
+            String currentState = currentSh.getState().getName();
+
+            if (!currentState.equals("CANCELLED") && !currentState.equals("REJECTED")) {
+                throw new ConflictException("Ya tenés una reserva activa (Estado: " + currentState + ") para este viaje.");
+            }
+            
+            log.info("Usuario {} tenía una reserva {}, permitiendo nueva solicitud.", userAuth.getUsername(), currentState);
         }
 
         // Validaciones de las ciudades

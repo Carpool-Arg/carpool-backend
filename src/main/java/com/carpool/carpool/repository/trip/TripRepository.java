@@ -59,7 +59,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query("SELECT DISTINCT t FROM Trip t " + 
         "JOIN t.tripStops ts " +
         "JOIN t.vehicle v " +
-        "JOIN v.driver d " +
+        "JOIN v.driver d " + 
         "JOIN t.stateHistory sh " +
         "WHERE t.currentAvailableSeats > 0 " +
         "AND sh.state.name = 'CREATED' AND sh.finishDateTime IS NULL " +
@@ -72,10 +72,10 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         "  WHERE r.trip.id = t.id " + 
         "  AND r.user.id = :userId " +
         "  AND EXISTS (" +
-        "    SELECT sh FROM StateHistory sh " +
-        "    JOIN sh.state st " +
-        "    WHERE sh.reservation.id = r.id " +
-        "    AND sh.finishDateTime IS NULL " +
+        "    SELECT shR FROM StateHistory shR " +
+        "    WHERE shR.reservation.id = r.id " +
+        "    AND shR.finishDateTime IS NULL " +
+        "    AND shR.state.name IN ('ACCEPTED', 'PENDING', 'CONFIRMED', 'UNPAID') " +
         "  )" +
         ") " + 
         "ORDER BY t.startTripDateTime ASC")
@@ -92,21 +92,18 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         "JOIN driver d ON d.id = v.driver_id " + 
         "JOIN state_history sh ON sh.trip_id = t.id " +
         "JOIN state s ON s.id = sh.state_id " +
-
         "WHERE t.current_available_seats > 0 " +
-        "AND s.name = 'CREATED' AND sh.finish_datetime IS NULL " +
+        "AND s.name = 'CREATED' AND s.scope = 'TRIP' AND sh.finish_datetime IS NULL " + 
         "AND t.start_date_time >= :now " +
         "AND d.user_id != :userId " +
-
         "AND NOT EXISTS ( " +
         " SELECT 1 FROM reservation r " +
         " JOIN state_history shR ON shR.reservation_id = r.id " +
         " JOIN state sR ON sR.id = shR.state_id " +
         " WHERE r.trip_id = t.id " + 
         " AND r.user_id = :userId " + 
-        " AND sR.name IN ('ACCEPTED', 'PENDING') " +
+        " AND sR.name IN ('ACCEPTED', 'PENDING', 'CONFIRMED') " + 
         " AND shR.finish_datetime IS NULL " +
-        " AND sh.finish_datetime IS NULL " +
         ") " +
         "AND ((:departureDate)::date IS NULL OR t.start_date_time::date = :departureDate) " +
         "AND EXISTS (SELECT 1 FROM trip_stop ts1, trip_stop ts2 " +

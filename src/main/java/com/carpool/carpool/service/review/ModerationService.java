@@ -92,11 +92,11 @@ public class ModerationService {
             Map<?, ?> toxicity = (Map<?, ?>) attributeScores.get("TOXICITY");
             Map<?, ?> summaryScore = (Map<?, ?>) toxicity.get("summaryScore");
 
-            // Verificación de que el score sea mayor a 0.7
+            // Verificación de que el score sea mayor a 0.45
             double scoreValue = ((Number) summaryScore.get("value")).doubleValue();
             log.info("Análisis Perspective API completado. Score: {}", scoreValue);
 
-            return scoreValue > 0.7;
+            return scoreValue > 0.45;
 
         } catch (IOException e) {
             log.error("Error al obtener Access Token de Google: {}", e.getMessage());
