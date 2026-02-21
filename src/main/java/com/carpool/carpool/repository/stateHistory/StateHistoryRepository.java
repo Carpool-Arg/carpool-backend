@@ -1,5 +1,6 @@
 package com.carpool.carpool.repository.stateHistory;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.carpool.carpool.dto.user.UserDebtResponseDTO;
 import com.carpool.carpool.enums.state.ScopeEnum;
+import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
 
@@ -37,7 +39,8 @@ public interface StateHistoryRepository extends JpaRepository<StateHistory, Long
     SELECT new com.carpool.carpool.dto.user.UserDebtResponseDTO(
         r.total,
         true,
-        (s.name = 'EXPIRED')
+        (s.name = 'EXPIRED'),
+        r.trip.id
     )
     FROM StateHistory sh
     JOIN sh.reservation r
@@ -58,6 +61,15 @@ public interface StateHistoryRepository extends JpaRepository<StateHistory, Long
     boolean isCurrentState(@Param("trip") Trip trip, @Param("name") String name, @Param("scope") ScopeEnum scope);
 
     @Query("""
+        SELECT COUNT(sh) > 0 FROM StateHistory sh 
+        WHERE sh.reservation = :reservation 
+        AND sh.state.name = :name 
+        AND sh.state.scope = :scope 
+        AND sh.finishDateTime IS NULL
+    """)
+    boolean isCurrentStateReservation(@Param("reservation") Reservation reservation, @Param("name") String name, @Param("scope") ScopeEnum scope);
+
+    @Query("""
         SELECT sh FROM StateHistory sh 
         WHERE sh.trip = :trip 
         AND sh.finishDateTime IS NULL 
@@ -65,4 +77,12 @@ public interface StateHistoryRepository extends JpaRepository<StateHistory, Long
     """)
     Optional<StateHistory> findCurrentStateByTrip(@Param("trip") Trip trip);
 
+	@Query("""
+			    SELECT sh
+			    FROM StateHistory sh
+			    WHERE sh.trip.id IN :tripIds
+			    AND sh.finishDateTime IS NULL
+			    AND sh.reservation IS NULL
+			""")
+	List<StateHistory> findCurrentStatesByTripIds(@Param("tripIds") List<Long> tripIds);
 }
