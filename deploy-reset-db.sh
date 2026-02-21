@@ -26,7 +26,7 @@ echo "Volumen borrado." | tee -a "$LOG_FILE"
 
 # ── Compilar y levantar con Liquibase en FALSE ──────────
 echo "Compilando con liquibase=false para crear tablas base..." | tee -a "$LOG_FILE"
-sed -i 's/spring\.liquibase\.enabled=true/spring.liquibase.enabled=false/' "$APP_PROPS"
+sed -i 's/spring\.liquibase\.enabled=true/spring.liquibase.enabled=false/' "$DEPLOY_DIR/src/main/resources/application.properties"
 
 mvn clean package -DskipTests | tee -a "$LOG_FILE"
 docker-compose build | tee -a "$LOG_FILE"
@@ -42,7 +42,7 @@ docker-compose down | tee -a "$LOG_FILE"
 
 # ── Recompilar con Liquibase en TRUE ────────────────────
 echo "Activando liquibase=true para correr migraciones..." | tee -a "$LOG_FILE"
-sed -i 's/spring\.liquibase\.enabled=false/spring.liquibase.enabled=true/' "$APP_PROPS"
+sed -i 's/spring\.liquibase\.enabled=false/spring.liquibase.enabled=true/' "$DEPLOY_DIR/src/main/resources/application.properties"
 
 cd "$DEPLOY_DIR"
 mvn clean package -DskipTests | tee -a "$LOG_FILE"
