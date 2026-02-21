@@ -25,9 +25,7 @@ if [ -z "${GPG_PASSPHRASE:-}" ]; then
   exit 1
 fi
 echo "$GPG_PASSPHRASE" > /tmp/.gpg_pass
-chmod 600 /tmp/.gpg_pass
-gpg --batch --yes --passphrase-file /tmp/.gpg_pass --pinentry-mode loopback --decrypt -o "$APP_PROPS" "$GPG_FILE"
-rm -f /tmp/.gpg_pass
+gpg --batch --yes --passphrase-file /root/.gpg_passphrase --pinentry-mode loopback --decrypt -o "$APP_PROPS" "$GPG_FILE"
 echo "application.properties generado." | tee -a "$LOG_FILE"
 
 echo "Bajando contenedores..." | tee -a "$LOG_FILE"
