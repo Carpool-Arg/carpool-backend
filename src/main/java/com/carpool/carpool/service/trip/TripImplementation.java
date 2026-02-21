@@ -57,6 +57,7 @@ import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.parameters.IParametersService;
 import com.carpool.carpool.service.reservation.IReservationService;
 import com.carpool.carpool.service.state.StateTransitionService;
+import com.carpool.carpool.service.trip.tripStop.TripStopComponent;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
 import com.carpool.carpool.service.notification.INotificationService;
@@ -84,6 +85,7 @@ public class TripImplementation implements ITripService {
     private final IReservationService reservationService;
     private final INotificationService notificationService;
     private final StateTransitionService stateTransitionService;
+    private final TripStopComponent tripStopComponent;
 
     private static final String STATE_ACCEPTED = "ACCEPTED";
 
@@ -441,9 +443,8 @@ public class TripImplementation implements ITripService {
         }
     }
     
-	// TODO: actualizar criterios de aceptacion en JIRA con lo que escribi en
-	// Sublime
 	@Override
+	@Transactional
 	public Response<Void> updateTrip(TripUpdateRequestDTO tripUpdateRequestDTO) {
 
 		final var idTrip = tripUpdateRequestDTO.getIdTrip();
@@ -460,15 +461,8 @@ public class TripImplementation implements ITripService {
 			throw new ForbiddenException("El viaje que desea modificar no le pertenece.");
 		}
 
-		final var currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(idTrip)
-				.orElseThrow(() -> {
-					log.error("El viaje con id: {} no tiene un estado actual", idTrip);
-					return new EntityNotFoundException("El viaje no presenta un estado actual");
-				});
-
-		if (!TripStateEnum.CREATED.name().equals(currentStateTrip.getState().getName())) {
-			throw new ConflictException("Solamente se pueden editar viajes que se encuentren en estado CREADO");
-		}
+		// Se valida que el viaje se encuentra en estado CREADO
+		validateStateTrip(idTrip, TripStateEnum.CREATED.name());
 
 		// Se valida que exista alguna reserva para el viaje
 		if (reservationRepository.existsByTripId(tripUpdateRequestDTO.getIdTrip())) {
@@ -478,18 +472,19 @@ public class TripImplementation implements ITripService {
 		LocalDateTime now = LocalDateTime.now();
 		Duration duration = Duration.between(now, trip.getStartTripDateTime());
 
-		// No tiene viajes, se valida que el horario actual no se encuentre dentro de
-		// las 12 horas del inicio del viaje
+		// Se valida que el horario actual no se encuentre dentro de las 12 horas del inicio del viaje
 		if (duration.isNegative() || duration.toHours() < 12) {
 			log.error(
 					"El viaje se encuentra dentro de las 12 horas de la salida. Horario de inicio del viaje: {}, horario actual: {}",
 					trip.getStartTripDateTime(), now);
-			throw new ConflictException(
-					"El viaje no puede ser editado dentro de las 12 horas siguientes al inicio del mismo.");
+			throw new ConflictException("El viaje no puede ser editado dentro de las 12 horas siguientes al inicio del mismo.");
 		}
 
-		// Se valida que la nueva fecha sea futura y tenga al menos 12 horas desde el
-		// momento actual
+		if (tripUpdateRequestDTO.getTripStops() != null) {
+			changeTripStops(trip, tripUpdateRequestDTO.getTripStops());
+		}
+
+		// Se valida que la nueva fecha sea futura y tenga al menos 12 horas desde el momento actual
 		if (tripUpdateRequestDTO.getStartDateTime() != null) {
 			final var newStartDateTime = tripUpdateRequestDTO.getStartDateTime();
 			Duration newDuration = Duration.between(now, newStartDateTime);
@@ -498,42 +493,82 @@ public class TripImplementation implements ITripService {
 				throw new ConflictException("La nueva fecha debe tener al menos 12 horas desde el momento actual.");
 			}
 
+			// Se obtiene la fecha de llegada estimada al destino. Si se reciben nuevas
+			// paradas, se calcula en base a la modificacion que se hizoe n changeTripStops, caso contrario se usan las paradas actuales que ya poseia el viaje
+			LocalDateTime newEnd = trip.getTripStops().stream().filter(TripStop::isDestination)
+					.map(TripStop::getEstimatedArrivalDateTime).findFirst()
+					.orElseThrow(() -> new ConflictException("No se pudo calcular la fecha de llegada."));
+
+			// Se verifica si el nuevo viaje interfiere con otros viajes del chofer.
+			if (tripRepository.hasOverlappingScheduleUpdate(driver.getId(), newStartDateTime, newEnd, idTrip)) {
+				throw new ConflictException(
+						"El horario para iniciar el viaje se superpone con otro viaje activo. Por favor, elige otro horario.");
+			}
+
 			trip.setStartTripDateTime(newStartDateTime);
 		}
 
-		// Se realizan validaciones para cambiar el vehiculo
 		Vehicle finalVehicle = trip.getVehicle();
 		Integer finalSeatCapacity = trip.getAvailableSeat();
 
+		// Se realizan validaciones para cambiar el vehiculo
 		if (tripUpdateRequestDTO.getIdVehicle() != null) {
-			Vehicle vehicle = vehicleRepository.findById(tripUpdateRequestDTO.getIdVehicle()).orElseThrow(() -> {
-				log.error("El vehiculo con id: {} no existe", tripUpdateRequestDTO.getIdVehicle());
-				return new EntityNotFoundException("El vehiculo no existe.");
-			});
-
-			if (!vehicle.getDriver().getId().equals(driver.getId())) {
-				throw new ForbiddenException("No puede asignar un vehículo que no le pertenece.");
-			}
-
-			finalVehicle = vehicle;
+			finalVehicle = changeVehicle(tripUpdateRequestDTO.getIdVehicle(), driver.getId());
 		}
 
 		if (tripUpdateRequestDTO.getAvailableSeat() != null) {
 			finalSeatCapacity = tripUpdateRequestDTO.getAvailableSeat();
 		}
-		// que la cantidad no supere a la que tiene el vehiculo
-//		int reservedSeats = reservationRepository.countReservedSeatsByTripId(trip.getId());
-//		if (finalSeatCapacity < reservedSeats) {
-//			throw new ConflictException("La nueva capacidad no puede ser menor a los asientos ya reservados.");
-//		}
 
-		// TODO Auto-generated method stub
-		return null;
+		// Se valida que la capacidad que se desea modificar no supere la que tiene el
+		// vehiculo
+		if (finalSeatCapacity > finalVehicle.getAvailableSeats()) {
+			throw new ConflictException("La capacidad del viaje no puede superar la capacidad del vehículo.");
+		}
+
+		trip.setVehicle(finalVehicle);
+		trip.setAvailableSeat(finalSeatCapacity);
+		trip.setCurrentAvailableSeats(finalSeatCapacity);
+
+		if (tripUpdateRequestDTO.getAvailableBaggage() != null) {
+			final String baggageValue = changeBaggage(tripUpdateRequestDTO.getAvailableBaggage());
+			trip.setAvailableBaggage(BaggageEnum.valueOf(baggageValue));
+		}
+
+		if (tripUpdateRequestDTO.getSeatPrice() != null) {
+			trip.setSeatPrice(tripUpdateRequestDTO.getSeatPrice());
+		}
+
+		tripRepository.save(trip);
+
+		return ResponseUtils.buildOKResponse(List.of("Viaje modificado con éxito"), null);
 	}
 
+	/**
+	 * Metodo encargado de finalizar un viaje, realizando la transicion de estados correspondiente
+	 * @param trip		Viaje que se desea finalizar
+	 * @return {@link Response} con el mensaje correspondiente
+	 */
     private Response<Void> finishTrip(Trip trip){
         stateTransitionService.transition(trip, ScopeEnum.TRIP, "IN_PROGRESS", "FINISHED");
         return ResponseUtils.buildOKResponse(List.of("Viaje finalizado con éxito") , null);
+    }
+    
+    /**
+     * Este metodo permite corroborar si un viaje se encuentra en un determinado estado
+     * @param idTrip		Viaje a corroborar el estado
+     * @param nameState		Estado que se desea corroborar
+     */
+    private void validateStateTrip(Long idTrip , String nameState) {
+		final var currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(idTrip)
+				.orElseThrow(() -> {
+					log.error("El viaje con id: {} no tiene un estado actual", idTrip);
+					return new EntityNotFoundException("El viaje no presenta un estado actual");
+				});
+
+		if (!nameState.equals(currentStateTrip.getState().getName())) {
+			throw new ConflictException("Solamente se pueden editar viajes que se encuentren en estado CREADO");
+		}
     }
 
     /**
@@ -563,6 +598,72 @@ public class TripImplementation implements ITripService {
                 "Orden inválido. Debe cerrarse la parada con orden " + expectedOrder
             );
         }
+    }
+    
+    /**
+     * Metodo que permite actualizar el cambio de un vehiculo
+     * @param idVehicle		Id del vehiculo que se desea actualizar
+     * @param driverId		Id del conductor
+     * @return Vehiculo a actualizar
+     */
+    private Vehicle changeVehicle(Long idVehicle, Long driverId) {
+		Vehicle vehicle = vehicleRepository.findById(idVehicle).orElseThrow(() -> {
+			log.error("El vehiculo con id: {} no existe", idVehicle);
+			return new EntityNotFoundException("El vehiculo no existe.");
+		});
+
+		if (!vehicle.getDriver().getId().equals(driverId)) {
+			throw new ForbiddenException("No puede asignar un vehículo que no le pertenece.");
+		}
+
+		return vehicle;
+    }
+    
+    /**
+     * Se realizan validaciones del tipo de equipaje 
+     * @param baggageValue		Tipo de equipaje
+     * @return El tipo de equipaje en caso de que exista
+     */
+    private String changeBaggage(String baggageValue) {
+		
+	    if (!BaggageEnum.contains(baggageValue)) {
+	    	log.error("El tipo de equipaje recibo de la request: {} no coincide con los definidos en el enum de equipaje", baggageValue);
+	        throw new ConflictException("El límite de equipaje indicado no es válido.");
+	    }
+	    
+	    return baggageValue;
+    }
+    
+    /**
+     * Actualiza las paradas de un viaje, recalculando distancias, tiempos estimados,
+     * precio por kilómetro, comisión y precio publicado.
+     * @param trip     El viaje a actualizar
+     * @param stopDTOs La lista de paradas nuevas
+     */
+    private void changeTripStops(Trip trip, List<TripStopRequestDTO> stopDTOs) {
+
+        startDestinationValidation(stopDTOs);
+        validateTripStopsOrder(stopDTOs);
+
+        stopDTOs.sort(Comparator.comparingInt(TripStopRequestDTO::getOrder));
+
+        tripStopRepository.deleteAll(trip.getTripStops());
+        trip.getTripStops().clear();
+
+        LocalDateTime baseStartTime = trip.getStartTripDateTime();
+
+        double totalDistance = tripStopComponent.buildStops(trip, stopDTOs, baseStartTime);
+
+        if (totalDistance <= 0) {
+            throw new ConflictException("No se pudo calcular la distancia total del viaje.");
+        }
+
+        double seatPrice = trip.getSeatPrice();
+        trip.setKilometerPrice(seatPrice / totalDistance);
+
+        double commission = seatPrice * (settingService.getDiscountPercentage() / 100.0);
+        trip.setDriverPriceDiscount(commission);
+        trip.setPublishedSeatPrice(seatPrice + commission);
     }
 
     /**
@@ -656,7 +757,7 @@ public class TripImplementation implements ITripService {
      * @throws ConflictException si la validacion falla
      */
     private void validateTripStopsOrder(List<TripStopRequestDTO> tripStops) {
-        // Validacion para controlar que los numeros de orden no se respitan en la lista
+        // Validacion para controlar que los numeros de orden no se repitan en la lista
         // de paradas
         boolean allOrderUnique = tripStops.stream()
                 .map(TripStopRequestDTO::getOrder)

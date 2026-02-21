@@ -1,7 +1,5 @@
 package com.carpool.carpool.dto.trip.tripStop;
 
-
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.validation.constraints.AssertTrue;
@@ -29,7 +27,6 @@ public class TripStopRequestDTO {
     @NotNull(message = "Debes especificar una observacion para cada parada.")
     @Size(max = 100, message="La observación no puede superar los 100 caracteres.")
     private String observation;
-
 
     @AssertTrue(message = "Una ciudad no puede ser origen y destino al mismo tiempo")
     @JsonIgnore
