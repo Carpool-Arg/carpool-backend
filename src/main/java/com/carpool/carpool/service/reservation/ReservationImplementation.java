@@ -130,11 +130,18 @@ public class ReservationImplementation implements IReservationService{
 
             String currentState = currentSh.getState().getName();
 
-            if (!currentState.equals("CANCELLED") && !currentState.equals("REJECTED")) {
+            
+            // No se permite que un viaje que fue rechazado pueda volver a ser solicitado y desaparece 
+            if (currentState.equals("REJECTED")) {
+                throw new ConflictException("Tu solicitud para este viaje fue rechazada y no puedes volver a intentarlo.");
+            }
+
+            if (!currentState.equals("CANCELLED")) {
                 throw new ConflictException("Ya tenés una reserva activa (Estado: " + currentState + ") para este viaje.");
             }
-            
-            log.info("Usuario {} tenía una reserva {}, permitiendo nueva solicitud.", userAuth.getUsername(), currentState);
+
+            // Si llegamos acá, es CANCELLED. El flujo sigue y crea una NUEVA reserva.
+            log.info("Usuario {} tenía una reserva CANCELLED, permitiendo nueva solicitud.", userAuth.getUsername());
         }
 
         // Validaciones de las ciudades

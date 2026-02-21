@@ -62,21 +62,18 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         "JOIN v.driver d " + 
         "JOIN t.stateHistory sh " +
         "WHERE t.currentAvailableSeats > 0 " +
-        "AND sh.state.name = 'CREATED' AND sh.finishDateTime IS NULL " +
+        "AND sh.state.name = 'CREATED' AND sh.finishDateTime IS NULL " + 
         "AND t.startTripDateTime >= :now " +
         "AND ts.city.id = :cityId " +
         "AND d.user.id != :userId " +
         "AND ts.stopOrder < (SELECT MAX(tsMax.stopOrder) FROM TripStop tsMax WHERE tsMax.trip.id = t.id) " +
         "AND NOT EXISTS (" + 
         "  SELECT r FROM Reservation r " +
+        "  JOIN StateHistory shR ON shR.reservation.id = r.id " + 
         "  WHERE r.trip.id = t.id " + 
         "  AND r.user.id = :userId " +
-        "  AND EXISTS (" +
-        "    SELECT shR FROM StateHistory shR " +
-        "    WHERE shR.reservation.id = r.id " +
-        "    AND shR.finishDateTime IS NULL " +
-        "    AND shR.state.name IN ('ACCEPTED', 'PENDING', 'CONFIRMED', 'UNPAID') " +
-        "  )" +
+        "  AND shR.finishDateTime IS NULL " +
+        "  AND shR.state.name != 'CANCELLED' " + 
         ") " + 
         "ORDER BY t.startTripDateTime ASC")
     List<Trip> findTripsForInitialFeed(
@@ -102,8 +99,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         " JOIN state sR ON sR.id = shR.state_id " +
         " WHERE r.trip_id = t.id " + 
         " AND r.user_id = :userId " + 
-        " AND sR.name IN ('ACCEPTED', 'PENDING', 'CONFIRMED') " + 
         " AND shR.finish_datetime IS NULL " +
+        " AND sR.name != 'CANCELLED' " + 
         ") " +
         "AND ((:departureDate)::date IS NULL OR t.start_date_time::date = :departureDate) " +
         "AND EXISTS (SELECT 1 FROM trip_stop ts1, trip_stop ts2 " +
