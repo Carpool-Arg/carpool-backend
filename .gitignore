@@ -6,6 +6,8 @@ target/
 !**/src/test/**/target/
 **/resources/firebase/*
 
+### Application.properties ###
+src/main/resources/application.properties
 
 ### STS ###
 .apt_generated
