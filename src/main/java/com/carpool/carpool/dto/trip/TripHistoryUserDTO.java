@@ -19,5 +19,6 @@ public class TripHistoryUserDTO {
     private String startCity;
     private String destinationCity;
     private double seatPrice;
+    private boolean reviewed;
     private String tripState;
 }

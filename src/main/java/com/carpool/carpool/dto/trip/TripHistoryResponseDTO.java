@@ -1,24 +1,24 @@
 package com.carpool.carpool.dto.trip;
 
+import java.time.LocalDateTime;
+
 import com.carpool.carpool.dto.vehicle.VehicleResponseTripDTO;
+
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Builder
-public class TripDriverDTO {
-    private Long id;
+public class TripHistoryResponseDTO {
+    private Long tripId;
+    private LocalDateTime startDateTime;
+    private String driverName;
+    private String driverProfileImage;
+    private Double driverRating;
     private VehicleResponseTripDTO vehicle;
     private String startCity;
     private String destinationCity;
-    private LocalDateTime startDateTime;
-    private int availableSeat;
-    private int currentAvailableSeats;
-    private String availableBaggage;
     private double seatPrice;
-    private LocalDateTime estimatedArrivalDateTime;
     private String tripState;
-    private boolean hasReservations;
+    private boolean reviewed;
 }

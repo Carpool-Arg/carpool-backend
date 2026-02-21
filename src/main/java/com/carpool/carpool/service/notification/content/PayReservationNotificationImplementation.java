@@ -11,8 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.carpool.carpool.utils.EmailMessageUtils.*;
-import static com.carpool.carpool.utils.EmailMessageUtils.BUTTON_NEW_RESERVATION;
-import static com.carpool.carpool.utils.EmailMessageUtils.MESSAGE_FOOTER_NEW_RESERVATION;
+
 
 @Component
 public class PayReservationNotificationImplementation implements INotificationContentService<Reservation>{
@@ -32,7 +31,7 @@ public class PayReservationNotificationImplementation implements INotificationCo
                 .type("PAYMENT_PENDING")
                 .pushTitle("¡Pagá tu viaje!")
                 .pushBody(passengerName + " tenés un pago pendiente")
-                .data(Map.of( "total", reservation.getTotal()))
+                .data(Map.of( "total", reservation.getTotal(), "tripId", reservation.getTrip().getId()))
                 .emailSubject(SUBJECT_EMAIL_RESERVATION_UNPAID)
                 .emailTitle(TITLE_RESERVATION_UNPAID.replace("{name}", reservation.getUser().getName()))
                 .emailMessage( MESSAGE_RESERVATION_UNPAID.replace( "{total}",String.valueOf(reservation.getTotal())))
