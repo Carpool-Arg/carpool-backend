@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
 import com.carpool.carpool.dto.trip.TripDriverDTO;
-import com.carpool.carpool.dto.trip.TripHistoryResponseDTO;
+import com.carpool.carpool.dto.trip.TripHistoryUserDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 
 import org.springframework.stereotype.Component;
@@ -132,13 +132,13 @@ public class TripMapper {
             .build();
     }
     
-    public TripHistoryResponseDTO convertTripToHistoryDTO(Trip trip, Reservation reservation, StateHistory stateHistory) {
+    public TripHistoryUserDTO convertTripToHistoryDTO(Trip trip, Reservation reservation, StateHistory stateHistory) {
 
         Driver driver = trip.getVehicle().getDriver();
         User user = driver.getUser();
         VehicleResponseTripDTO vehicleEntity =  mapVehicleToVehicleResponseDTO(trip.getVehicle());
 
-        return TripHistoryResponseDTO.builder()
+        return TripHistoryUserDTO.builder()
                 .tripId(trip.getId())
                 .startDateTime(trip.getStartTripDateTime())
                 .driverName(user.getName() + " " + user.getLastname())

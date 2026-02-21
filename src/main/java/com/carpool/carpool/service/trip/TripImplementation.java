@@ -21,8 +21,8 @@ import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
 import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
 import com.carpool.carpool.dto.trip.TripDriverDTO;
 import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
-import com.carpool.carpool.dto.trip.TripHistoryResponseDTO;
 import com.carpool.carpool.dto.trip.TripHistoryUserDTO;
+import com.carpool.carpool.dto.trip.TripHistoryUserResponseDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
@@ -228,7 +228,7 @@ public class TripImplementation implements ITripService {
     }
 
 	@Override
-	public Response<TripHistoryUserDTO> getHistoryTripUser(List<String> namesStateTrip, int skip) {
+	public Response<TripHistoryUserResponseDTO> getHistoryTripUser(List<String> namesStateTrip, int skip) {
 		
 		Long userId = getAuthenticatedUserId();
 		log.info("Iniciando busqueda de historial de viajes para usuario con id: {}", userId);
@@ -273,7 +273,7 @@ public class TripImplementation implements ITripService {
 	                    ));
 	    
 	    log.info("Iniciando mappeo de response a DTO");
-	    List<TripHistoryResponseDTO> tripDtos =
+	    List<TripHistoryUserDTO> tripDtos =
 	            trips.stream()
 	                    .map(trip -> tripMapper.convertTripToHistoryDTO(
 	                            trip,
@@ -283,8 +283,8 @@ public class TripImplementation implements ITripService {
 	                    .toList();
 	    log.info("Operacion completada con exito");
 	    
-	    TripHistoryUserDTO response =
-	            TripHistoryUserDTO.builder()
+	    TripHistoryUserResponseDTO response =
+	            TripHistoryUserResponseDTO.builder()
 	                    .trips(tripDtos)
 	                    .build();
 	    

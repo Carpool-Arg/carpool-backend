@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
 import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
 import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
-import com.carpool.carpool.dto.trip.TripHistoryUserDTO;
+import com.carpool.carpool.dto.trip.TripHistoryUserResponseDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
@@ -84,7 +84,7 @@ public class TripController {
 	@ApiResponses({ @ApiResponse(responseCode = "200", description = "El viaje es posible"),
 			@ApiResponse(responseCode = "404", description = "Solicitud inválida") })
 	@GetMapping("/history-trip-user")
-	public Response<TripHistoryUserDTO> getHistoryTripUser(
+	public Response<TripHistoryUserResponseDTO> getHistoryTripUser(
 		    @RequestParam(required = true) List<String> namesStateTrip,
 		    @RequestParam(required = false, defaultValue = "0") int skip) {
 		return tripService.getHistoryTripUser(namesStateTrip, skip);
