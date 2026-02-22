@@ -562,26 +562,7 @@ public class TripImplementation implements ITripService {
 
 		// Se valida que la nueva fecha sea futura y tenga al menos 12 horas desde el momento actual
 		if (tripUpdateRequestDTO.getStartDateTime() != null) {
-			final var newStartDateTime = tripUpdateRequestDTO.getStartDateTime();
-			Duration newDuration = Duration.between(now, newStartDateTime);
-
-			if (newDuration.isNegative() || newDuration.toHours() < 12) {
-				throw new ConflictException("La nueva fecha debe tener al menos 12 horas desde el momento actual.");
-			}
-
-			// Se obtiene la fecha de llegada estimada al destino. Si se reciben nuevas
-			// paradas, se calcula en base a la modificacion que se hizoe n changeTripStops, caso contrario se usan las paradas actuales que ya poseia el viaje
-			LocalDateTime newEnd = trip.getTripStops().stream().filter(TripStop::isDestination)
-					.map(TripStop::getEstimatedArrivalDateTime).findFirst()
-					.orElseThrow(() -> new ConflictException("No se pudo calcular la fecha de llegada."));
-
-			// Se verifica si el nuevo viaje interfiere con otros viajes del chofer.
-			if (tripRepository.hasOverlappingScheduleUpdate(driver.getId(), newStartDateTime, newEnd, idTrip)) {
-				throw new ConflictException(
-						"El horario para iniciar el viaje se superpone con otro viaje activo. Por favor, elige otro horario.");
-			}
-
-			trip.setStartTripDateTime(newStartDateTime);
+	        validateAndApplyNewStartDateTime(tripUpdateRequestDTO.getStartDateTime(), trip, driver.getId(), now);
 		}
 
 		Vehicle finalVehicle = trip.getVehicle();
@@ -693,6 +674,35 @@ public class TripImplementation implements ITripService {
 		}
 
 		return vehicle;
+    }
+    
+    /**
+     * Metodo que permite calcular la nueva fecha que se desea modificar el viaje y corroborar que la misma sea valida, como: que la misma no se encuentre dentro
+     * de las 12 horas previas al inicio del viaje, que no se superponga con otro viaje.
+     * @param newStartDateTime		Nueva fecha y hora a setear al viaje
+     * @param trip					El viaje que se desea modificar
+     * @param driverId				El id del conductor
+     * @param now					Fecha y hora actual
+     */
+    private void validateAndApplyNewStartDateTime(LocalDateTime newStartDateTime, Trip trip, Long driverId, LocalDateTime now) {
+        Duration newDuration = Duration.between(now, newStartDateTime);
+
+        if (newDuration.isNegative() || newDuration.toHours() < 12) {
+            throw new ConflictException("La nueva fecha debe tener al menos 12 horas desde el momento actual.");
+        }
+
+        LocalDateTime newEnd = trip.getTripStops().stream()
+                .filter(TripStop::isDestination)
+                .map(TripStop::getEstimatedArrivalDateTime)
+                .findFirst()
+                .orElseThrow(() -> new ConflictException("No se pudo calcular la fecha de llegada."));
+
+        if (tripRepository.hasOverlappingScheduleUpdate(driverId, newStartDateTime, newEnd, trip.getId())) {
+            throw new ConflictException(
+                    "El horario para iniciar el viaje se superpone con otro viaje activo. Por favor, elige otro horario.");
+        }
+
+        trip.setStartTripDateTime(newStartDateTime);
     }
     
     /**
