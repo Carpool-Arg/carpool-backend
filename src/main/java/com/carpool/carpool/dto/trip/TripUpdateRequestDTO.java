@@ -24,7 +24,7 @@ public class TripUpdateRequestDTO {
     @Min(value = 1, message = "Debe indicar una cantidad correcta de asientos.")
     private Integer availableSeat;
 
-    @Min(value = 1, message = "Debe indicar una cantidad de asientos válida.")
+    @Min(value = 1, message = "Debe indicar un equipaje válido.")
     private String availableBaggage;
 
     @DecimalMin(value = "1.0", message = "El precio debe tener un valor minimo de $ 1.0")
