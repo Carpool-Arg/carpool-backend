@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.carpool.carpool.dto.trip.*;
@@ -16,11 +18,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
 import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
 import com.carpool.carpool.dto.trip.TripDriverDTO;
 import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
+import com.carpool.carpool.dto.trip.TripHistoryUserDTO;
+import com.carpool.carpool.dto.trip.TripHistoryUserResponseDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
@@ -31,6 +38,7 @@ import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.enums.trip.BaggageEnum;
+import com.carpool.carpool.exception.BadRequestException;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ForbiddenException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
@@ -227,6 +235,73 @@ public class TripImplementation implements ITripService {
 
     }
 
+	@Override
+	public Response<TripHistoryUserResponseDTO> getHistoryTripUser(List<String> namesStateTrip, int skip) {
+		
+		Long userId = getAuthenticatedUserId();
+		log.info("Iniciando busqueda de historial de viajes para usuario con id: {}", userId);
+		
+		 List<String> existingStates = stateRepository.findExistingStateNames(ScopeEnum.TRIP, namesStateTrip);
+		 
+		 // Se valida la existencia de los estados
+		 if(existingStates.size() != namesStateTrip.size()) {
+			List<String> invalidStates = namesStateTrip.stream().filter(state -> !existingStates.contains(state)).toList();
+
+			throw new BadRequestException("Estados inválidos: " + String.join(", ", invalidStates));
+		 }
+		
+		// Se buscan los viajes  del usuario con el estado correspondiente
+		Page<Trip> tripsPage = tripRepository.findTripsByUserAndCurrentStates(userId, namesStateTrip, getPageable(skip));
+		log.info("Cantidad de historial de viajes obtenidos: [{}]", tripsPage.getTotalElements());
+		List<Trip> trips = tripsPage.getContent();
+		
+	    if(trips.isEmpty()){return ResponseUtils.buildOKResponse(List.of("El pasajero no cuenta con viajes"), null);}
+		
+	    // Se obtienen los id de los viajes
+	    List<Long> tripIds = trips.stream().map(Trip::getId).toList();
+	    
+	    // Se obtienen los estados actuales de cada viaje
+	    List<StateHistory> currentStates = stateHistoryRepository.findCurrentStatesByTripIds(tripIds);
+	    
+	    // Se obtienen las reservas del usuario en cada viaje
+	    List<Reservation> reservations = reservationRepository.findByTripIdInAndUserId(tripIds, userId);
+	    
+	    Map<Long, StateHistory> stateMap =
+	            currentStates.stream()
+	                    .collect(Collectors.toMap(
+	                            sh -> sh.getTrip().getId(),
+	                            Function.identity()
+	                    ));
+	    
+	    Map<Long, Reservation> reservationMap =
+	            reservations.stream()
+	                    .collect(Collectors.toMap(
+	                            r -> r.getTrip().getId(),
+	                            Function.identity()
+	                    ));
+	    
+	    log.info("Iniciando mappeo de response a DTO");
+	    List<TripHistoryUserDTO> tripDtos =
+	            trips.stream()
+	                    .map(trip -> tripMapper.convertTripToHistoryDTO(
+	                            trip,
+	                            reservationMap.get(trip.getId()),
+	                            stateMap.get(trip.getId())
+	                    ))
+	                    .toList();
+	    log.info("Operacion completada con exito");
+	    
+	    TripHistoryUserResponseDTO response =
+	            TripHistoryUserResponseDTO.builder()
+	                    .trips(tripDtos)
+	                    .build();
+	    
+	    return ResponseUtils.buildOKResponse(
+	    		List.of("Viajes obtenidos correctamente"),
+	    		response
+	    );
+	}
+    
     @Override
     public Response<Boolean> isTripCreator(Long tripId) {
 
@@ -352,8 +427,11 @@ public class TripImplementation implements ITripService {
         List<Reservation> acceptedReservations = reservationRepository.findByTripIdAndStateName(trip.getId(),
                 STATE_ACCEPTED);
 
+        log.info("Buscando reservas pendientes");
+        List<Reservation> pendingReservations = reservationRepository.findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
+
         // Validar que si hay reservas activas, debe haber una razón
-        if (!acceptedReservations.isEmpty()) {
+        if (!acceptedReservations.isEmpty() || !pendingReservations.isEmpty())  {
             if (tripCancellRequestDTO.getReason() == null || tripCancellRequestDTO.getReason().isBlank()) {
                 throw new ConflictException("Este viaje cuenta con reservas activas, por lo que tenés que justificar el motivo de su cancelación.");
             }
@@ -365,8 +443,6 @@ public class TripImplementation implements ITripService {
             }
         }
 
-        log.info("Buscando reservas pendientes");
-        List<Reservation> pendingReservations = reservationRepository.findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
         List<Reservation> reservationsToCancel = new ArrayList<>();
         reservationsToCancel.addAll(acceptedReservations);
         reservationsToCancel.addAll(pendingReservations);
@@ -845,4 +921,16 @@ public class TripImplementation implements ITripService {
                     res);
         }
     }
+
+    /**
+     * Permite crear un objeto {@link Pageable} para filtrar por paginado
+     * @param skip	Pagina que se desea obtener
+     * @return Objeto {@link Pageable}
+     */
+    private Pageable getPageable(int skip) {
+        final int PAGE_SIZE = 10;
+        int page = skip / PAGE_SIZE;
+
+        return PageRequest.of(page, PAGE_SIZE);
+      }
 }

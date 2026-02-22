@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
 import com.carpool.carpool.dto.trip.TripDriverDTO;
+import com.carpool.carpool.dto.trip.TripHistoryUserDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 
 import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
@@ -25,6 +26,8 @@ import com.carpool.carpool.dto.vehicle.VehicleResponseTripDTO;
 import com.carpool.carpool.enums.trip.BaggageEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.model.driver.Driver;
+import com.carpool.carpool.model.reservation.Reservation;
+import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.user.User;
@@ -73,16 +76,7 @@ public class TripMapper {
         String profilePictureUrl = mediaService.getProfilePictureUrlByUserId(user.getId());
        
         List<TripStopResponseDTO> tripStopResponseDTOs = getTripstopResponseDTO(trip);
-        
-        Vehicle vehicleEntity = trip.getVehicle();
-        VehicleResponseTripDTO vehicle = VehicleResponseTripDTO.builder()
-        	.id(vehicleEntity.getId())
-            .domain(vehicleEntity.getDomain())
-            .vehicleTypeName(vehicleEntity.getVehicleType().getName())
-            .brand(vehicleEntity.getBrand())
-            .model(vehicleEntity.getModel())
-            .color(vehicleEntity.getColor())
-            .build();
+        VehicleResponseTripDTO vehicleEntity =  mapVehicleToVehicleResponseDTO(trip.getVehicle());
 
         DriverSearchResponseDTO driverSearchDTO = DriverSearchResponseDTO.builder()
             .driverId(driver.getId())
@@ -95,13 +89,39 @@ public class TripMapper {
             .id(trip.getId())
             .driverInfo(driverSearchDTO)
             .tripStops(tripStopResponseDTOs)
-            .vehicle(vehicle)
+            .vehicle(vehicleEntity)
             .startDateTime(trip.getStartTripDateTime())
             .availableSeat(trip.getAvailableSeat())
             .currentAvailableSeats(trip.getCurrentAvailableSeats())
             .availableBaggage(trip.getAvailableBaggage().toString())
             .seatPrice(roundPrice(trip.getPublishedSeatPrice())) 
             .build();
+    }
+    
+    public TripHistoryUserDTO convertTripToHistoryDTO(Trip trip, Reservation reservation, StateHistory stateHistory) {
+
+        Driver driver = trip.getVehicle().getDriver();
+        User user = driver.getUser();
+        VehicleResponseTripDTO vehicleEntity =  mapVehicleToVehicleResponseDTO(trip.getVehicle());
+        Long userId = reservation.getUser().getId();
+        
+        boolean tripReviewed = trip.getReviews()
+            .stream()
+            .anyMatch(review -> review.getReviewerUser().getId().equals(userId));
+
+        return TripHistoryUserDTO.builder()
+                .tripId(trip.getId())
+                .startDateTime(trip.getStartTripDateTime())
+                .driverName(user.getName() + " " + user.getLastname())
+                .driverProfileImage(mediaService.getProfilePictureUrlByUserId(user.getId()))
+                .driverRating(driver.getRating())
+                .vehicle(vehicleEntity)
+                .startCity(reservation.getStartCity().getCity().getName())
+                .destinationCity(reservation.getDestinationCity().getCity().getName())
+                .seatPrice(reservation.getTotal())
+                .reviewed(tripReviewed)
+                .tripState(stateHistory.getState().getName())
+                .build();
     }
 
     public CurrentTripResponseDTO covertTripToCurrentTripResponseDTO(Trip trip){
@@ -126,7 +146,7 @@ public class TripMapper {
                 .map(trip -> {
 
                     boolean hasReservations =
-                            stateHistoryRepository.hasAcceptedReservations(trip.getId());
+                            stateHistoryRepository.hasActiveReservations(trip.getId());
 
                     Vehicle vehicle = trip.getVehicle();
 
@@ -272,4 +292,15 @@ public class TripMapper {
                 "El viaje no tiene un estado actual"
             ));
     }
+
+    private VehicleResponseTripDTO mapVehicleToVehicleResponseDTO(Vehicle vehicleEntity) {
+        return VehicleResponseTripDTO.builder()
+                .domain(vehicleEntity.getDomain())
+                .vehicleTypeName(vehicleEntity.getVehicleType().getName())
+                .brand(vehicleEntity.getBrand())
+                .model(vehicleEntity.getModel())
+                .color(vehicleEntity.getColor())
+                .build();
+    }
+
 }

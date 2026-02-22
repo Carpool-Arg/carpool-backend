@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
 import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
 import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
+
+import com.carpool.carpool.dto.trip.TripHistoryUserResponseDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
@@ -80,6 +82,16 @@ public class TripController {
     public  Response<Void> checkTripAvailability(@RequestParam String startDateTime) {
         return tripService.checkTripAvailability(LocalDateTime.parse(startDateTime));
     }
+    
+	@Operation(summary = "Obtiene el historial de viajes de un pasajero")
+	@ApiResponses({ @ApiResponse(responseCode = "200", description = "El viaje es posible"),
+			@ApiResponse(responseCode = "404", description = "Solicitud inválida") })
+	@GetMapping("/history-trip-user")
+	public Response<TripHistoryUserResponseDTO> getHistoryTripUser(
+		    @RequestParam(required = true) List<String> namesStateTrip,
+		    @RequestParam(required = false, defaultValue = "0") int skip) {
+		return tripService.getHistoryTripUser(namesStateTrip, skip);
+	}
 
     @Operation(
             summary = "Obtener el feed inicial de viajes"
@@ -202,12 +214,12 @@ public class TripController {
     }
     
     @Operation(
-            summary = "Aceptar-Rechazar una reserva de un viaje"
+            summary = "Modificar un viaje"
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Reservas aceptada-cancelada con éxito"),
+            @ApiResponse(responseCode = "200", description = "Viaje modificado con éxito"),
             @ApiResponse(responseCode = "404", description = "Recurso no encontrado"),
-            @ApiResponse(responseCode = "409", description = "Cupo de asientos ocupados", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Errores de estados relacionados con el viaje", content = @Content),
     })
     @PutMapping
     public ResponseEntity<Response<Void>> updateTrip(@Valid @RequestBody TripUpdateRequestDTO tripUpdateRequestDTO){
