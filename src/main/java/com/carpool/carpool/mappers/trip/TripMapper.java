@@ -295,6 +295,7 @@ public class TripMapper {
 
     private VehicleResponseTripDTO mapVehicleToVehicleResponseDTO(Vehicle vehicleEntity) {
         return VehicleResponseTripDTO.builder()
+        		.id(vehicleEntity.getId())
                 .domain(vehicleEntity.getDomain())
                 .vehicleTypeName(vehicleEntity.getVehicleType().getName())
                 .brand(vehicleEntity.getBrand())
