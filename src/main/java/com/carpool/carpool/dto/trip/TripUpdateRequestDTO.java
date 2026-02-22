@@ -8,6 +8,7 @@ import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -24,7 +25,7 @@ public class TripUpdateRequestDTO {
     @Min(value = 1, message = "Debe indicar una cantidad correcta de asientos.")
     private Integer availableSeat;
 
-    @Min(value = 1, message = "Debe indicar un equipaje válido.")
+    @NotBlank(message = "El tipo de equipaje es un dato obligatorio.")
     private String availableBaggage;
 
     @DecimalMin(value = "1.0", message = "El precio debe tener un valor minimo de $ 1.0")
