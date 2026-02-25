@@ -2,6 +2,7 @@ package com.carpool.carpool.mappers.trip;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -145,6 +146,11 @@ public class TripMapper {
 
         return listTrips.stream()
                 .map(trip -> {
+                    LocalDateTime now = LocalDateTime.now();
+
+                    Duration duration = Duration.between(now, trip.getStartTripDateTime());
+
+                    boolean itsOnTime = !duration.isNegative() || !(duration.toHours() < 12);
 
                     boolean hasReservations =
                             stateHistoryRepository.hasActiveReservations(trip.getId());
@@ -189,7 +195,7 @@ public class TripMapper {
                             .seatPrice(roundPrice(trip.getSeatPrice() - trip.getDriverPriceDiscount()))
                             .estimatedArrivalDateTime(estimatedArrivalDate)
                             .tripState(getCurrentTripStatusName(trip))
-                            .hasReservations(hasReservations)
+                            .canEdit(!hasReservations && itsOnTime)
                             .build();
                 })
                 .toList();
