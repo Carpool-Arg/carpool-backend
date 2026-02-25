@@ -13,5 +13,5 @@ public class VehicleResponseTripDTO {
     private String brand;
     private String model;
     private String color;
-
+    private int availableSeats;
 }

@@ -302,6 +302,7 @@ public class TripMapper {
                 .brand(vehicleEntity.getBrand())
                 .model(vehicleEntity.getModel())
                 .color(vehicleEntity.getColor())
+                .availableSeats(vehicleEntity.getAvailableSeats())
                 .build();
     }
 
