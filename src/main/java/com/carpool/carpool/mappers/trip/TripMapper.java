@@ -94,7 +94,8 @@ public class TripMapper {
             .availableSeat(trip.getAvailableSeat())
             .currentAvailableSeats(trip.getCurrentAvailableSeats())
             .availableBaggage(trip.getAvailableBaggage().toString())
-            .seatPrice(roundPrice(trip.getPublishedSeatPrice())) 
+            .seatPrice(roundPrice(trip.getPublishedSeatPrice()))
+            .originalSeatPrice(trip.getSeatPrice())
             .build();
     }
     

@@ -95,7 +95,6 @@ public class TripController {
 
     @Operation(
             summary = "Obtener el feed inicial de viajes"
-
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista de viajes obtenida con éxito"),
