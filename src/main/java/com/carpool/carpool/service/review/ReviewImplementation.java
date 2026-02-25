@@ -118,6 +118,7 @@ public class ReviewImplementation implements IReviewService {
                 .reviewerUser(userReviewer)
                 .targetUser(targetUser)
                 .trip(trip)
+                .passengerToDriver(true)
                 .build();
 
         Review savedReview = reviewRepository.save(review);
