@@ -593,7 +593,18 @@ public class TripImplementation implements ITripService {
 		}
 
 		if (tripUpdateRequestDTO.getSeatPrice() != null) {
-			trip.setSeatPrice(tripUpdateRequestDTO.getSeatPrice());
+            if (trip.getSeatPrice() != tripUpdateRequestDTO.getSeatPrice()){
+                double totalCommissionPerSeat = (double) tripUpdateRequestDTO.getSeatPrice()
+                        * (settingService.getDiscountPercentage() / 100.0);
+
+                double requestedPrice = tripUpdateRequestDTO.getSeatPrice();
+
+                trip.setPublishedSeatPrice(requestedPrice + totalCommissionPerSeat);
+
+                trip.setDriverPriceDiscount(totalCommissionPerSeat);
+
+                trip.setSeatPrice(tripUpdateRequestDTO.getSeatPrice());
+            }
 		}
 
 		tripRepository.save(trip);
