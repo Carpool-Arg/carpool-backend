@@ -150,6 +150,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
           FROM state_history sh2
           WHERE sh2.trip_id = t.id
       )
+    ORDER BY t.start_date_time DESC
 """, nativeQuery = true)
     List<Trip> findTripsByDriverIdWithCurrentStateTrip(
             @Param("driverId") Long driverId,
