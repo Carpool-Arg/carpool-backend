@@ -1,5 +1,7 @@
 package com.carpool.carpool.service.review;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.security.core.Authentication;
@@ -9,13 +11,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.carpool.carpool.dto.review.ReviewRequestDTO;
 import com.carpool.carpool.dto.review.ReviewResponseDTO;
+import com.carpool.carpool.dto.review.ReviewToMeDTO;
+import com.carpool.carpool.dto.review.ReviewsToMeResponseDTO;
 import com.carpool.carpool.enums.state.ScopeEnum;
+import com.carpool.carpool.exception.BadRequestException;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.review.ReviewMapper;
 import com.carpool.carpool.model.driver.Driver;
 import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.review.Review;
+import com.carpool.carpool.model.role.Role;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.repository.driver.DriverRepository;
@@ -29,6 +35,7 @@ import com.carpool.carpool.utils.ResponseUtils;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
 import com.carpool.carpool.dto.review.DriverReviewResponseDTO;
@@ -166,6 +173,66 @@ public class ReviewImplementation implements IReviewService {
         return ResponseUtils.buildOKResponse(List.of(msg), true);
     }
 
+    @Override
+    public Response<ReviewsToMeResponseDTO> getReviewsToMe(LocalDate dateFrom,LocalDate dateTo,String role,int skip,String orderBy) {
+
+        User user = GetAuthenticatedUser();
+
+        LocalDateTime fromDateTime = null;
+        LocalDateTime toDateTime = null;
+
+        if (dateFrom != null) {
+            fromDateTime = dateFrom.atStartOfDay();
+        }
+        if (dateTo != null) {
+            toDateTime = dateTo.atTime(23, 59, 59);
+        }
+
+        Page<Review> page;
+        Double rating;
+
+        if ("DRIVER".equalsIgnoreCase(role)) {
+            if(!user.hasRole("ROLE_DRIVER")) throw new BadRequestException("El usuario no posee el rol indicado");
+            try{
+                rating = user.getDriver().getRating();
+            }catch(Exception e){
+                throw new ConflictException("Hubo un problema al recuperar el usuario.");
+            }
+
+            page = reviewRepository.findReviewsByTargetUserWithFilters(
+                user.getId(),
+                fromDateTime,
+                toDateTime,
+                true,
+                getPageable(orderBy, skip)
+            );
+
+        } else if ("PASSENGER".equalsIgnoreCase(role)) {
+            rating = user.getRating();
+            page = reviewRepository.findReviewsByTargetUserWithFilters(
+                user.getId(),
+                fromDateTime,
+                toDateTime,
+                false,
+                getPageable(orderBy, skip)
+            );
+
+        } else {
+            throw new BadRequestException("Rol inválido");
+        }
+
+        List<ReviewToMeDTO> reviewsToMe = page.getContent().stream()
+            .map(reviewMapper::convertReviewToReviewToMeDTO)
+        .toList();
+
+        ReviewsToMeResponseDTO response = ReviewsToMeResponseDTO.builder()
+            .rating(rating)
+            .reviews(reviewsToMe)
+        .build();
+
+        return ResponseUtils.buildOKResponse(null, response);
+    }
+
     /**
      * Metodo para obtener el objeto que vamos a usar para el paginado
      * Definmos un tamaño de la pgina fijo 
@@ -229,6 +296,7 @@ public class ReviewImplementation implements IReviewService {
         return userRepository.findByUsernameAndDeletedAtIsNull(username)
                 .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."));
     }
+
 
 }
 

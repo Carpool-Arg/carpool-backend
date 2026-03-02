@@ -4,13 +4,16 @@ import org.springframework.stereotype.Component;
 
 import com.carpool.carpool.dto.review.DriverReviewResponseDTO;
 import com.carpool.carpool.dto.review.ReviewResponseDTO;
+import com.carpool.carpool.dto.review.ReviewToMeDTO;
 import com.carpool.carpool.model.review.Review;
+import com.carpool.carpool.service.media.IMediaService;
 
 import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
 public class ReviewMapper {
+  private final IMediaService mediaService;
 
 
   public DriverReviewResponseDTO convertReviewToDriverReviewResponseDTO(Review review){
@@ -50,5 +53,19 @@ public class ReviewMapper {
             reviewResponseDTO.setTargetName(review.getTargetUser().getName() + " " + review.getTargetUser().getLastname());
         return reviewResponseDTO;
 
+    }
+
+    public ReviewToMeDTO convertReviewToReviewToMeDTO(Review review){
+      String profilePictureUrl = mediaService.getProfilePictureUrlByUserId(review.getReviewerUser().getId());
+      String userCompleteName = review.getReviewerUser().getName() + " " + review.getReviewerUser().getLastname();
+
+      return ReviewToMeDTO.builder()
+        .completeName(userCompleteName)
+        .stars(review.getStars())
+        .reviewDate(review.getCreatedAt())
+        .tripDate(review.getTrip().getStartTripDateTime())
+        .description(review.getDescription())
+        .profilePhotoUrl(profilePictureUrl)
+      .build();
     }
 }

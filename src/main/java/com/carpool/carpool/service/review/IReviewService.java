@@ -1,10 +1,12 @@
 package com.carpool.carpool.service.review;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import com.carpool.carpool.dto.review.DriverReviewResponseDTO;
 import com.carpool.carpool.dto.review.ReviewRequestDTO;
 import com.carpool.carpool.dto.review.ReviewResponseDTO;
+import com.carpool.carpool.dto.review.ReviewsToMeResponseDTO;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.response.Response;
@@ -38,4 +40,10 @@ public interface IReviewService {
    * @throws ResourceNotFoundException si el viaje con {@code tripId} no existe.
    */
   Response<Boolean> canUserReviewTrip(Long tripId);
+
+  /**
+   * Metodo para obtener las reseñas que he recibido pudiendo filtrar y obtenerlas de manera paginada
+   * @return
+   */
+  Response<ReviewsToMeResponseDTO> getReviewsToMe(LocalDate dateFrom, LocalDate dateTo,String role, int skip,  String orderBy);
 }

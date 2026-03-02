@@ -1,7 +1,10 @@
 package com.carpool.carpool.repository.review;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -53,4 +56,21 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
      */
     List<Review> findByTargetUserIdAndDeletedAtIsNull(Long targetUserId);
     
+
+    @Query("""
+        SELECT r
+        FROM Review r
+        WHERE r.targetUser.id = :userId
+          AND r.deletedAt IS NULL
+          AND r.passengerToDriver = :userToDriver
+          AND (CAST(:fromDate AS timestamp) IS NULL OR r.createdAt >= :fromDate)
+          AND (CAST(:toDate AS timestamp) IS NULL OR r.createdAt <= :toDate)
+    """)
+    Page<Review> findReviewsByTargetUserWithFilters(
+            @Param("userId") Long userId,
+            @Param("fromDate") LocalDateTime dateFrom,
+            @Param("toDate") LocalDateTime dateTo,
+            @Param("userToDriver") boolean userToDriver,
+            Pageable pageable
+    );
 }
