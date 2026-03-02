@@ -20,5 +20,5 @@ public class TripDriverDTO {
     private double seatPrice;
     private LocalDateTime estimatedArrivalDateTime;
     private String tripState;
-    private boolean canEdit;
+    private boolean hasReservations;
 }
