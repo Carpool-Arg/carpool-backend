@@ -220,17 +220,21 @@ public class ReviewImplementation implements IReviewService {
         } else {
             throw new BadRequestException("Rol inválido");
         }
-
+        
         List<ReviewToMeDTO> reviewsToMe = page.getContent().stream()
             .map(reviewMapper::convertReviewToReviewToMeDTO)
         .toList();
+
+        String message = reviewsToMe.isEmpty()
+            ? "No se encontraron reseñas"
+            : "Reseñas recuperadas con éxito";
 
         ReviewsToMeResponseDTO response = ReviewsToMeResponseDTO.builder()
             .rating(rating)
             .reviews(reviewsToMe)
         .build();
 
-        return ResponseUtils.buildOKResponse(null, response);
+        return ResponseUtils.buildOKResponse(List.of(message), response);
     }
 
     /**
