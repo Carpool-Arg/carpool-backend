@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 import com.carpool.carpool.dto.review.DriverReviewResponseDTO;
-import com.carpool.carpool.dto.review.ReviewRequestDTO;
+import com.carpool.carpool.dto.review.ReviewDriverRequestDTO;
 import com.carpool.carpool.dto.review.ReviewResponseDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.review.IReviewService;
@@ -66,7 +66,7 @@ public class ReviewController {
     
     @Operation(
         summary = "Crear una nueva reseña",
-        description = "Permite a un pasajero reseñar a un chofer tras finalizar un viaje abonado. Valida estados de viaje y evita duplicados."
+        description = "Permite a un PASAJERO reseñar A un CHOFER tras finalizar un viaje abonado. Valida estados de viaje y evita duplicados."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "Reseña creada exitosamente"),
@@ -74,11 +74,11 @@ public class ReviewController {
         @ApiResponse(responseCode = "404", description = "Viaje o Usuario no encontrado"),
         @ApiResponse(responseCode = "409", description = "Conflicto: El viaje no terminó, no está pago o ya fue reseñado")
     })
-    @PostMapping
+    @PostMapping("/driver")
     public ResponseEntity<Response<ReviewResponseDTO>> createReview(
-            @Valid @RequestBody ReviewRequestDTO reviewRequestDTO) {
+            @Valid @RequestBody ReviewDriverRequestDTO reviewDriverRequestDTO) {
         
-        Response<ReviewResponseDTO> serviceResponse = reviewService.createReview(reviewRequestDTO);
+        Response<ReviewResponseDTO> serviceResponse = reviewService.createDriverReview(reviewDriverRequestDTO);
         return new ResponseEntity<>(serviceResponse, HttpStatus.CREATED);
     }
 }

@@ -34,6 +34,14 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     boolean existsByReviewerUserIdAndTripId(Long reviewerUserId, Long tripId);
 
     /**
+     * Verifica si un pasajero ya fue reseñado para un viaje específico.
+     * @param targetUserId ID del pasajero que se quiere reseñar
+     * @param tripId ID del viaje para el cual se dejó la reseña
+     * @return true si ya existe una reseña para el usuario para ese viaje, false en caso contrario
+     */
+    boolean existsByTargetUserIdAndTripId(Long targetUserId, Long tripId);
+
+    /**
      * Calcula el promedio de estrellas (rating) para un usuario específico basado en las reseñas recibidas.
      * @param userId ID del usuario para el cual se desea calcular el promedio de rating
      * @return El promedio de estrellas recibido por el usuario, o null si no tiene reseñas
