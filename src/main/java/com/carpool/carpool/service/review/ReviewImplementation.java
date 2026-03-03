@@ -219,8 +219,7 @@ public class ReviewImplementation implements IReviewService {
 
         } else {
             throw new BadRequestException("Rol inválido");
-        }
-        
+        }        
         List<ReviewToMeDTO> reviewsToMe = page.getContent().stream()
             .map(reviewMapper::convertReviewToReviewToMeDTO)
         .toList();
@@ -230,6 +229,7 @@ public class ReviewImplementation implements IReviewService {
             : "Reseñas recuperadas con éxito";
 
         ReviewsToMeResponseDTO response = ReviewsToMeResponseDTO.builder()
+            .total(page.getTotalElements())
             .rating(rating)
             .reviews(reviewsToMe)
         .build();
