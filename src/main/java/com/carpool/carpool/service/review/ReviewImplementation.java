@@ -173,6 +173,23 @@ public class ReviewImplementation implements IReviewService {
             throw new ConflictException("Solo se puede reseñar un viaje que haya finalizado.");
         }
 
+        // La reseña se puede realizar hasta 48hs luego de que el viaje haya finalizado.
+        StateHistory finishedState = stateHistoryRepository
+                .findTopByEntityAndStateNameAndScopeOrderByCreatedAtDesc(
+                        trip,
+                        "FINISHED",
+                        ScopeEnum.TRIP
+                )
+                .orElseThrow(() -> new IllegalStateException("No se encontró el estado FINISHED del viaje."));
+
+        LocalDateTime finishedAt = finishedState.getStartDateTime();
+        LocalDateTime now = LocalDateTime.now();
+
+        if (finishedAt.plusHours(48).isBefore(now)) {
+            log.warn("Intento de reseña fuera de plazo: viaje {} finalizado en {}", trip.getId(), finishedAt);
+            throw new ConflictException("La reseña solo puede realizarse dentro de las 48 horas posteriores a la finalización del viaje.");
+        }
+
         if (reviewRepository.existsByReviewerUserIdAndTripId(userReviewer.getId(), trip.getId())) {
             log.warn("Intento de crear reseña duplicada: El usuario {} ya ha reseñado el viaje {}", userReviewer.getId(), trip.getId());
             throw new ConflictException("Ya has realizado una reseña para este viaje.");
