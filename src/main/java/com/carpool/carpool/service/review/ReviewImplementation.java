@@ -187,11 +187,16 @@ public class ReviewImplementation implements IReviewService {
         if (dateTo != null) {
             toDateTime = dateTo.atTime(23, 59, 59);
         }
+        
+        log.info("Buscando reseñas para el usuario con el ID {}. Filtros: Fecha desde: {}. Fecha hasta: {}. Rol: {}. Skip: {}. Orden: {}",
+            user.getId(),fromDateTime, toDateTime, role,skip,orderBy
+        );
 
         Page<Review> page;
         Double rating;
 
         if ("DRIVER".equalsIgnoreCase(role)) {
+            log.info("Verificando si el usuario tiene el rol de chofer.");
             if(!user.hasRole("ROLE_DRIVER")) throw new BadRequestException("El usuario no posee el rol indicado");
             try{
                 rating = user.getDriver().getRating();
@@ -199,6 +204,7 @@ public class ReviewImplementation implements IReviewService {
                 throw new ConflictException("Hubo un problema al recuperar el usuario.");
             }
 
+            log.info("Recuperando pagina de reseñas que pasajeros le hicieron al usuario como chofer.");
             page = reviewRepository.findReviewsByTargetUserWithFilters(
                 user.getId(),
                 fromDateTime,
@@ -208,7 +214,12 @@ public class ReviewImplementation implements IReviewService {
             );
 
         } else if ("PASSENGER".equalsIgnoreCase(role)) {
-            rating = user.getRating();
+            try{
+                rating = user.getRating();
+            }catch(Exception e){
+                throw new ConflictException("Hubo un problema al recuperar el usuario.");
+            }
+            log.info("Recuperando pagina de reseñas que choferes le hicieron al usuario como pasajero.");
             page = reviewRepository.findReviewsByTargetUserWithFilters(
                 user.getId(),
                 fromDateTime,
@@ -220,6 +231,7 @@ public class ReviewImplementation implements IReviewService {
         } else {
             throw new BadRequestException("Rol inválido");
         }        
+
         List<ReviewToMeDTO> reviewsToMe = page.getContent().stream()
             .map(reviewMapper::convertReviewToReviewToMeDTO)
         .toList();
