@@ -80,7 +80,7 @@ public class ReviewController {
   public ResponseEntity<Response<ReviewsToMeResponseDTO>> getMyReviews(
     @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate fromDate,
     @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate toDate,
-    @RequestParam(required = false, defaultValue = "DRIVER") String role,
+    @RequestParam(required = false, defaultValue = "driver") String role,
     @RequestParam(required = false, defaultValue = "0") int skip,
     @RequestParam(required = false, defaultValue = "RECENT") String orderBy
   ) {

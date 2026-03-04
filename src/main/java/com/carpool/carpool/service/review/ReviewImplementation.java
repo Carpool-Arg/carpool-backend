@@ -195,7 +195,7 @@ public class ReviewImplementation implements IReviewService {
         Page<Review> page;
         Double rating;
 
-        if ("DRIVER".equalsIgnoreCase(role)) {
+        if ("driver".equalsIgnoreCase(role)) {
             log.info("Verificando si el usuario tiene el rol de chofer.");
             if(!user.hasRole("ROLE_DRIVER")) throw new BadRequestException("El usuario no posee el rol indicado");
             try{
@@ -213,7 +213,7 @@ public class ReviewImplementation implements IReviewService {
                 getPageable(orderBy, skip)
             );
 
-        } else if ("PASSENGER".equalsIgnoreCase(role)) {
+        } else if ("passenger".equalsIgnoreCase(role)) {
             try{
                 rating = user.getRating();
             }catch(Exception e){

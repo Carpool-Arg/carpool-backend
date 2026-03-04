@@ -25,5 +25,7 @@ public class UserResponseDTO {
     private String birthDate;
     private UserGenderEnum gender;
     private UserStateEnum status;
+    private double passengerRating;
+    private double driverRating;
 
 }
