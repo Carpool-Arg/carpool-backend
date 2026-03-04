@@ -26,6 +26,6 @@ public class UserResponseDTO {
     private UserGenderEnum gender;
     private UserStateEnum status;
     private double passengerRating;
-    private double driverRating;
+    private Double driverRating;
 
 }
