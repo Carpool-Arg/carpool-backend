@@ -123,7 +123,7 @@ public class ReviewImplementation implements IReviewService {
         Review savedReview = reviewRepository.save(review);
         log.info("Reseña guardada exitosamente con ID: {}", savedReview.getId());
 
-        updateDriverRating(targetUser.getId());
+        updateUserRating(targetUser.getId(), true);
 
         return ResponseUtils.buildOKResponse(
                 List.of("Reseña creada con éxito"),
@@ -165,11 +165,46 @@ public class ReviewImplementation implements IReviewService {
         return ResponseUtils.buildOKResponse(List.of(msg), true);
     }
 
+    
+    @Override
+    @Transactional
+    public Response<Void> deleteReview(Long reviewId) {
+        log.info("Iniciando proceso de eliminación de reseña ID: {}", reviewId);
+
+        User currentUser = GetAuthenticatedUser();
+        
+        Review review = reviewRepository.findByIdAndReviewerUserId(reviewId, currentUser.getId())
+                .orElseThrow(() -> {
+                    log.error("Fallo al eliminar: Reseña {} no encontrada", reviewId);
+                    return new ResourceNotFoundException("No se encontró la reseña o no tienes permisos.");
+                });
+
+        Long targetUserId = review.getTargetUser().getId();
+        Trip trip = review.getTrip();
+
+        // Determinamos si el usuario calificado era el chofer de ese viaje
+        // Si el ID del targetUser es el mismo que el del dueño del auto, es una reseña a un CHOFER
+        boolean isTargetDriver = trip.getVehicle().getDriver().getUser().getId().equals(targetUserId);
+
+        reviewRepository.delete(review);
+
+        // Si isTargetDriver es true, actualizará la tabla Driver. Si es false, la tabla User (pasajero).
+        updateUserRating(targetUserId, isTargetDriver);
+
+        log.info("Reseña eliminada. Se recalculó el promedio del usuario {} como {}", 
+                targetUserId, isTargetDriver ? "CHOFER" : "PASAJERO");
+
+        return ResponseUtils.buildOKResponse(
+                List.of("Reseña eliminada correctamente. El promedio ha sido actualizado."),
+                null);
+    }
+
+
     /**
      * Metodo para obtener el objeto que vamos a usar para el paginado
      * Definmos un tamaño de la pgina fijo 
      * @param type
-     * @param skip
+     * @param skip 
      * @return
      */
     private Pageable getPageable(String type, int skip) {
@@ -187,33 +222,107 @@ public class ReviewImplementation implements IReviewService {
     }
 
     /**
-     * Recalcula y actualiza el rating promedio del chofer asociado al usuario dado. Se llama después de crear una nueva reseña para asegurar que el rating del chofer esté siempre actualizado.
-     * @param userId ID del usuario target (chofer) para el cual se desea actualizar el rating promedio
-     * @throws ResourceNotFoundException si no se encuentra el perfil de chofer asociado al usuario
+     * Recalcula y actualiza el rating promedio del usuario reseñado. Se llama después de crear una nueva reseña para asegurar que el rating esté siempre actualizado.
+     * @param userId ID del usuario target  para el cual se desea actualizar el rating promedio
+     * @param passengerToDriver Indica si la reseña fue realizada por un pasajero hacia un chofer.
+     *  *                          Si es {@code true}, se actualiza el perfil de {@link com.carpool.carpool.model.driver.Driver}.
+     *  *                          Si es {@code false}, se actualiza el {@link com.carpool.carpool.model.user.User}.
+     * @throws ResourceNotFoundException si no se encuentra el perfil asociado al usuario
      */
-    private void updateDriverRating(Long userId) {
-        log.debug("Recalculando rating con base 5 para el usuario ID: {}", userId);
-        
-        Object result = reviewRepository.getReviewStatsByUserId(userId);
-        Object[] stats = (Object[]) result;
+    private void updateUserRating(Long userId, boolean passengerToDriver) {
+        RatingStats stats = getRatingStats(userId);
+        double roundedAverage = calculateAverageWithBase(stats);
 
-        long count = (stats[0] != null) ? ((Number) stats[0]).longValue() : 0L;
-        double sum = (stats[1] != null) ? ((Number) stats[1]).doubleValue() : 0.0;
+        // Actualizamos SIEMPRE la tabla User (que es la base de todos)
+        updatePassengerRating(userId, stats, roundedAverage);
 
-        double totalSum = 5.0 + sum; 
-        long totalCount = 1 + count;
+        // Y SI es chofer, actualizamos TAMBIÉN la tabla Driver
+        if (passengerToDriver) {
+            updateDriverRating(userId, stats, roundedAverage);
+        }
+    }
+
+    /**
+     * Obtiene las estadísticas de reseñas para un usuario.
+     *
+     * <p>Realiza una consulta al repo que retorna:
+     * <ul>
+     *     <li>Cantidad total de reseñas</li>
+     *     <li>Suma total de estrellas</li>
+     * </ul>
+     *
+     * @param userId ID del usuario del cual se desean obtener estadísticas.
+     * @return {@link RatingStats} con cantidad de reseñas y suma de estrellas.
+     */
+    private RatingStats getRatingStats(Long userId) {
+        Object[] result = (Object[]) reviewRepository.getReviewStatsByUserId(userId);
+
+        long count = result[0] != null ? ((Number) result[0]).longValue() : 0L;
+        double sum = result[1] != null ? ((Number) result[1]).doubleValue() : 0.0;
+
+        return new RatingStats(count, sum);
+    }
+
+    /**
+     * Calcula el promedio de rating aplicando la política de base 5.0.
+     *
+     * <p>La política consiste en:
+     * <ul>
+     *     <li>Sumar una reseña base de 5 estrellas</li>
+     *     <li>Incrementar el conteo total en 1</li>
+     * </ul>
+     *
+     * El resultado se redondea a un decimal.
+     *
+     * @param stats Estadísticas actuales del usuario.
+     * @return Promedio final redondeado a un decimal.
+     */
+    private double calculateAverageWithBase(RatingStats stats) {
+        double totalSum = 5.0 + stats.sum();
+        long totalCount = 1 + stats.count();
 
         double average = totalSum / totalCount;
-        double roundedAverage = Math.round(average * 10.0) / 10.0;
+        return Math.round(average * 10.0) / 10.0;
+    }
 
+    /**
+     * Actualiza el rating promedio del perfil de chofer asociado al usuario.
+     *
+     * @param userId ID del usuario target.
+     * @param stats Estadísticas de reseñas utilizadas para logging.
+     * @param average Promedio calculado y redondeado.
+     *
+     * @throws ResourceNotFoundException si no se encuentra el perfil de chofer.
+     */
+    private void updateDriverRating(Long userId, RatingStats stats, double average) {
         Driver driver = driverRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Perfil de chofer no encontrado"));
 
-        log.info("Rating Chofer {}. Reseñas: {}. Suma: {}. Promedio: {}", 
-                userId, count, sum, roundedAverage);
+        log.info("Rating Chofer {}. Reseñas: {}. Suma: {}. Promedio: {}",
+                userId, stats.count(), stats.sum(), average);
 
-        driver.setRating(roundedAverage);
+        driver.setRating(average);
         driverRepository.save(driver);
+    }
+
+    /**
+     * Actualiza el rating promedio del pasajero (entidad User).
+     *
+     * @param userId ID del usuario target.
+     * @param stats Estadísticas de reseñas utilizadas para logging.
+     * @param average Promedio calculado y redondeado.
+     *
+     * @throws ConflictException si no se encuentra el pasajero.
+     */
+    private void updatePassengerRating(Long userId, RatingStats stats, double average) {
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ConflictException("Pasajero no encontrado."));
+
+        log.info("Rating Pasajero {}. Reseñas: {}. Suma: {}. Promedio: {}",
+                userId, stats.count(), stats.sum(), average);
+
+        user.setRating(average);
+        userRepository.save(user);
     }
 
     /**
@@ -228,6 +337,9 @@ public class ReviewImplementation implements IReviewService {
         return userRepository.findByUsernameAndDeletedAtIsNull(username)
                 .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."));
     }
+
+
+    private record RatingStats (long count, double sum) {}
 
 }
 

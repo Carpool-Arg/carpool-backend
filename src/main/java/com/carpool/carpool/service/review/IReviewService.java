@@ -38,4 +38,11 @@ public interface IReviewService {
    * @throws ResourceNotFoundException si el viaje con {@code tripId} no existe.
    */
   Response<Boolean> canUserReviewTrip(Long tripId);
+
+  /**
+   * 
+   * @param reviewId
+   * @return
+   */
+  Response<Void> deleteReview(Long reviewId);
 }

@@ -1,6 +1,7 @@
 package com.carpool.carpool.repository.review;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
 
@@ -14,16 +15,16 @@ import com.carpool.carpool.model.review.Review;
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-  @Query("""
-      SELECT r
-      FROM Review r
-      WHERE r.targetUser.id = :userId
+    @Query("""
+        SELECT r
+        FROM Review r
+        WHERE r.targetUser.id = :userId
         AND r.deletedAt IS NULL
-  """)
-  List<Review> findReviewsByTargetUser(
-      @Param("userId") Long userId,
-      Pageable pageable
-  );
+    """)
+    List<Review> findReviewsByTargetUser(
+        @Param("userId") Long userId,
+        Pageable pageable
+    );
 
     /**
      * Verifica si un usuario ya ha dejado una reseña para un viaje específico.
@@ -38,7 +39,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
      * @param userId ID del usuario para el cual se desea calcular el promedio de rating
      * @return El promedio de estrellas recibido por el usuario, o null si no tiene reseñas
      */
-   @Query("""
+    @Query("""
         SELECT COUNT(r), SUM(r.stars) 
         FROM Review r 
         WHERE r.targetUser.id = :userId 
@@ -52,5 +53,12 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
      * @return Lista de reseñas recibidas por el usuario target, sin incluir las reseñas eliminadas
      */
     List<Review> findByTargetUserIdAndDeletedAtIsNull(Long targetUserId);
-    
+
+    /**
+     * 
+     * @param id
+     * @param reviewerUserId
+     * @return
+     */
+    Optional<Review> findByIdAndReviewerUserId(Long id, Long reviewerUserId);
 }
