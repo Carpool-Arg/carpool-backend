@@ -40,11 +40,12 @@ public interface ITripService {
      * Metodo para verificar la disponibilidad de un viaje.
      *
      * @param startDateTime La fecha y hora a partir de la cual verificar.
+     * @param idTrip id del viaje que NO queres tener en cuenta en la comprobacion
      * @return Response<Void> devolviendo el mensaje si el viaje es posible o no.
      * @throws ConflictException si el chofer ya tiene un viaje planificado en la
      *                           fecha y hora dadas.
      */
-    Response<Void> checkTripAvailability(LocalDateTime startDateTime);
+    Response<Void> checkTripAvailability(LocalDateTime startDateTime, Long idTrip);
 
     /**
      * Metodo para obtener los viajes que creó un chofer que se encuentra en la

@@ -183,11 +183,11 @@ public class TripImplementation implements ITripService {
     }
 
     @Override
-    public Response<Void> checkTripAvailability(LocalDateTime startDateTime) {
+    public Response<Void> checkTripAvailability(LocalDateTime startDateTime, Long idTrip) {
 
         Driver driver = getAuthenticatedDriver();
 
-        if (tripRepository.isTimeSlotOccupied(driver.getId(), startDateTime)) {
+        if (tripRepository.isTimeSlotOccupied(driver.getId(), startDateTime, idTrip)) {
             throw new ConflictException("Ese horario coincide con un viaje que ya tenés en curso.");
         }
 

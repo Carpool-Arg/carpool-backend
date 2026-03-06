@@ -232,24 +232,27 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
      * dentro de un viaje programado o en curso
      * @param driverId
      * @param timeToCheck
+     * @param idTrip
      * @return
      */
     @Query(value = """
-        SELECT COUNT(t.id) > 0 
-        FROM trip t
-        JOIN trip_stop ts ON t.id = ts.trip_id
-        JOIN state_history sh ON t.id = sh.trip_id
-        JOIN state s ON s.id = sh.state_id
-        WHERE t.vehicle_id IN (SELECT v.id FROM vehicles v WHERE v.driver_id = :driverId)
-            AND ts.is_destination = true
-            AND sh.finish_datetime IS NULL
-            AND s.name IN ('CREATED', 'IN_PROGRESS')
-            AND :timeToCheck BETWEEN (t.start_date_time - INTERVAL '30 minutes') 
-                                AND ts.estimated_arrival_date_time
-    """, nativeQuery = true)
+    SELECT COUNT(t.id) > 0 
+    FROM trip t
+    JOIN trip_stop ts ON t.id = ts.trip_id
+    JOIN state_history sh ON t.id = sh.trip_id
+    JOIN state s ON s.id = sh.state_id
+    WHERE t.vehicle_id IN (SELECT v.id FROM vehicles v WHERE v.driver_id = :driverId)
+        AND ts.is_destination = true
+        AND sh.finish_datetime IS NULL
+        AND s.name IN ('CREATED', 'IN_PROGRESS')
+        AND (:idTrip IS NULL OR t.id <> :idTrip)
+        AND :timeToCheck BETWEEN (t.start_date_time - INTERVAL '30 minutes') 
+                            AND ts.estimated_arrival_date_time
+""", nativeQuery = true)
     boolean isTimeSlotOccupied(
-        @Param("driverId") Long driverId,
-        @Param("timeToCheck") LocalDateTime timeToCheck
+            @Param("driverId") Long driverId,
+            @Param("timeToCheck") LocalDateTime timeToCheck,
+            @Param("idTrip") Long idTrip
     );
 
     /**
