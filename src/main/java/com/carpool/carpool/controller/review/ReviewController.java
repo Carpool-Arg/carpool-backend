@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 import com.carpool.carpool.dto.review.DriverReviewResponseDTO;
+import com.carpool.carpool.dto.review.MyMadeReviewsResponseDTO;
 import com.carpool.carpool.dto.review.ReviewRequestDTO;
 import com.carpool.carpool.dto.review.ReviewResponseDTO;
 import com.carpool.carpool.dto.review.ReviewsToMeResponseDTO;
@@ -86,8 +87,27 @@ public class ReviewController {
   ) {
     return ResponseEntity.ok(reviewService.getReviewsToMe(fromDate, toDate,role, skip, orderBy));
   }
+  
+  @Operation(
+      summary = "Obtener las reseñas que he realizado",
+      description = "Permite obtener una lista paginada y filtrada de las reseñas que he realizado a choferes o pasajeros"
+  )
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Lista obtenida con éxito"),
+      @ApiResponse(responseCode = "401", description = "No autorizado para acceder a este recurso")
+  })
+  @GetMapping("/my-made-reviews")
+  public ResponseEntity<Response<MyMadeReviewsResponseDTO>> getMyMadeReviews(
+      @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate fromDate,
+      @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate toDate,
+      @RequestParam(required = false, defaultValue = "true") boolean toDriver,
+      @RequestParam(required = false, defaultValue = "0") int skip,
+      @RequestParam(required = false, defaultValue = "RECENT") String orderBy
+  ) {
+      return ResponseEntity.ok(reviewService.getMyMadeReviews(fromDate, toDate, toDriver, skip, orderBy));
+  }
 
-    
+
   @Operation(
       summary = "Crear una nueva reseña",
       description = "Permite a un pasajero reseñar a un chofer tras finalizar un viaje abonado. Valida estados de viaje y evita duplicados."

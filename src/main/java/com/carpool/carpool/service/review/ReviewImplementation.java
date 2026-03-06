@@ -21,7 +21,6 @@ import com.carpool.carpool.mappers.review.ReviewMapper;
 import com.carpool.carpool.model.driver.Driver;
 import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.review.Review;
-import com.carpool.carpool.model.role.Role;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.repository.driver.DriverRepository;
@@ -39,6 +38,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
 import com.carpool.carpool.dto.review.DriverReviewResponseDTO;
+import com.carpool.carpool.dto.review.MyMadeReviewDTO;
+import com.carpool.carpool.dto.review.MyMadeReviewsResponseDTO;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -247,6 +248,57 @@ public class ReviewImplementation implements IReviewService {
         .build();
 
         return ResponseUtils.buildOKResponse(List.of(message), response);
+    }
+
+    
+    @Override
+    public Response<MyMadeReviewsResponseDTO> getMyMadeReviews(
+            LocalDate dateFrom, 
+            LocalDate dateTo, 
+            boolean toDriver, 
+            int skip, 
+            String orderBy) 
+        {
+        
+        User user = GetAuthenticatedUser();
+        
+        LocalDateTime fromDateTime = null; 
+        LocalDateTime toLocalDateTime = null; 
+
+        if (dateFrom != null) {
+            fromDateTime = dateFrom.atStartOfDay();
+        }
+        if (dateTo != null) {
+            toLocalDateTime = dateTo.atTime(23, 59, 59);
+        }
+
+        log.info("Buscando reseñas realizadas por el usuario ID {}. Filtros: Desde: {}. Hasta: {}. ToDriver: {}. Skip: {}. Orden: {}",
+        user.getId(), fromDateTime, toLocalDateTime, toDriver, skip, orderBy);
+
+        Page<Review> page = reviewRepository.findReviewsByReviewerWithFiltersPage(
+            user.getId(), 
+            fromDateTime, 
+            toLocalDateTime, 
+            toDriver,
+            getPageable((orderBy), skip)
+        );
+
+        List<MyMadeReviewDTO> myReviews = page.getContent().stream()
+        .map(reviewMapper::convertReviewToMyMadeReviewDTO)
+        .toList(); 
+
+        String message = myReviews.isEmpty()
+            ? "Todavía no has realizado ninguna reseña."
+            : "Reseñas recuperadas con éxito.";
+        
+        
+        MyMadeReviewsResponseDTO myMadeReviewsResponseDTO = MyMadeReviewsResponseDTO.builder()
+            .total(page.getTotalElements())
+            .reviews(myReviews)
+            .build();
+        
+        return ResponseUtils.buildOKResponse(List.of(message), myMadeReviewsResponseDTO);
+
     }
 
     /**

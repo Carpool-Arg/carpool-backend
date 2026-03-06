@@ -1,6 +1,5 @@
 package com.carpool.carpool.repository.review;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -72,5 +71,22 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             @Param("toDate") LocalDateTime dateTo,
             @Param("userToDriver") boolean userToDriver,
             Pageable pageable
+    );
+
+    @Query("""
+        SELECT r
+        FROM Review r
+        WHERE r.reviewerUser.id = :reviewerId
+          AND r.deletedAt IS NULL
+          AND r.passengerToDriver = :toDriver
+          AND (CAST(:fromDate AS timestamp) IS NULL OR r.createdAt >= :fromDate)
+          AND (CAST(:toDate AS timestamp) IS NULL OR r.createdAt <= :toDate)
+    """)
+    Page<Review> findReviewsByReviewerWithFiltersPage(
+        @Param("reviewerId") Long reviewerId,
+        @Param("fromDate") LocalDateTime dateFrom,
+        @Param("toDate") LocalDateTime dateTo,
+        @Param("toDriver") boolean toDriver,
+        Pageable pageable
     );
 }

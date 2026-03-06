@@ -3,6 +3,7 @@ package com.carpool.carpool.mappers.review;
 import org.springframework.stereotype.Component;
 
 import com.carpool.carpool.dto.review.DriverReviewResponseDTO;
+import com.carpool.carpool.dto.review.MyMadeReviewDTO;
 import com.carpool.carpool.dto.review.ReviewResponseDTO;
 import com.carpool.carpool.dto.review.ReviewToMeDTO;
 import com.carpool.carpool.model.review.Review;
@@ -67,5 +68,36 @@ public class ReviewMapper {
         .description(review.getDescription())
         .profilePhotoUrl(profilePictureUrl)
       .build();
+    }
+
+    /**
+     * 
+     * @param review
+     * @return
+     */
+    public MyMadeReviewDTO convertReviewToMyMadeReviewDTO(Review review) {
+        String targetProfilePictureUrl = mediaService.getProfilePictureUrlByUserId(review.getTargetUser().getId());
+        String targetCompleteName = review.getTargetUser().getName() + " " + review.getTargetUser().getLastname();
+
+        return MyMadeReviewDTO.builder()
+            .id(review.getId()) 
+            .stars(review.getStars())
+            .createdAt(review.getCreatedAt())
+            .tripDate(review.getTrip().getStartTripDateTime())
+            .description(applyEllipsis(review.getDescription(), 100)) 
+            .targetFullName(targetCompleteName)
+            .targetPhoto(targetProfilePictureUrl)
+            .tripId(review.getTrip().getId())
+            .build();
+    }
+
+    /**
+     * Aplica puntos suspensivos si el texto supera el límite.
+     */
+    private String applyEllipsis(String text, int limit) {
+        if (text == null || text.length() <= limit) {
+            return text;
+        }
+        return text.substring(0, limit - 3) + "...";
     }
 }
