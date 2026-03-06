@@ -556,6 +556,21 @@ public class TripImplementation implements ITripService {
 			throw new ConflictException("El viaje no puede ser editado dentro de las 12 horas siguientes al inicio del mismo.");
 		}
 
+        if (tripUpdateRequestDTO.getSeatPrice() != null) {
+            if (trip.getSeatPrice() != tripUpdateRequestDTO.getSeatPrice()){
+                double totalCommissionPerSeat = (double) tripUpdateRequestDTO.getSeatPrice()
+                        * (settingService.getDiscountPercentage() / 100.0);
+
+                double requestedPrice = tripUpdateRequestDTO.getSeatPrice();
+
+                trip.setPublishedSeatPrice(requestedPrice + totalCommissionPerSeat);
+
+                trip.setDriverPriceDiscount(totalCommissionPerSeat);
+
+                trip.setSeatPrice(tripUpdateRequestDTO.getSeatPrice());
+            }
+        }
+
 		if (tripUpdateRequestDTO.getTripStops() != null) {
 			changeTripStops(trip, tripUpdateRequestDTO.getTripStops());
 		}
@@ -590,21 +605,6 @@ public class TripImplementation implements ITripService {
 		if (tripUpdateRequestDTO.getAvailableBaggage() != null) {
 			final String baggageValue = changeBaggage(tripUpdateRequestDTO.getAvailableBaggage());
 			trip.setAvailableBaggage(BaggageEnum.valueOf(baggageValue));
-		}
-
-		if (tripUpdateRequestDTO.getSeatPrice() != null) {
-            if (trip.getSeatPrice() != tripUpdateRequestDTO.getSeatPrice()){
-                double totalCommissionPerSeat = (double) tripUpdateRequestDTO.getSeatPrice()
-                        * (settingService.getDiscountPercentage() / 100.0);
-
-                double requestedPrice = tripUpdateRequestDTO.getSeatPrice();
-
-                trip.setPublishedSeatPrice(requestedPrice + totalCommissionPerSeat);
-
-                trip.setDriverPriceDiscount(totalCommissionPerSeat);
-
-                trip.setSeatPrice(tripUpdateRequestDTO.getSeatPrice());
-            }
 		}
 
 		tripRepository.save(trip);
