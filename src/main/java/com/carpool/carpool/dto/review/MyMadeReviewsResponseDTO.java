@@ -9,5 +9,5 @@ import lombok.Getter;
 @Builder
 public class MyMadeReviewsResponseDTO {
     private long total;
-    private List<MyMadeReviewDTO> reviews;
+    private List<UserReviewDTO> reviews;
 }

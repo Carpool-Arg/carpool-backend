@@ -98,13 +98,13 @@ public class ReviewController {
   })
   @GetMapping("/my-made-reviews")
   public ResponseEntity<Response<MyMadeReviewsResponseDTO>> getMyMadeReviews(
-      @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate fromDate,
-      @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate toDate,
-      @RequestParam(required = false, defaultValue = "true") boolean toDriver,
-      @RequestParam(required = false, defaultValue = "0") int skip,
-      @RequestParam(required = false, defaultValue = "RECENT") String orderBy
+    @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate fromDate,
+    @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate toDate,
+    @RequestParam(required = false, defaultValue = "driver") String role,
+    @RequestParam(required = false, defaultValue = "0") int skip,
+    @RequestParam(required = false, defaultValue = "RECENT") String orderBy
   ) {
-      return ResponseEntity.ok(reviewService.getMyMadeReviews(fromDate, toDate, toDriver, skip, orderBy));
+    return ResponseEntity.ok(reviewService.getMyMadeReviews(fromDate, toDate, role, skip, orderBy));
   }
 
 

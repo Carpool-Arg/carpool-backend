@@ -54,10 +54,10 @@ public interface IReviewService {
      * pudiendo filtrar por tipo (a chofer o a pasajero), rango de fechas y ordenamiento.
      * @param dateFrom fecha desde (opcional)
      * @param dateTo fecha hasta (opcional)
-     * @param toDriver true si se quieren reseñas hechas a choferes, false para pasajeros
+     * @param role rol del usuario
      * @param skip registros a saltear para paginado
      * @param orderBy criterio de ordenamiento
      * @return Response con el total y lista paginada de reseñas realizadas
      */
-  Response<MyMadeReviewsResponseDTO> getMyMadeReviews(LocalDate dateFrom, LocalDate dateTo, boolean toDriver, int skip, String orderBy);
+  Response<MyMadeReviewsResponseDTO> getMyMadeReviews(LocalDate dateFrom, LocalDate dateTo,  String role, int skip, String orderBy);
 }

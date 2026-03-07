@@ -11,8 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.carpool.carpool.dto.review.ReviewRequestDTO;
 import com.carpool.carpool.dto.review.ReviewResponseDTO;
-import com.carpool.carpool.dto.review.ReviewToMeDTO;
 import com.carpool.carpool.dto.review.ReviewsToMeResponseDTO;
+import com.carpool.carpool.dto.review.UserReviewDTO;
 import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.exception.BadRequestException;
 import com.carpool.carpool.exception.ConflictException;
@@ -38,7 +38,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
 import com.carpool.carpool.dto.review.DriverReviewResponseDTO;
-import com.carpool.carpool.dto.review.MyMadeReviewDTO;
 import com.carpool.carpool.dto.review.MyMadeReviewsResponseDTO;
 
 import lombok.RequiredArgsConstructor;
@@ -232,10 +231,9 @@ public class ReviewImplementation implements IReviewService {
         } else {
             throw new BadRequestException("Rol inválido");
         }        
-
-        List<ReviewToMeDTO> reviewsToMe = page.getContent().stream()
+        List<UserReviewDTO> reviewsToMe = page.getContent().stream()
             .map(reviewMapper::convertReviewToReviewToMeDTO)
-        .toList();
+            .toList();
 
         String message = reviewsToMe.isEmpty()
             ? "No se encontraron reseñas"
@@ -253,11 +251,11 @@ public class ReviewImplementation implements IReviewService {
     
     @Override
     public Response<MyMadeReviewsResponseDTO> getMyMadeReviews(
-            LocalDate dateFrom, 
-            LocalDate dateTo, 
-            boolean toDriver, 
-            int skip, 
-            String orderBy) 
+        LocalDate dateFrom,
+        LocalDate dateTo,
+        String role,
+        int skip,
+        String orderBy)
         {
         
         User user = GetAuthenticatedUser();
@@ -272,18 +270,20 @@ public class ReviewImplementation implements IReviewService {
             toLocalDateTime = dateTo.atTime(23, 59, 59);
         }
 
-        log.info("Buscando reseñas realizadas por el usuario ID {}. Filtros: Desde: {}. Hasta: {}. ToDriver: {}. Skip: {}. Orden: {}",
-        user.getId(), fromDateTime, toLocalDateTime, toDriver, skip, orderBy);
+        log.info("Buscando reseñas realizadas por el usuario ID {}. Filtros: Desde: {}. Hasta: {}. Role: {}. Skip: {}. Orden: {}",
+        user.getId(), fromDateTime, toLocalDateTime, role, skip, orderBy);
+
+        boolean toDriver = "driver".equalsIgnoreCase(role);
 
         Page<Review> page = reviewRepository.findReviewsByReviewerWithFiltersPage(
-            user.getId(), 
-            fromDateTime, 
-            toLocalDateTime, 
+            user.getId(),
+            fromDateTime,
+            toLocalDateTime,
             toDriver,
-            getPageable((orderBy), skip)
+            getPageable(orderBy, skip)
         );
 
-        List<MyMadeReviewDTO> myReviews = page.getContent().stream()
+        List<UserReviewDTO> myReviews = page.getContent().stream()
         .map(reviewMapper::convertReviewToMyMadeReviewDTO)
         .toList(); 
 

@@ -3,9 +3,8 @@ package com.carpool.carpool.mappers.review;
 import org.springframework.stereotype.Component;
 
 import com.carpool.carpool.dto.review.DriverReviewResponseDTO;
-import com.carpool.carpool.dto.review.MyMadeReviewDTO;
 import com.carpool.carpool.dto.review.ReviewResponseDTO;
-import com.carpool.carpool.dto.review.ReviewToMeDTO;
+import com.carpool.carpool.dto.review.UserReviewDTO;
 import com.carpool.carpool.model.review.Review;
 import com.carpool.carpool.service.media.IMediaService;
 
@@ -56,48 +55,39 @@ public class ReviewMapper {
 
     }
 
-    public ReviewToMeDTO convertReviewToReviewToMeDTO(Review review){
+    public UserReviewDTO convertReviewToReviewToMeDTO(Review review) {
       String profilePictureUrl = mediaService.getProfilePictureUrlByUserId(review.getReviewerUser().getId());
-      String userCompleteName = review.getReviewerUser().getName() + " " + review.getReviewerUser().getLastname();
+      String completeName = review.getReviewerUser().getName() + " " + review.getReviewerUser().getLastname();
 
-      return ReviewToMeDTO.builder()
-        .completeName(userCompleteName)
-        .stars(review.getStars())
-        .reviewDate(review.getCreatedAt())
-        .tripDate(review.getTrip().getStartTripDateTime())
-        .description(review.getDescription())
-        .profilePhotoUrl(profilePictureUrl)
-      .build();
+      return UserReviewDTO.builder()
+          .id(review.getId())
+          .stars(review.getStars())
+          .createdAt(review.getCreatedAt())
+          .tripDate(review.getTrip().getStartTripDateTime())
+          .description(review.getDescription())
+          .completeName(completeName)
+          .profilePhotoUrl(profilePictureUrl)
+          .tripId(review.getTrip().getId())
+          .build();
     }
-
     /**
      * 
      * @param review
      * @return
      */
-    public MyMadeReviewDTO convertReviewToMyMadeReviewDTO(Review review) {
-        String targetProfilePictureUrl = mediaService.getProfilePictureUrlByUserId(review.getTargetUser().getId());
-        String targetCompleteName = review.getTargetUser().getName() + " " + review.getTargetUser().getLastname();
+    public UserReviewDTO convertReviewToMyMadeReviewDTO(Review review) {
+      String profilePictureUrl = mediaService.getProfilePictureUrlByUserId(review.getTargetUser().getId());
+      String completeName = review.getTargetUser().getName() + " " + review.getTargetUser().getLastname();
 
-        return MyMadeReviewDTO.builder()
-            .id(review.getId()) 
-            .stars(review.getStars())
-            .createdAt(review.getCreatedAt())
-            .tripDate(review.getTrip().getStartTripDateTime())
-            .description(applyEllipsis(review.getDescription(), 100)) 
-            .targetFullName(targetCompleteName)
-            .targetPhoto(targetProfilePictureUrl)
-            .tripId(review.getTrip().getId())
-            .build();
-    }
-
-    /**
-     * Aplica puntos suspensivos si el texto supera el límite.
-     */
-    private String applyEllipsis(String text, int limit) {
-        if (text == null || text.length() <= limit) {
-            return text;
-        }
-        return text.substring(0, limit - 3) + "...";
-    }
+      return UserReviewDTO.builder()
+          .id(review.getId())
+          .stars(review.getStars())
+          .createdAt(review.getCreatedAt())
+          .tripDate(review.getTrip().getStartTripDateTime())
+          .description(review.getDescription())
+          .completeName(completeName)
+          .profilePhotoUrl(profilePictureUrl)
+          .tripId(review.getTrip().getId())
+          .build();
+    }   
 }
