@@ -178,6 +178,10 @@ public class ReviewImplementation implements IReviewService {
 
         User user = GetAuthenticatedUser();
 
+        if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
+            throw new BadRequestException("La fecha 'desde' no puede ser superior a la fecha 'hasta'.");
+        }
+
         LocalDateTime fromDateTime = null;
         LocalDateTime toDateTime = null;
 
@@ -260,6 +264,10 @@ public class ReviewImplementation implements IReviewService {
         
         User user = GetAuthenticatedUser();
         
+        if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
+            throw new BadRequestException("La fecha 'desde' no puede ser superior a la fecha 'hasta'.");
+        }
+
         LocalDateTime fromDateTime = null; 
         LocalDateTime toLocalDateTime = null; 
 
