@@ -35,7 +35,7 @@ public interface IReviewService {
   /**
    * Crea una nueva reseña para un pasajero específico. El usuario autenticado es el que realiza la reseña (chofer) y el destinatario es un pasajero del viaje.
    *
-   * @param reviewRequestDTO DTO que contiene la información de la reseña a crear, incluyendo la calificación, descripción y el ID del viaje.
+   * @param reviewPassengerRequestDTO DTO que contiene la información de la reseña a crear, incluyendo la calificación, descripción y el ID del viaje.
    * @return Response que contiene el DTO de la reseña creada, o un error si la creación falla por validaciones o conflictos.
    * @throws ResourceNotFoundException si el viaje o el usuario no existen.
    * @throws ConflictException si el viaje no ha finalizado,  el usuario ya ha dejado una reseña para ese pasajero.
@@ -49,4 +49,13 @@ public interface IReviewService {
    * @throws ResourceNotFoundException si el viaje con {@code tripId} no existe.
    */
   Response<Boolean> canUserReviewTrip(Long tripId);
+
+  /**
+   * Metodo que permite verificar si un chofer puede dejar una reseña para un pasajero y viaje específico
+   * @param tripId ID del viaje a verificar.
+   * @param passengerId ID del pasajero a verificar.
+   * @return Response que contiene un booleano indicando si el chofer  puede dejar una reseña para el viaje, o un error si la verificación falla.
+   * @throws ResourceNotFoundException si el viaje con {@code tripId} o el pasajero con {@code passengerId} no existe.
+   */
+  Response<Boolean> canDriverReviewTrip(Long tripId, Long passengerId);
 }

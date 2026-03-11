@@ -2,6 +2,8 @@ package com.carpool.carpool.service.review;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import com.carpool.carpool.dto.review.ReviewPassengerRequestDTO;
 import com.carpool.carpool.enums.reservation.ReservationStateEnum;
@@ -110,7 +112,7 @@ public class ReviewImplementation implements IReviewService {
 
         // La reseña se puede realizar hasta 48hs luego de que el viaje haya finalizado.
         StateHistory finishedState = stateHistoryRepository
-                .findTopByEntityAndStateNameAndScopeOrderByCreatedAtDesc(
+                .findTopByTripAndState_NameAndState_ScopeOrderByStartDateTimeDesc(
                         trip,
                         "FINISHED",
                         ScopeEnum.TRIP
@@ -175,7 +177,7 @@ public class ReviewImplementation implements IReviewService {
 
         // La reseña se puede realizar hasta 48hs luego de que el viaje haya finalizado.
         StateHistory finishedState = stateHistoryRepository
-                .findTopByEntityAndStateNameAndScopeOrderByCreatedAtDesc(
+                .findTopByTripAndState_NameAndState_ScopeOrderByStartDateTimeDesc(
                         trip,
                         "FINISHED",
                         ScopeEnum.TRIP
@@ -231,6 +233,80 @@ public class ReviewImplementation implements IReviewService {
                 List.of("Reseña creada con éxito"),
                 reviewMapper.convertReviewToReviewResponseDTO(savedReview)
         );
+    }
+    @Override
+    public Response<Boolean> canDriverReviewTrip(Long tripId, Long passengerId) {
+        User user = GetAuthenticatedUser();
+
+        Driver driver = driverRepository.findByUserId(user.getId())
+                .orElseThrow(
+                        () -> new ConflictException("No se encontró el perfil de chofer para el usuario autenticado."));
+
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> {
+                    log.error("Error: No se encontró el viaje con ID {}", tripId);
+                    return new ResourceNotFoundException("Viaje no encontrado");
+                });
+
+        User targetUser = userRepository.findByIdAndDeletedAtIsNull(passengerId)
+                .orElseThrow(() -> new ConflictException("Pasajero a reseñar no encontrado."));
+
+        boolean isFinished = stateHistoryRepository.isCurrentState(trip, "FINISHED", ScopeEnum.TRIP);
+
+        //El chofer en sesion está intentando reseñar un viaje que NO le pertenece
+        if (!Objects.equals(trip.getVehicle().getDriver().getId(), driver.getId())){
+            String msg = "El usuario no está habilitado para reseñar este viaje.";
+            log.warn("Check canDriverReviewTrip - Fallo: {}, Usuario: {}", msg, user.getUsername());
+            return ResponseUtils.buildOKResponse(List.of(msg), false);
+        }
+
+        //El viaje NO está finalziado
+        if (!isFinished) {
+            String msg = "El usuario no está habilitado para reseñar este viaje. El mismo no está finalizado";
+            log.warn("Check canDriverReviewTrip - Fallo: {}, Usuario: {}", msg, user.getUsername());
+            return ResponseUtils.buildOKResponse(List.of(msg), false);
+        }
+
+        //Verificar que el pasajero enviado no haya sido reseñado
+        if (reviewRepository.existsByTargetUserIdAndTripId(targetUser.getId(), trip.getId())) {
+            String msg = "El usuario no está habilitado para reseñar este viaje. El pasajero ya fue reseñado";
+            log.warn("Check canDriverReviewTrip - Fallo: {}, Usuario: {}", msg, user.getUsername());
+            return ResponseUtils.buildOKResponse(List.of(msg), false);
+        }
+
+        //Verificar que el id del targetUser que se envia tenga una reserva asociada a dicho viaje
+        List<String> excludedStates = List.of(ReservationStateEnum.REJECTED.name(), ReservationStateEnum.CANCELLED.name());
+
+        Optional<Reservation> reservationOpt = reservationRepository
+                .findReservationByUserAndTripExcludingStates(targetUser.getId(), trip.getId(), excludedStates);
+
+        if (reservationOpt.isEmpty()) {
+            String msg = "El usuario no está habilitado para reseñar este viaje. El pasajero no tiene asociada una reserva a dicho viaje";
+            log.warn("Check canDriverReviewTrip - Fallo: {}, Usuario: {}", msg, user.getUsername());
+            return ResponseUtils.buildOKResponse(List.of(msg), false);
+        }
+
+        // La reseña se puede realizar hasta 48hs luego de que el viaje haya finalizado.
+        StateHistory finishedState = stateHistoryRepository
+                .findTopByTripAndState_NameAndState_ScopeOrderByStartDateTimeDesc(
+                        trip,
+                        "FINISHED",
+                        ScopeEnum.TRIP
+                )
+                .orElseThrow(() -> new IllegalStateException("No se encontró el estado FINISHED del viaje."));
+
+        LocalDateTime finishedAt = finishedState.getStartDateTime();
+        LocalDateTime now = LocalDateTime.now();
+
+        if (finishedAt.plusHours(48).isBefore(now)) {
+            String msg = "El usuario no está habilitado para reseñar este viaje. La reseña solo puede realizarse dentro de las 48 horas posteriores a la finalización del viaje.";
+            log.warn("Check canDriverReviewTrip - Fallo: {}, Usuario: {}", msg, user.getUsername());
+            return ResponseUtils.buildOKResponse(List.of(msg), false);
+        }
+
+        String msg = "Usuario habilitado para dejar su reseña sobre el viaje.";
+        log.info("Check canReview - Éxito: {}, Usuario: {}", msg, user.getUsername());
+        return ResponseUtils.buildOKResponse(List.of(msg), true);
     }
 
     @Override

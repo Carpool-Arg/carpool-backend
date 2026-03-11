@@ -15,9 +15,9 @@ import com.carpool.carpool.model.trip.Trip;
 
 public interface StateHistoryRepository extends JpaRepository<StateHistory, Long> {
 
-    Optional<StateHistory> findTopByEntityAndStateNameAndScopeOrderByCreatedAtDesc(
-            Trip entity,
-            String stateName,
+    Optional<StateHistory> findTopByTripAndState_NameAndState_ScopeOrderByStartDateTimeDesc(
+            Trip trip,
+            String name,
             ScopeEnum scope
     );
 
