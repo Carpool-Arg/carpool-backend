@@ -50,14 +50,16 @@ public interface IReviewService {
 
  
   /**
-     * Obtiene todas las reseñas realizadas por el usuario autenticado,
-     * pudiendo filtrar por tipo (a chofer o a pasajero), rango de fechas y ordenamiento.
-     * @param dateFrom fecha desde (opcional)
-     * @param dateTo fecha hasta (opcional)
-     * @param role rol del usuario
-     * @param skip registros a saltear para paginado
-     * @param orderBy criterio de ordenamiento
-     * @return Response con el total y lista paginada de reseñas realizadas
-     */
+   * Recupera de forma paginada las reseñas realizadas por el usuario autenticado.
+   * Según el rol indicado, resuelve internamente si buscar reseñas hechas a choferes
+   * o a pasajeros.
+   * Si no se encuentran reseñas para la página solicitada, retorna un mensaje informativo.
+   * @param dateFrom fecha desde (opcional). Si se indica sola, trae desde esa fecha hasta hoy.
+   * @param dateTo fecha hasta (opcional). Si se indica sola, trae todo hasta esa fecha.
+   * @param role rol desde el cual se hicieron las reseñas. "driver" para reseñas a pasajeros, "passenger" para reseñas a choferes.
+   * @param skip cantidad de registros a saltear para el paginado.
+   * @param orderBy criterio de ordenamiento: RATING_DESC, RATING_ASC o RECENT.
+   * @return Response con el total y la lista paginada de reseñas realizadas.
+  */
   Response<MyMadeReviewsResponseDTO> getMyMadeReviews(LocalDate dateFrom, LocalDate dateTo,  String role, int skip, String orderBy);
 }

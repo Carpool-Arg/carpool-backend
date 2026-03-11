@@ -252,7 +252,6 @@ public class ReviewImplementation implements IReviewService {
         return ResponseUtils.buildOKResponse(List.of(message), response);
     }
 
-    
     @Override
     public Response<MyMadeReviewsResponseDTO> getMyMadeReviews(
         LocalDate dateFrom,
@@ -281,7 +280,7 @@ public class ReviewImplementation implements IReviewService {
         log.info("Buscando reseñas realizadas por el usuario ID {}. Filtros: Desde: {}. Hasta: {}. Role: {}. Skip: {}. Orden: {}",
         user.getId(), fromDateTime, toLocalDateTime, role, skip, orderBy);
 
-        boolean toDriver = "driver".equalsIgnoreCase(role);
+        boolean toDriver = "passenger".equalsIgnoreCase(role);
 
         Page<Review> page = reviewRepository.findReviewsByReviewerWithFiltersPage(
             user.getId(),
