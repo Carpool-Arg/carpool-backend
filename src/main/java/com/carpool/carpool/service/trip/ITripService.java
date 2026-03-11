@@ -27,7 +27,16 @@ public interface ITripService {
      * @throws ResourceNotFoundException si el viaje no existe
      */
     Response<TripResponseDTO> getTripDetails(Long id);
-    
+
+    /**
+     * Metodo para obtener los detalles de un viaje específico por su ID, para su EDICION.
+     *
+     * @param id identificador del viaje a solicitar
+     * @return Response<TripResponseDTO> devolviendo el viaje solicitado
+     * @throws ResourceNotFoundException si el viaje no existe, o no se puede editar
+     */
+    Response<TripResponseDTO> getTripDetailsForEdit(Long id);
+
     /**
      * Metodo para obtener el historial de viajes de un pasajero
      * @param namesStateTrip	Lista con nombre de estados de un viaje

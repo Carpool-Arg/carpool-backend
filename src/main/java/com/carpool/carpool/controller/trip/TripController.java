@@ -72,6 +72,21 @@ public class TripController {
     }
 
     @Operation(
+            summary = "Obtener los datos de un viaje específico que se desea editar"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Detalles del viaje obtenidos con éxito"),
+            @ApiResponse(responseCode = "400", description = "ID de viaje inválido"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado para ver los detalles del viaje"),
+            @ApiResponse(responseCode = "404", description = "El viaje no existe", content = @Content),
+    })
+    @GetMapping("/edit/{id}")
+    public ResponseEntity<Response<TripResponseDTO>> getTripDetailsForEdit(@PathVariable Long id) {
+        return new ResponseEntity<>(tripService.getTripDetailsForEdit(id), HttpStatus.OK);
+    }
+
+    @Operation(
                 summary = "Verificar la disponibilidad de un viaje"
     )
     @ApiResponses({

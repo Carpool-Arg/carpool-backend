@@ -158,9 +158,19 @@ public class TripImplementation implements ITripService {
     }
 
     @Override
+    public Response<TripResponseDTO> getTripDetailsForEdit(Long id) {
+        Trip trip = findTrip(id);
+
+        validateTripEditable(trip);
+
+        TripResponseDTO dto = tripMapper.convertTripToTripResponseDTO(trip);
+
+        return ResponseUtils.buildOKResponse(List.of("Datos del viaje obtenidos para edición"), dto);
+    }
+
+    @Override
     public Response<TripResponseDTO> getTripDetails(Long id) {
-        Trip trip = tripRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("El viaje no existe."));
+        Trip trip = findTrip(id);
 
         TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip);
         return ResponseUtils.buildOKResponse(List.of("Viaje encontrado con éxito"), tripResponseDTO);
@@ -529,32 +539,11 @@ public class TripImplementation implements ITripService {
 			return new EntityNotFoundException("El viaje que desea modificar no existe.");
 		});
 
+        validateTripEditable(trip);
+
 		Driver driver = getAuthenticatedDriver();
 
-		// Se valida que el viaje pertenezca al chofer
-		if (!driver.getId().equals(trip.getVehicle().getDriver().getId())) {
-			log.error("El chofer con ID: {} esta intentando modificar un viaje que no le pertenece", driver.getId());
-			throw new ForbiddenException("El viaje que desea modificar no le pertenece.");
-		}
-
-		// Se valida que el viaje se encuentra en estado CREADO
-		validateStateTrip(idTrip, TripStateEnum.CREATED.name());
-
-		// Se valida que exista alguna reserva para el viaje
-		if (reservationRepository.existsByTripId(tripUpdateRequestDTO.getIdTrip())) {
-			throw new ConflictException("No puede modificar el viaje ya que este cuenta con al menos una reserva.");
-		}
-
 		LocalDateTime now = LocalDateTime.now();
-		Duration duration = Duration.between(now, trip.getStartTripDateTime());
-
-		// Se valida que el horario actual no se encuentre dentro de las 12 horas del inicio del viaje
-		if (duration.isNegative() || duration.toHours() < 12) {
-			log.error(
-					"El viaje se encuentra dentro de las 12 horas de la salida. Horario de inicio del viaje: {}, horario actual: {}",
-					trip.getStartTripDateTime(), now);
-			throw new ConflictException("El viaje no puede ser editado dentro de las 12 horas siguientes al inicio del mismo.");
-		}
 
         if (tripUpdateRequestDTO.getSeatPrice() != null) {
             if (trip.getSeatPrice() != tripUpdateRequestDTO.getSeatPrice()){
@@ -611,6 +600,65 @@ public class TripImplementation implements ITripService {
 
 		return ResponseUtils.buildOKResponse(List.of("Viaje modificado con éxito"), null);
 	}
+
+    /**
+     * Valida si un viaje puede ser modificado por el chofer autenticado.
+     * <p>
+     * Se realizan las siguientes verificaciones:
+     * <ul>
+     *     <li>Que el viaje pertenezca al chofer autenticado.</li>
+     *     <li>Que el estado actual del viaje sea {@code CREATED}.</li>
+     *     <li>Que el viaje no tenga reservas asociadas.</li>
+     *     <li>Que falten al menos 12 horas para la fecha de inicio del viaje.</li>
+     * </ul>
+     *
+     * @param trip el {@link Trip} que se desea validar para edición
+     * @throws ForbiddenException si el viaje no pertenece al chofer autenticado
+     * @throws ConflictException si el viaje no cumple con las condiciones necesarias para ser editado
+     */
+    private void validateTripEditable(Trip trip){
+        Driver driver = getAuthenticatedDriver();
+
+        // Se valida que el viaje pertenezca al chofer
+        if (!driver.getId().equals(trip.getVehicle().getDriver().getId())) {
+            log.error("El chofer con ID: {} esta intentando modificar un viaje que no le pertenece", driver.getId());
+            throw new ForbiddenException("El viaje que desea modificar no le pertenece.");
+        }
+
+        // Se valida que el viaje se encuentra en estado CREADO
+        validateStateTrip(trip.getId(), TripStateEnum.CREATED.name());
+
+        // Se valida que exista alguna reserva para el viaje
+        if (reservationRepository.existsByTripId(trip.getId())) {
+            throw new ConflictException("No puede modificar el viaje ya que este cuenta con al menos una reserva.");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        Duration duration = Duration.between(now, trip.getStartTripDateTime());
+
+        // Se valida que el horario actual no se encuentre dentro de las 12 horas del inicio del viaje
+        if (duration.isNegative() || duration.toHours() < 12) {
+            log.error(
+                    "El viaje se encuentra dentro de las 12 horas de la salida. Horario de inicio del viaje: {}, horario actual: {}",
+                    trip.getStartTripDateTime(), now);
+            throw new ConflictException("El viaje no puede ser editado dentro de las 12 horas siguientes al inicio del mismo.");
+        }
+    }
+
+    /**
+     * Obtiene un viaje a partir de su identificador.
+     * <p>
+     * Este método se utiliza como punto central para recuperar un viaje desde la base
+     * de datos, asegurando que exista antes de continuar con cualquier lógica de negocio.
+     *
+     * @param id el identificador del viaje que se desea obtener
+     * @return el {@link Trip} correspondiente al ID proporcionado
+     * @throws ResourceNotFoundException si no existe un viaje con el ID indicado
+     */
+    private Trip findTrip(Long id) {
+        return tripRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("El viaje no existe."));
+    }
 
 	/**
 	 * Metodo encargado de finalizar un viaje, realizando la transicion de estados correspondiente
