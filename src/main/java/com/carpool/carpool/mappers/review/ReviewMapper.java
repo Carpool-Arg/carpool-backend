@@ -55,6 +55,10 @@ public class ReviewMapper {
 
     }
 
+    /**
+     * Convierte una entidad Review en UserReviewDTO mostrando los datos del usuario revisor.
+     * Usado cuando el usuario autenticado quiere ver las reseñas que recibió.
+     */
     public UserReviewDTO convertReviewToReviewToMeDTO(Review review) {
       String profilePictureUrl = mediaService.getProfilePictureUrlByUserId(review.getReviewerUser().getId());
       String completeName = review.getReviewerUser().getName() + " " + review.getReviewerUser().getLastname();
@@ -71,9 +75,8 @@ public class ReviewMapper {
           .build();
     }
     /**
-     * 
-     * @param review
-     * @return
+     * Convierte una entidad Review en UserReviewDTO mostrando los datos del usuario target.
+     * Usado cuando el usuario autenticado quiere ver las reseñas que él realizó.
      */
     public UserReviewDTO convertReviewToMyMadeReviewDTO(Review review) {
       String profilePictureUrl = mediaService.getProfilePictureUrlByUserId(review.getTargetUser().getId());
