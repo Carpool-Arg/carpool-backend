@@ -629,7 +629,7 @@ public class TripImplementation implements ITripService {
         validateStateTrip(trip.getId(), TripStateEnum.CREATED.name());
 
         // Se valida que exista alguna reserva para el viaje
-        if (reservationRepository.existsByTripId(trip.getId())) {
+        if (reservationRepository.existsActiveReservationsForTrip(trip.getId())) {
             throw new ConflictException("No puede modificar el viaje ya que este cuenta con al menos una reserva.");
         }
 
