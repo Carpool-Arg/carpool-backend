@@ -155,5 +155,7 @@ public interface ITripService {
     Response<Void> arriveTripStop(TripArriveRequestDTO tripArriveRequestDTO);
     
     Response<Void> updateTrip(TripUpdateRequestDTO tripUpdateRequestDTO);
+
+    Response<TripPassengersResponseDTO> getTripPassengers(Long idTrip);
     
 }

@@ -167,6 +167,21 @@ public class TripController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Obtener el viaje en curso del chofer logueado.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Viaje obtenido con éxito."),
+            @ApiResponse(responseCode = "404", description = "No se pudo encontrar el viaje.", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor al obtener el viaje.", content = @Content),
+    })
+    @GetMapping("/passengers")
+    public ResponseEntity<Response<TripPassengersResponseDTO>> getTripPassengers(
+        @RequestParam(required = true) Long tripId
+    ) {
+        Response<TripPassengersResponseDTO> response = tripService.getTripPassengers(tripId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
     @Operation(summary = "Buscar viajes con filtros aplicados")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista de viajes obtenida con éxito"),

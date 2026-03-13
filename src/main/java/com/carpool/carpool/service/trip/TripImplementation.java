@@ -601,6 +601,36 @@ public class TripImplementation implements ITripService {
 		return ResponseUtils.buildOKResponse(List.of("Viaje modificado con éxito"), null);
 	}
 
+
+    @Override
+    public Response<TripPassengersResponseDTO> getTripPassengers(Long idTrip){
+        log.info("Comenzando la recuperacion de los pasajeros de un viaje.");
+
+        Driver driver = getAuthenticatedDriver();
+
+        Trip trip = findTrip(idTrip);
+        
+        if(trip.getVehicle().getDriver().getId() != driver.getId()){
+            throw new ConflictException("No puede realizar esta acción, el viaje no le pertenece");
+        }
+
+        final String message;
+        List<String> reservationStates = List.of("UNPAID", "COMPLETED","EXPIRED");
+
+        List<User> passengers = tripRepository.findUsersByTripIdAndReservationStates(idTrip, reservationStates);
+        TripPassengersResponseDTO response = tripMapper.convertUserToTripPassengerDTO(passengers);
+        if (passengers == null){
+            throw new ConflictException("Ha ocurrido un error al recuperar los pasajeros del viaje.");
+
+        }
+        if (passengers.isEmpty()){
+            message = "El viaje no tiene pasajeros para reseñar";
+        }else{
+            message = "Pasajeros recuperados con exito";
+        }
+        return ResponseUtils.buildOKResponse(List.of(message), response);
+    }
+
     /**
      * Valida si un viaje puede ser modificado por el chofer autenticado.
      * <p>

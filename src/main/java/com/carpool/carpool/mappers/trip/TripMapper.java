@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
+import com.carpool.carpool.dto.trip.PassengerTripDTO;
 import com.carpool.carpool.dto.trip.TripDriverDTO;
 import com.carpool.carpool.dto.trip.TripHistoryUserDTO;
+import com.carpool.carpool.dto.trip.TripPassengersResponseDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
 
 import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
@@ -305,6 +307,24 @@ public class TripMapper {
                 .color(vehicleEntity.getColor())
                 .availableSeats(vehicleEntity.getAvailableSeats())
                 .build();
+    }
+
+    public TripPassengersResponseDTO convertUserToTripPassengerDTO(List<User> users){
+        TripPassengersResponseDTO response = TripPassengersResponseDTO.builder()
+        .passengers(
+            users.stream()
+                .map(user -> PassengerTripDTO.builder()
+                    .idPassenger(user.getId())
+                    .passengerName(user.getName())
+                    .passengerLastname(user.getLastname())
+                    .profilePhotoUrl(mediaService.getProfilePictureUrlByUserId(user.getId()))
+                    .build()
+                )
+                .toList()
+        )
+        .build();
+
+        return response;
     }
 
 }
