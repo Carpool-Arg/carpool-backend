@@ -1,5 +1,7 @@
 package com.carpool.carpool.dto.trip;
 
+import com.carpool.carpool.dto.review.TripPassengerReviewDTO;
+
 import lombok.Builder;
 import lombok.Getter;
 
@@ -10,4 +12,5 @@ public class PassengerTripDTO {
   private String passengerName;
   private String passengerLastname;
   private String profilePhotoUrl;
+  private TripPassengerReviewDTO review;
 }

@@ -318,7 +318,13 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
 	Page<Trip> findTripsByUserAndCurrentStates(@Param("userId") Long userId, @Param("states") List<String> states,
 			Pageable pageable);
 
-
+    /**
+     * Consulta que obtiene una lista con lso usuarios que participaron de un viaje en espcifico y tienen 
+     * sus reservas en un estado actual que coincide con alguno de la lista que se pasa por parametros
+     * @param tripId
+     * @param states
+     * @return
+     */
     @Query("""
     SELECT DISTINCT r.user
     FROM Reservation r

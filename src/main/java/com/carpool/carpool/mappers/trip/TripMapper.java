@@ -13,7 +13,7 @@ import com.carpool.carpool.dto.trip.TripDriverDTO;
 import com.carpool.carpool.dto.trip.TripHistoryUserDTO;
 import com.carpool.carpool.dto.trip.TripPassengersResponseDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
-
+import com.carpool.carpool.repository.review.ReviewRepository;
 import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
 import org.springframework.stereotype.Component;
 
@@ -45,6 +45,7 @@ public class TripMapper {
 	
     private final IMediaService mediaService;
     private final StateHistoryRepository stateHistoryRepository;
+    private final ReviewRepository reviewRepository;
     private final TripStopComponent tripStopComponent;
     
     public Trip convertTripRequestDTOToTrip(TripRequestDTO tripRequestDTO, Vehicle vehicle){ 
@@ -309,7 +310,7 @@ public class TripMapper {
                 .build();
     }
 
-    public TripPassengersResponseDTO convertUserToTripPassengerDTO(List<User> users){
+    public TripPassengersResponseDTO convertUserToTripPassengerDTO(List<User> users, Long idTrip){
         TripPassengersResponseDTO response = TripPassengersResponseDTO.builder()
         .passengers(
             users.stream()
@@ -318,6 +319,11 @@ public class TripMapper {
                     .passengerName(user.getName())
                     .passengerLastname(user.getLastname())
                     .profilePhotoUrl(mediaService.getProfilePictureUrlByUserId(user.getId()))
+                    .review(
+                        reviewRepository
+                            .getTripPassengerReview(idTrip, user.getId())
+                            .orElse(null)
+                    )
                     .build()
                 )
                 .toList()
