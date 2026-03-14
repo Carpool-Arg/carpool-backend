@@ -28,6 +28,21 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
     );
 
     @Query("""
+    SELECT r FROM Reservation r
+    JOIN r.trip t
+    JOIN StateHistory sh ON sh.reservation = r
+    JOIN sh.state st
+    WHERE r.user.id = :userId
+      AND t.id = :tripId
+      AND st.name NOT IN :excludedStates
+""")
+    Optional<Reservation> findReservationByUserAndTripExcludingStates(
+            @Param("userId") Long userId,
+            @Param("tripId") Long tripId,
+            @Param("excludedStates") List<String> excludedStates
+    );
+
+    @Query("""
         SELECT r FROM Reservation r
         JOIN r.trip t
         JOIN r.startCity sCity
