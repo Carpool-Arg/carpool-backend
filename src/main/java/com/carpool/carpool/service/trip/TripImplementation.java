@@ -620,7 +620,7 @@ public class TripImplementation implements ITripService {
         List<User> passengers = tripRepository.findUsersByTripIdAndReservationStates(idTrip, reservationStates);
         TripPassengersResponseDTO response = tripMapper.convertUserToTripPassengerDTO(passengers, trip.getId());
         if (passengers == null){
-            throw new ConflictException("Ha ocurrido un error al recuperar los pasajeros del viaje.");
+            throw new ResourceNotFoundException("Ha ocurrido un error al recuperar los pasajeros del viaje.");
         }
         if (passengers.isEmpty()){
             message = "El viaje no tiene pasajeros para reseñar";

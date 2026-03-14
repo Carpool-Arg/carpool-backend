@@ -168,10 +168,10 @@ public class TripController {
     }
 
     @Operation(
-            summary = "Obtener el viaje en curso del chofer logueado.")
+            summary = "Obtiene los pasajeros que participaron de un viaje")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Viaje obtenido con éxito."),
-            @ApiResponse(responseCode = "404", description = "No se pudo encontrar el viaje.", content = @Content),
+            @ApiResponse(responseCode = "200", description = "Pasajeros obtenidos con exito."),
+            @ApiResponse(responseCode = "404", description = "No se pudieron recuperar los pasajeros.", content = @Content),
             @ApiResponse(responseCode = "500", description = "Error interno del servidor al obtener el viaje.", content = @Content),
     })
     @GetMapping("/passengers")
