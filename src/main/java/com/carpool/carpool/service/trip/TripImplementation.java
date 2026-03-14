@@ -22,6 +22,18 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
+import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
+import com.carpool.carpool.dto.trip.TripDriverDTO;
+import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
+import com.carpool.carpool.dto.trip.TripHistoryUserDTO;
+import com.carpool.carpool.dto.trip.TripHistoryUserResponseDTO;
+import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
+import com.carpool.carpool.dto.trip.TripRequestDTO;
+import com.carpool.carpool.dto.trip.TripResponseDTO;
+import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
+import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
+import com.carpool.carpool.dto.trip.TripUpdateRequestDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
@@ -643,7 +655,7 @@ public class TripImplementation implements ITripService {
         }
 
         // Se valida que el viaje se encuentra en estado CREADO
-        validateStateTrip(trip.getId(), List.of(TripStateEnum.CREATED.name(), TripStateEnum.FINISHED.name()));
+        validateStateTrip(trip.getId(), TripStateEnum.CREATED.name());
 
         // Se valida que exista alguna reserva para el viaje
         if (reservationRepository.existsActiveReservationsForTrip(trip.getId())) {
@@ -688,25 +700,20 @@ public class TripImplementation implements ITripService {
     }
     
     /**
-     * Este metodo permite corroborar si un viaje se encuentra en alguno de los estados indicados
-     * @param idTrip    Viaje a corroborar el estado
-     * @param states    Lista de estados válidos
+     * Este metodo permite corroborar si un viaje se encuentra en un determinado estado
+     * @param idTrip		Viaje a corroborar el estado
+     * @param nameState		Estado que se desea corroborar
      */
-    private void validateStateTrip(Long idTrip, List<String> states) {
-        final var currentStateTrip = stateHistoryRepository
-                .findByTripIdAndFinishDateTimeIsNull(idTrip)
-                .orElseThrow(() -> {
-                    log.error("El viaje con id: {} no tiene un estado actual", idTrip);
-                    return new EntityNotFoundException("El viaje no presenta un estado actual");
-                });
+    private void validateStateTrip(Long idTrip , String nameState) {
+		final var currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(idTrip)
+				.orElseThrow(() -> {
+					log.error("El viaje con id: {} no tiene un estado actual", idTrip);
+					return new EntityNotFoundException("El viaje no presenta un estado actual");
+				});
 
-        String currentState = currentStateTrip.getState().getName();
-
-        if (!states.contains(currentState)) {
-            throw new ConflictException(
-                "El viaje debe encontrarse en alguno de los siguientes estados: " + states
-            );
-        }
+		if (!nameState.equals(currentStateTrip.getState().getName())) {
+			throw new ConflictException("Solamente se pueden editar viajes que se encuentren en estado CREADO");
+		}
     }
 
     /**
