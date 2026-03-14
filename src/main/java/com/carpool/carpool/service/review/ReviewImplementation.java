@@ -197,16 +197,10 @@ public class ReviewImplementation implements IReviewService {
         );
 
         Page<Review> page;
-        Double rating;
 
         if ("driver".equalsIgnoreCase(role)) {
             log.info("Verificando si el usuario tiene el rol de chofer.");
             if(!user.hasRole("ROLE_DRIVER")) throw new BadRequestException("El usuario no posee el rol indicado");
-            try{
-                rating = user.getDriver().getRating();
-            }catch(Exception e){
-                throw new ConflictException("Hubo un problema al recuperar el usuario.");
-            }
 
             log.info("Recuperando pagina de reseñas que pasajeros le hicieron al usuario como chofer.");
             page = reviewRepository.findReviewsByTargetUserWithFilters(
@@ -218,11 +212,6 @@ public class ReviewImplementation implements IReviewService {
             );
 
         } else if ("passenger".equalsIgnoreCase(role)) {
-            try{
-                rating = user.getRating();
-            }catch(Exception e){
-                throw new ConflictException("Hubo un problema al recuperar el usuario.");
-            }
             log.info("Recuperando pagina de reseñas que choferes le hicieron al usuario como pasajero.");
             page = reviewRepository.findReviewsByTargetUserWithFilters(
                 user.getId(),
@@ -245,7 +234,6 @@ public class ReviewImplementation implements IReviewService {
 
         ReviewsToMeResponseDTO response = ReviewsToMeResponseDTO.builder()
             .total(page.getTotalElements())
-            .rating(rating)
             .reviews(reviewsToMe)
         .build();
 
