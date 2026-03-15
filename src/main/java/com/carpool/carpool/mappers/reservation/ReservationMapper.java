@@ -65,6 +65,7 @@ public class ReservationMapper {
                         .state(Optional.ofNullable(stateHistoryMap.get(reservation.getId()))
                                 .map(sh -> sh.getState().getName())
                                 .orElse(null))
+                        .ratingUser(reservation.getUser().getRating())
                         .build())
                 .collect(Collectors.toList());
     }
