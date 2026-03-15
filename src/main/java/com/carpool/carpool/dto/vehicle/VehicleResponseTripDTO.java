@@ -7,10 +7,11 @@ import lombok.Getter;
 @Builder
 public class VehicleResponseTripDTO {
     
+	private Long id;
     private String domain;
     private String vehicleTypeName;
     private String brand;
     private String model;
     private String color;
-
+    private int availableSeats;
 }

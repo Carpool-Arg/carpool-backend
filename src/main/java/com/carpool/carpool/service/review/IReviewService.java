@@ -5,7 +5,8 @@ import java.util.List;
 
 import com.carpool.carpool.dto.review.DriverReviewResponseDTO;
 import com.carpool.carpool.dto.review.MyMadeReviewsResponseDTO;
-import com.carpool.carpool.dto.review.ReviewRequestDTO;
+import com.carpool.carpool.dto.review.ReviewDriverRequestDTO;
+import com.carpool.carpool.dto.review.ReviewPassengerRequestDTO;
 import com.carpool.carpool.dto.review.ReviewResponseDTO;
 import com.carpool.carpool.dto.review.ReviewsToMeResponseDTO;
 import com.carpool.carpool.exception.ConflictException;
@@ -27,12 +28,22 @@ public interface IReviewService {
   /**
    * Crea una nueva reseña para un viaje específico. El usuario autenticado es el que realiza la reseña (pasajero) y el destinatario es el chofer del viaje.
    * 
-   * @param reviewRequestDTO DTO que contiene la información de la reseña a crear, incluyendo la calificación, descripción y el ID del viaje.
+   * @param reviewDriverRequestDTO DTO que contiene la información de la reseña a crear, incluyendo la calificación, descripción y el ID del viaje.
    * @return Response que contiene el DTO de la reseña creada, o un error si la creación falla por validaciones o conflictos.
    * @throws ResourceNotFoundException si el viaje o el usuario no existen.
    * @throws ConflictException si el viaje no ha finalizado, no está pagado o el usuario ya ha dejado una reseña para ese viaje.
    */
-  Response<ReviewResponseDTO> createReview(ReviewRequestDTO reviewRequestDTO);
+  Response<ReviewResponseDTO> createDriverReview(ReviewDriverRequestDTO reviewDriverRequestDTO);
+
+  /**
+   * Crea una nueva reseña para un pasajero específico. El usuario autenticado es el que realiza la reseña (chofer) y el destinatario es un pasajero del viaje.
+   *
+   * @param reviewPassengerRequestDTO DTO que contiene la información de la reseña a crear, incluyendo la calificación, descripción y el ID del viaje.
+   * @return Response que contiene el DTO de la reseña creada, o un error si la creación falla por validaciones o conflictos.
+   * @throws ResourceNotFoundException si el viaje o el usuario no existen.
+   * @throws ConflictException si el viaje no ha finalizado,  el usuario ya ha dejado una reseña para ese pasajero.
+   */
+  Response<ReviewResponseDTO> createPassengerReview(ReviewPassengerRequestDTO reviewPassengerRequestDTO);
 
   /**
    * Metodo que permite verificar si un usuario puede dejar una reseña para un viaje específico.
@@ -61,5 +72,15 @@ public interface IReviewService {
    * @param orderBy criterio de ordenamiento: RATING_DESC, RATING_ASC o RECENT.
    * @return Response con el total y la lista paginada de reseñas realizadas.
   */
+  
   Response<MyMadeReviewsResponseDTO> getMyMadeReviews(LocalDate dateFrom, LocalDate dateTo,  String role, int skip, String orderBy);
+
+  /* 
+   * Metodo que permite verificar si un chofer puede dejar una reseña para un pasajero y viaje específico
+   * @param tripId ID del viaje a verificar.
+   * @param passengerId ID del pasajero a verificar.
+   * @return Response que contiene un booleano indicando si el chofer  puede dejar una reseña para el viaje, o un error si la verificación falla.
+   * @throws ResourceNotFoundException si el viaje con {@code tripId} o el pasajero con {@code passengerId} no existe.
+   */
+  Response<Boolean> canDriverReviewTrip(Long tripId, Long passengerId);
 }

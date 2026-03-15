@@ -27,7 +27,16 @@ public interface ITripService {
      * @throws ResourceNotFoundException si el viaje no existe
      */
     Response<TripResponseDTO> getTripDetails(Long id);
-    
+
+    /**
+     * Metodo para obtener los detalles de un viaje específico por su ID, para su EDICION.
+     *
+     * @param id identificador del viaje a solicitar
+     * @return Response<TripResponseDTO> devolviendo el viaje solicitado
+     * @throws ResourceNotFoundException si el viaje no existe, o no se puede editar
+     */
+    Response<TripResponseDTO> getTripDetailsForEdit(Long id);
+
     /**
      * Metodo para obtener el historial de viajes de un pasajero
      * @param namesStateTrip	Lista con nombre de estados de un viaje
@@ -40,11 +49,12 @@ public interface ITripService {
      * Metodo para verificar la disponibilidad de un viaje.
      *
      * @param startDateTime La fecha y hora a partir de la cual verificar.
+     * @param idTrip id del viaje que NO queres tener en cuenta en la comprobacion
      * @return Response<Void> devolviendo el mensaje si el viaje es posible o no.
      * @throws ConflictException si el chofer ya tiene un viaje planificado en la
      *                           fecha y hora dadas.
      */
-    Response<Void> checkTripAvailability(LocalDateTime startDateTime);
+    Response<Void> checkTripAvailability(LocalDateTime startDateTime, Long idTrip);
 
     /**
      * Metodo para obtener los viajes que creó un chofer que se encuentra en la
@@ -143,4 +153,14 @@ public interface ITripService {
      *         peticion
      */
     Response<Void> arriveTripStop(TripArriveRequestDTO tripArriveRequestDTO);
+    
+    Response<Void> updateTrip(TripUpdateRequestDTO tripUpdateRequestDTO);
+    
+    /**
+     * Metodo para obtener los pasajeros que se participaron d eun viaje y tienen sus reservas en estados especificos
+     * @param idTrip
+     * @return
+     */
+    Response<TripPassengersResponseDTO> getTripPassengers(Long idTrip);
+    
 }
