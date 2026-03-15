@@ -1,5 +1,6 @@
 package com.carpool.carpool.model.driver;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
 import com.carpool.carpool.model.licenseClass.LicenseClass;
@@ -19,7 +20,7 @@ import lombok.ToString;
 @ToString
 @Entity
 @Table(name = "driver")
-public class Driver {
+public class Driver implements Serializable{
 
     @Id
     @Column(name = "id")
