@@ -64,6 +64,9 @@ public class Review {
 
   private Trip trip;
 
+  @Column(name = "passenger_to_driver", nullable = false)
+  private Boolean passengerToDriver;
+
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 

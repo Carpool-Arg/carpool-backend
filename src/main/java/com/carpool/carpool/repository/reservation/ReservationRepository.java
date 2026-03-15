@@ -28,6 +28,22 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
     );
 
     @Query("""
+    SELECT r FROM Reservation r
+    JOIN r.trip t
+    JOIN StateHistory sh ON sh.reservation = r
+    JOIN sh.state st
+    WHERE r.user.id = :userId
+      AND t.id = :tripId
+      AND sh.finishDateTime IS NULL
+      AND st.name NOT IN :excludedStates
+""")
+    Optional<Reservation> findReservationByUserAndTripExcludingStates(
+            @Param("userId") Long userId,
+            @Param("tripId") Long tripId,
+            @Param("excludedStates") List<String> excludedStates
+    );
+
+    @Query("""
         SELECT r FROM Reservation r
         JOIN r.trip t
         JOIN r.startCity sCity
@@ -119,7 +135,19 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
     Optional<Reservation> findExpiredReservationByUserId(
             @Param("userId") Long userId
     );
-    
+
+    @Query("""
+    SELECT COUNT(r) > 0
+    FROM Reservation r
+    JOIN StateHistory sh ON sh.reservation.id = r.id
+    JOIN sh.state s
+    WHERE r.trip.id = :tripId
+      AND s.name IN ('PENDING', 'ACCEPTED')
+      AND sh.finishDateTime IS NULL
+""")
+    boolean existsActiveReservationsForTrip(@Param("tripId") Long tripId);
+        
+    int countReservedSeatsByTripId(Long tripId);
     List<Reservation> findByTripIdInAndUserId(List<Long> tripIds, Long userId);
 
     /**
@@ -129,4 +157,5 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
      * @return
      */
     boolean existsByUserIdAndTripId(Long userId, Long tripId);
+
 }

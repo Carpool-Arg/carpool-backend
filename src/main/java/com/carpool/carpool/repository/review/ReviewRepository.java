@@ -1,6 +1,7 @@
 package com.carpool.carpool.repository.review;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
 
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.carpool.carpool.dto.review.TripPassengerReviewDTO;
 import com.carpool.carpool.model.review.Review;
 
 @Repository
@@ -34,6 +36,14 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     boolean existsByReviewerUserIdAndTripId(Long reviewerUserId, Long tripId);
 
     /**
+     * Verifica si un pasajero ya fue reseñado para un viaje específico.
+     * @param targetUserId ID del pasajero que se quiere reseñar
+     * @param tripId ID del viaje para el cual se dejó la reseña
+     * @return true si ya existe una reseña para el usuario para ese viaje, false en caso contrario
+     */
+    boolean existsByTargetUserIdAndTripId(Long targetUserId, Long tripId);
+
+    /**
      * Calcula el promedio de estrellas (rating) para un usuario específico basado en las reseñas recibidas.
      * @param userId ID del usuario para el cual se desea calcular el promedio de rating
      * @return El promedio de estrellas recibido por el usuario, o null si no tiene reseñas
@@ -52,5 +62,24 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
      * @return Lista de reseñas recibidas por el usuario target, sin incluir las reseñas eliminadas
      */
     List<Review> findByTargetUserIdAndDeletedAtIsNull(Long targetUserId);
+
+    /**
+     * Otiene las estrellas y la descripcion de una reseña a un pasajero especifico para un viaje en especifico, se 
+     * usa un octional para manejar el caso de que no exista la reseña
+     * @param tripId
+     * @param userId el id del usuario del que se quiere obtener la reseña
+     * @return
+     */
+    @Query("""
+      SELECT new com.carpool.carpool.dto.review.TripPassengerReviewDTO(
+        rev.stars,
+        rev.description
+      )
+      FROM Review rev
+      WHERE rev.trip.id = :tripId
+      AND rev.targetUser.id = :userId
+      AND rev.passengerToDriver = false
+    """)
+    Optional<TripPassengerReviewDTO> getTripPassengerReview(Long tripId, Long userId);
     
 }
