@@ -1,7 +1,9 @@
 package com.carpool.carpool.controller.review;
 
+import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import com.carpool.carpool.dto.review.ReviewPassengerRequestDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,8 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 import com.carpool.carpool.dto.review.DriverReviewResponseDTO;
+import com.carpool.carpool.dto.review.MyMadeReviewsResponseDTO;
 import com.carpool.carpool.dto.review.ReviewDriverRequestDTO;
 import com.carpool.carpool.dto.review.ReviewResponseDTO;
+import com.carpool.carpool.dto.review.ReviewsToMeResponseDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.review.IReviewService;
 
@@ -49,6 +53,46 @@ public class ReviewController {
     @RequestParam(required = false, defaultValue = "RECENT") String orderBy
   ){
     return new ResponseEntity<>(reviewService.getDriverReviews(driverId, skip, orderBy), HttpStatus.OK);
+  }
+
+
+  @Operation(
+      summary = "Obtener las reseñas que me han realizado como chofer o pasajero",
+      description = "Permite obtener una lista paginada y filtrada de las reseñas que me han realizado como chofer o pasajero"
+  )
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Lista obtenida con exito"),
+      @ApiResponse(responseCode = "404", description = "No se pudo recuperar la lista"),
+      @ApiResponse(responseCode = "401", description = "No autorizado para acceder a este recurso")
+  })
+  @GetMapping("/my-reviews")
+  public ResponseEntity<Response<ReviewsToMeResponseDTO>> getMyReviews(
+    @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate fromDate,
+    @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate toDate,
+    @RequestParam(required = false, defaultValue = "driver") String role,
+    @RequestParam(required = false, defaultValue = "0") int skip,
+    @RequestParam(required = false, defaultValue = "RECENT") String orderBy
+  ) {
+    return ResponseEntity.ok(reviewService.getReviewsToMe(fromDate, toDate,role, skip, orderBy));
+  }
+  
+  @Operation(
+      summary = "Obtener las reseñas que he realizado",
+      description = "Permite obtener una lista paginada y filtrada de las reseñas que he realizado a choferes o pasajeros"
+  )
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Lista obtenida con éxito"),
+      @ApiResponse(responseCode = "401", description = "No autorizado para acceder a este recurso")
+  })
+  @GetMapping("/my-made-reviews")
+  public ResponseEntity<Response<MyMadeReviewsResponseDTO>> getMyMadeReviews(
+    @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate fromDate,
+    @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate toDate,
+    @RequestParam(required = false, defaultValue = "driver") String role,
+    @RequestParam(required = false, defaultValue = "0") int skip,
+    @RequestParam(required = false, defaultValue = "RECENT") String orderBy
+  ) {
+    return ResponseEntity.ok(reviewService.getMyMadeReviews(fromDate, toDate, role, skip, orderBy));
   }
 
   @Operation(

@@ -8,6 +8,7 @@ import java.util.List;
 
 import com.carpool.carpool.enums.user.UserGenderEnum;
 import com.carpool.carpool.enums.user.UserStateEnum;
+import com.carpool.carpool.model.driver.Driver;
 import com.carpool.carpool.model.review.Review;
 import com.carpool.carpool.model.role.Role;
 import com.carpool.carpool.validators.genderValidEnum.GenderValidEnum;
@@ -109,6 +110,10 @@ public class User implements Serializable {
     @OneToMany(mappedBy = "targetUser",cascade = CascadeType.ALL,orphanRemoval = true)
     private transient List<Review> recievedReviews;
 
+    @JsonIgnoreProperties({"user"})
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private Driver driver;
+
     @PrePersist
     protected void onCreate() {
         this.created_at = LocalDateTime.now();
@@ -127,5 +132,12 @@ public class User implements Serializable {
 
     public boolean isAccountActive(){
         return status == UserStateEnum.ACTIVE;
+    }
+
+    public boolean hasRole(String roleName) {
+        if (roles == null) return false;
+
+        return roles.stream()
+                .anyMatch(role -> role.getName().equalsIgnoreCase(roleName));
     }
 }

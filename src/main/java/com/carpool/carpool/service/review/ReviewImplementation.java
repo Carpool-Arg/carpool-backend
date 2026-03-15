@@ -1,5 +1,6 @@
 package com.carpool.carpool.service.review;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -15,7 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.carpool.carpool.dto.review.ReviewDriverRequestDTO;
 import com.carpool.carpool.dto.review.ReviewResponseDTO;
+import com.carpool.carpool.dto.review.ReviewsToMeResponseDTO;
+import com.carpool.carpool.dto.review.UserReviewDTO;
 import com.carpool.carpool.enums.state.ScopeEnum;
+import com.carpool.carpool.exception.BadRequestException;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.review.ReviewMapper;
@@ -35,9 +39,11 @@ import com.carpool.carpool.utils.ResponseUtils;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
 import com.carpool.carpool.dto.review.DriverReviewResponseDTO;
+import com.carpool.carpool.dto.review.MyMadeReviewsResponseDTO;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -353,6 +359,141 @@ public class ReviewImplementation implements IReviewService {
         String msg = "Usuario habilitado para dejar su reseña sobre el viaje.";
         log.info("Check canReview - Éxito: {}, Usuario: {}", msg, user.getUsername());
         return ResponseUtils.buildOKResponse(List.of(msg), true);
+    }
+
+    @Override
+    public Response<ReviewsToMeResponseDTO> getReviewsToMe(LocalDate dateFrom,LocalDate dateTo,String role,int skip,String orderBy) {
+
+        User user = GetAuthenticatedUser();
+
+        if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
+            throw new BadRequestException("La fecha 'desde' no puede ser superior a la fecha 'hasta'.");
+        }
+
+        LocalDateTime fromDateTime = null;
+        LocalDateTime toDateTime = null;
+
+        if (dateFrom != null) {
+            fromDateTime = dateFrom.atStartOfDay();
+        }
+        if (dateTo != null) {
+            toDateTime = dateTo.atTime(23, 59, 59);
+        }
+        
+        log.info("Buscando reseñas para el usuario con el ID {}. Filtros: Fecha desde: {}. Fecha hasta: {}. Rol: {}. Skip: {}. Orden: {}",
+            user.getId(),fromDateTime, toDateTime, role,skip,orderBy
+        );
+
+        Page<Review> page;
+        Double rating;
+
+        if ("driver".equalsIgnoreCase(role)) {
+            log.info("Verificando si el usuario tiene el rol de chofer.");
+            if(!user.hasRole("ROLE_DRIVER")) throw new BadRequestException("El usuario no posee el rol indicado");
+            try{
+                rating = user.getDriver().getRating();
+            }catch(Exception e){
+                throw new ConflictException("Hubo un problema al recuperar el usuario.");
+            }
+
+            log.info("Recuperando pagina de reseñas que pasajeros le hicieron al usuario como chofer.");
+            page = reviewRepository.findReviewsByTargetUserWithFilters(
+                user.getId(),
+                fromDateTime,
+                toDateTime,
+                true,
+                getPageable(orderBy, skip)
+            );
+
+        } else if ("passenger".equalsIgnoreCase(role)) {
+            try{
+                rating = user.getRating();
+            }catch(Exception e){
+                throw new ConflictException("Hubo un problema al recuperar el usuario.");
+            }
+            log.info("Recuperando pagina de reseñas que choferes le hicieron al usuario como pasajero.");
+            page = reviewRepository.findReviewsByTargetUserWithFilters(
+                user.getId(),
+                fromDateTime,
+                toDateTime,
+                false,
+                getPageable(orderBy, skip)
+            );
+
+        } else {
+            throw new BadRequestException("Rol inválido");
+        }        
+        List<UserReviewDTO> reviewsToMe = page.getContent().stream()
+            .map(reviewMapper::convertReviewToReviewToMeDTO)
+            .toList();
+
+        String message = reviewsToMe.isEmpty()
+            ? "No se encontraron reseñas"
+            : "Reseñas recuperadas con éxito";
+
+        ReviewsToMeResponseDTO response = ReviewsToMeResponseDTO.builder()
+            .total(page.getTotalElements())
+            .rating(rating)
+            .reviews(reviewsToMe)
+        .build();
+
+        return ResponseUtils.buildOKResponse(List.of(message), response);
+    }
+
+    @Override
+    public Response<MyMadeReviewsResponseDTO> getMyMadeReviews(
+        LocalDate dateFrom,
+        LocalDate dateTo,
+        String role,
+        int skip,
+        String orderBy)
+        {
+        
+        User user = GetAuthenticatedUser();
+        
+        if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
+            throw new BadRequestException("La fecha 'desde' no puede ser superior a la fecha 'hasta'.");
+        }
+
+        LocalDateTime fromDateTime = null; 
+        LocalDateTime toLocalDateTime = null; 
+
+        if (dateFrom != null) {
+            fromDateTime = dateFrom.atStartOfDay();
+        }
+        if (dateTo != null) {
+            toLocalDateTime = dateTo.atTime(23, 59, 59);
+        }
+
+        log.info("Buscando reseñas realizadas por el usuario ID {}. Filtros: Desde: {}. Hasta: {}. Role: {}. Skip: {}. Orden: {}",
+        user.getId(), fromDateTime, toLocalDateTime, role, skip, orderBy);
+
+        boolean toDriver = "passenger".equalsIgnoreCase(role);
+
+        Page<Review> page = reviewRepository.findReviewsByReviewerWithFiltersPage(
+            user.getId(),
+            fromDateTime,
+            toLocalDateTime,
+            toDriver,
+            getPageable(orderBy, skip)
+        );
+
+        List<UserReviewDTO> myReviews = page.getContent().stream()
+        .map(reviewMapper::convertReviewToMyMadeReviewDTO)
+        .toList(); 
+
+        String message = myReviews.isEmpty()
+            ? "Todavía no has realizado ninguna reseña."
+            : "Reseñas recuperadas con éxito.";
+        
+        
+        MyMadeReviewsResponseDTO myMadeReviewsResponseDTO = MyMadeReviewsResponseDTO.builder()
+            .total(page.getTotalElements())
+            .reviews(myReviews)
+            .build();
+        
+        return ResponseUtils.buildOKResponse(List.of(message), myMadeReviewsResponseDTO);
+
     }
 
     /**

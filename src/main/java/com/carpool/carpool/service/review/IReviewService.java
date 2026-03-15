@@ -1,11 +1,14 @@
 package com.carpool.carpool.service.review;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import com.carpool.carpool.dto.review.DriverReviewResponseDTO;
+import com.carpool.carpool.dto.review.MyMadeReviewsResponseDTO;
 import com.carpool.carpool.dto.review.ReviewDriverRequestDTO;
 import com.carpool.carpool.dto.review.ReviewPassengerRequestDTO;
 import com.carpool.carpool.dto.review.ReviewResponseDTO;
+import com.carpool.carpool.dto.review.ReviewsToMeResponseDTO;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.response.Response;
@@ -51,6 +54,28 @@ public interface IReviewService {
   Response<Boolean> canUserReviewTrip(Long tripId);
 
   /**
+   * Metodo para obtener las reseñas que he recibido pudiendo filtrar y obtenerlas de manera paginada
+   * @return
+   */
+  Response<ReviewsToMeResponseDTO> getReviewsToMe(LocalDate dateFrom, LocalDate dateTo,String role, int skip,  String orderBy);
+
+ 
+  /**
+   * Recupera de forma paginada las reseñas realizadas por el usuario autenticado.
+   * Según el rol indicado, resuelve internamente si buscar reseñas hechas a choferes
+   * o a pasajeros.
+   * Si no se encuentran reseñas para la página solicitada, retorna un mensaje informativo.
+   * @param dateFrom fecha desde (opcional). Si se indica sola, trae desde esa fecha hasta hoy.
+   * @param dateTo fecha hasta (opcional). Si se indica sola, trae todo hasta esa fecha.
+   * @param role rol desde el cual se hicieron las reseñas. "driver" para reseñas a pasajeros, "passenger" para reseñas a choferes.
+   * @param skip cantidad de registros a saltear para el paginado.
+   * @param orderBy criterio de ordenamiento: RATING_DESC, RATING_ASC o RECENT.
+   * @return Response con el total y la lista paginada de reseñas realizadas.
+  */
+  
+  Response<MyMadeReviewsResponseDTO> getMyMadeReviews(LocalDate dateFrom, LocalDate dateTo,  String role, int skip, String orderBy);
+
+  /* 
    * Metodo que permite verificar si un chofer puede dejar una reseña para un pasajero y viaje específico
    * @param tripId ID del viaje a verificar.
    * @param passengerId ID del pasajero a verificar.
