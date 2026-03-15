@@ -34,6 +34,7 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
     JOIN sh.state st
     WHERE r.user.id = :userId
       AND t.id = :tripId
+      AND sh.finishDateTime IS NULL
       AND st.name NOT IN :excludedStates
 """)
     Optional<Reservation> findReservationByUserAndTripExcludingStates(
