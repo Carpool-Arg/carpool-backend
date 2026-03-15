@@ -102,7 +102,13 @@ public class ReviewImplementation implements IReviewService {
         }
 
         //Verificar que el id del targetUser que se envia tenga una reserva asociada a dicho viaje
-        List<String> excludedStates = List.of(ReservationStateEnum.REJECTED.name(), ReservationStateEnum.CANCELLED.name());
+        List<String> excludedStates = List.of(
+                ReservationStateEnum.PENDING.name(),
+                ReservationStateEnum.ACCEPTED.name(),
+                ReservationStateEnum.IN_PROGRESS.name(),
+                ReservationStateEnum.REJECTED.name(),
+                ReservationStateEnum.CANCELLED.name()
+        );
 
         reservationRepository.findReservationByUserAndTripExcludingStates(targetUser.getId(), trip.getId(), excludedStates)
                 .orElseThrow(() -> {
