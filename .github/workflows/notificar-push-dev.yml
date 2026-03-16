@@ -20,8 +20,10 @@ jobs:
           Commit: ${{ github.event.head_commit.message }}
           
           -----------------------------------------------"
+
+          MESSAGE_JSON=$(echo "$MESSAGE" | sed ':a;N;$!ba;s/\n/\\n/g')
           
           curl -H "Content-Type: application/json" \
           -X POST \
-          -d "{\"content\":\"$MESSAGE\"}" \
+          -d "{\"content\":\"$MESSAGE_JSON\"}" \
           ${{ secrets.DISCORD_WEBHOOK }}
