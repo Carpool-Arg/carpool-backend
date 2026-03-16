@@ -3,7 +3,7 @@ name: Notificar cambios en desarrollo
 on:
   push:
     branches:
-      - desarrollo
+      - dev
 
 jobs:
   notify:
