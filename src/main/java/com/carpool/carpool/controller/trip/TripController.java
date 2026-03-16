@@ -87,7 +87,7 @@ public class TripController {
     }
 
     @Operation(
-                summary = "Verificar la disponibilidad de un viaje"
+                summary = "Verificar la disponibilidad de un viaje."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "El viaje es posible"),
