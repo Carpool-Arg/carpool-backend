@@ -1,0 +1,20 @@
+name: Notificar cambios en desarrollo
+
+on:
+  push:
+    branches:
+      - desarrollo
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Notificar Discord
+        run: |
+          curl -H "Content-Type: application/json" \
+          -X POST \
+          -d '{
+            "content": "Nuevos cambios en rama desarrollo\nAutor: ${{ github.actor }}\nCommit: ${{ github.event.head_commit.message }}"
+          }' \
+          ${{ secrets.DISCORD_WEBHOOK }}
