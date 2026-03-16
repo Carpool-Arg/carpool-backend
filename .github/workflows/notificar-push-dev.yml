@@ -12,9 +12,16 @@ jobs:
     steps:
       - name: Notificar Discord
         run: |
+          MESSAGE="-----------------------------------------------
+          
+          Nuevos cambios en rama dev
+          Fecha: ${{ github.event.head_commit.timestamp }}
+          Autor: ${{ github.actor }}
+          Commit: ${{ github.event.head_commit.message }}
+          
+          -----------------------------------------------"
+          
           curl -H "Content-Type: application/json" \
           -X POST \
-          -d '{
-            "content": "Nuevos cambios en rama desarrollo\nFecha: ${{ github.event.head_commit.timestamp }}\nAutor: ${{ github.actor }}\nCommit: ${{ github.event.head_commit.message }}"
-          }' \
+          -d "{\"content\":\"$MESSAGE\"}" \
           ${{ secrets.DISCORD_WEBHOOK }}
