@@ -12,10 +12,12 @@ jobs:
     steps:
       - name: Notificar Discord
         run: |
+          TIMESTAMP="${{ github.event.head_commit.timestamp }}"
+          FECHA_LEGIBLE=$(date -d "$TIMESTAMP" "+%d/%m/%Y %H:%M")
           MESSAGE="-----------------------------------------------
           
-          Nuevos cambios en rama dev
-          Fecha: ${{ github.event.head_commit.timestamp }}
+          **Nuevos cambios en rama dev**
+          Fecha: $FECHA_LEGIBLE
           Autor: ${{ github.actor }}
           Commit: ${{ github.event.head_commit.message }}
           
