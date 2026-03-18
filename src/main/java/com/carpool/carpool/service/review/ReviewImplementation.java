@@ -496,11 +496,46 @@ public class ReviewImplementation implements IReviewService {
 
     }
 
+    
+    @Override
+    @Transactional
+    public Response<Void> deleteReview(Long reviewId) {
+        log.info("Iniciando proceso de eliminación de reseña ID: {}", reviewId);
+
+        User currentUser = GetAuthenticatedUser();
+        
+        Review review = reviewRepository.findByIdAndReviewerUserId(reviewId, currentUser.getId())
+                .orElseThrow(() -> {
+                    log.error("Fallo al eliminar: Reseña {} no encontrada", reviewId);
+                    return new ResourceNotFoundException("No se encontró la reseña o no tienes permisos.");
+                });
+
+        Long targetUserId = review.getTargetUser().getId();
+        Trip trip = review.getTrip();
+
+        // Determinamos si el usuario calificado era el chofer de ese viaje
+        // Si el ID del targetUser es el mismo que el del dueño del auto, es una reseña a un CHOFER
+        boolean isTargetDriver = trip.getVehicle().getDriver().getUser().getId().equals(targetUserId);
+
+        reviewRepository.delete(review);
+
+        // Si isTargetDriver es true, actualizará la tabla Driver. Si es false, la tabla User (pasajero).
+        updateUserRating(targetUserId, isTargetDriver);
+
+        log.info("Reseña eliminada. Se recalculó el promedio del usuario {} como {}", 
+                targetUserId, isTargetDriver ? "CHOFER" : "PASAJERO");
+
+        return ResponseUtils.buildOKResponse(
+                List.of("Reseña eliminada correctamente. El promedio ha sido actualizado."),
+                null);
+    }
+
+
     /**
      * Metodo para obtener el objeto que vamos a usar para el paginado
      * Definmos un tamaño de la pgina fijo 
      * @param type
-     * @param skip
+     * @param skip 
      * @return
      */
     private Pageable getPageable(String type, int skip) {

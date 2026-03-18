@@ -7,6 +7,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import com.carpool.carpool.dto.review.ReviewPassengerRequestDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -156,5 +157,15 @@ public class ReviewController {
             @Valid @RequestBody ReviewPassengerRequestDTO reviewPassengerRequestDTO) {
       Response<ReviewResponseDTO> serviceResponse = reviewService.createPassengerReview(reviewPassengerRequestDTO);
       return new ResponseEntity<>(serviceResponse, HttpStatus.CREATED);
+    }
+    @Operation(summary = "Eliminar una reseña", description = "Elimina físicamente una reseña y actualiza el promedio del chofer calificado.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Reseña eliminada con éxito"),
+        @ApiResponse(responseCode = "404", description = "Reseña no encontrada"),
+        @ApiResponse(responseCode = "403", description = "No autorizado para eliminar esta reseña")
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Response<Void>> deleteReview(@PathVariable Long id) {
+        return new ResponseEntity<>(reviewService.deleteReview(id), HttpStatus.OK);
     }
 }

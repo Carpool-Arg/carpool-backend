@@ -83,4 +83,11 @@ public interface IReviewService {
    * @throws ResourceNotFoundException si el viaje con {@code tripId} o el pasajero con {@code passengerId} no existe.
    */
   Response<Boolean> canDriverReviewTrip(Long tripId, Long passengerId);
+
+  /**
+   * 
+   * @param reviewId
+   * @return
+   */
+  Response<Void> deleteReview(Long reviewId);
 }
