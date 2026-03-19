@@ -1,7 +1,5 @@
 package com.carpool.carpool;
 
-import com.carpool.carpool.security.config.RecaptchaConfig;
-
 import jakarta.annotation.PostConstruct;
 
 import java.util.TimeZone;
@@ -13,6 +11,8 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
+
+import com.carpool.carpool.security.config.RecaptchaConfig;
 
 @SpringBootApplication
 @EnableScheduling

@@ -1,0 +1,34 @@
+name: Notificar cambios en desarrollo
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Notificar Discord
+        run: |
+          TIMESTAMP="${{ github.event.head_commit.timestamp }}"
+          FECHA_LEGIBLE=$(date -d "$TIMESTAMP" "+%d/%m/%Y %H:%M" -u)
+          FECHA_LEGIBLE=$(TZ="America/Argentina/Buenos_Aires" date -d "$TIMESTAMP" "+%d/%m/%Y %H:%M")
+          
+          MESSAGE="-----------------------------------------------
+          
+          **Nuevos cambios en rama dev**
+          
+          Fecha: $FECHA_LEGIBLE
+          Autor: ${{ github.actor }}
+          Commit: ${{ github.event.head_commit.message }}
+          
+          -----------------------------------------------"
+
+          MESSAGE_JSON=$(echo "$MESSAGE" | sed ':a;N;$!ba;s/\n/\\n/g')
+          
+          curl -H "Content-Type: application/json" \
+          -X POST \
+          -d "{\"content\":\"$MESSAGE_JSON\"}" \
+          ${{ secrets.DISCORD_WEBHOOK }}

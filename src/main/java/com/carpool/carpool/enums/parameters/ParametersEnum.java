@@ -8,7 +8,8 @@ import lombok.Getter;
  * <p>
  *   {@code DEFAULT_CITY_KEY}
  *   {@code MINIMUM_CITY_DISTANCE}
- *
+ *   {@code DISCOUNT_PERCENTAGE}
+ *   {@code AVERAGE_SPEED_KMH}
  * </p>
  */
 @Getter
@@ -16,6 +17,7 @@ import lombok.Getter;
 public enum ParametersEnum {
     DEFAULT_CITY_KEY("default-city-id"),
     MINIMUM_CITY_DISTANCE("minimum-city-distance"),
-    DISCOUNT_PERCENTAGE("discount-percentage");
+    DISCOUNT_PERCENTAGE("discount-percentage"),
+	AVERAGE_SPEED_KMH("average-speed-kmh");
     private final String key;
 }

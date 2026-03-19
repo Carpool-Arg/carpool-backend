@@ -2,7 +2,6 @@ package com.carpool.carpool.model.trip.tripStop;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.carpool.carpool.model.province.city.City;

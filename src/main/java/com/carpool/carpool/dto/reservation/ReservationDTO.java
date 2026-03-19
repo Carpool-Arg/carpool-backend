@@ -16,6 +16,7 @@ public class ReservationDTO {
     private boolean baggage;
     private String nameUser;
     private String lastNameUser;
+    private Double ratingUser;
     private String urlImage;
     private String state;
 }

@@ -1,11 +1,14 @@
 package com.carpool.carpool.repository.trip;
 
 import com.carpool.carpool.model.trip.Trip;
+import com.carpool.carpool.model.user.User;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -57,24 +60,21 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query("SELECT DISTINCT t FROM Trip t " + 
         "JOIN t.tripStops ts " +
         "JOIN t.vehicle v " +
-        "JOIN v.driver d " +
+        "JOIN v.driver d " + 
         "JOIN t.stateHistory sh " +
         "WHERE t.currentAvailableSeats > 0 " +
-        "AND sh.state.name = 'CREATED' AND sh.finishDateTime IS NULL " +
+        "AND sh.state.name = 'CREATED' AND sh.finishDateTime IS NULL " + 
         "AND t.startTripDateTime >= :now " +
         "AND ts.city.id = :cityId " +
         "AND d.user.id != :userId " +
         "AND ts.stopOrder < (SELECT MAX(tsMax.stopOrder) FROM TripStop tsMax WHERE tsMax.trip.id = t.id) " +
         "AND NOT EXISTS (" + 
         "  SELECT r FROM Reservation r " +
+        "  JOIN StateHistory shR ON shR.reservation.id = r.id " + 
         "  WHERE r.trip.id = t.id " + 
         "  AND r.user.id = :userId " +
-        "  AND EXISTS (" +
-        "    SELECT sh FROM StateHistory sh " +
-        "    JOIN sh.state st " +
-        "    WHERE sh.reservation.id = r.id " +
-        "    AND sh.finishDateTime IS NULL " +
-        "  )" +
+        "  AND shR.finishDateTime IS NULL " +
+        "  AND shR.state.name != 'CANCELLED' " + 
         ") " + 
         "ORDER BY t.startTripDateTime ASC")
     List<Trip> findTripsForInitialFeed(
@@ -90,21 +90,18 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         "JOIN driver d ON d.id = v.driver_id " + 
         "JOIN state_history sh ON sh.trip_id = t.id " +
         "JOIN state s ON s.id = sh.state_id " +
-
         "WHERE t.current_available_seats > 0 " +
-        "AND s.name = 'CREATED' AND sh.finish_datetime IS NULL " +
+        "AND s.name = 'CREATED' AND s.scope = 'TRIP' AND sh.finish_datetime IS NULL " + 
         "AND t.start_date_time >= :now " +
         "AND d.user_id != :userId " +
-
         "AND NOT EXISTS ( " +
         " SELECT 1 FROM reservation r " +
         " JOIN state_history shR ON shR.reservation_id = r.id " +
         " JOIN state sR ON sR.id = shR.state_id " +
         " WHERE r.trip_id = t.id " + 
         " AND r.user_id = :userId " + 
-        " AND sR.name IN ('ACCEPTED', 'PENDING') " +
         " AND shR.finish_datetime IS NULL " +
-        " AND sh.finish_datetime IS NULL " +
+        " AND sR.name != 'CANCELLED' " + 
         ") " +
         "AND ((:departureDate)::date IS NULL OR t.start_date_time::date = :departureDate) " +
         "AND EXISTS (SELECT 1 FROM trip_stop ts1, trip_stop ts2 " +
@@ -130,22 +127,36 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         @Param("now") LocalDateTime now);
 
     @Query(value = """
-        SELECT t.* 
-        FROM trip t
-        JOIN state_history sh ON sh.trip_id = t.id
-        JOIN state s ON s.id = sh.state_id
-        JOIN vehicles v ON v.id = t.vehicle_id
-        JOIN trip_stop ts ON ts.trip_id = t.id AND ts.is_destination = true
-        WHERE v.driver_id = :driverId
-          AND s.name IN (:tripState)
-          AND s.scope = 'TRIP'
-          AND sh.start_datetime = (
-              SELECT MAX(sh2.start_datetime)
-              FROM state_history sh2
-              WHERE sh2.trip_id = t.id
-          )
-    """, nativeQuery = true)
-    List<Trip> findTripsByDriverIdWithCurrentStateTrip(@Param("driverId") Long driverId, @Param("tripState") List<String> tripState);
+    SELECT DISTINCT t.*
+    FROM trip t
+    JOIN state_history sh ON sh.trip_id = t.id
+    JOIN state s ON s.id = sh.state_id
+    JOIN vehicles v ON v.id = t.vehicle_id
+    JOIN trip_stop ts ON ts.trip_id = t.id AND ts.is_destination = true
+        
+    LEFT JOIN reservation r ON r.trip_id = t.id
+    LEFT JOIN state_history sh_r 
+        ON sh_r.reservation_id = r.id 
+       AND sh_r.finish_datetime IS NULL
+    LEFT JOIN state s_r 
+        ON s_r.id = sh_r.state_id
+       AND s_r.scope = 'RESERVATION'
+       AND s_r.name = 'ACCEPTED'
+
+    WHERE v.driver_id = :driverId
+      AND s.name IN (:tripState)
+      AND s.scope = 'TRIP'
+      AND sh.start_datetime = (
+          SELECT MAX(sh2.start_datetime)
+          FROM state_history sh2
+          WHERE sh2.trip_id = t.id
+      )
+    ORDER BY t.start_date_time ASC
+""", nativeQuery = true)
+    List<Trip> findTripsByDriverIdWithCurrentStateTrip(
+            @Param("driverId") Long driverId,
+            @Param("tripState") List<String> tripState
+    );
 
     @Query("""
             Select t from Trip t
@@ -186,30 +197,63 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         @Param("newStart") LocalDateTime newStart,
         @Param("newEnd") LocalDateTime newEnd
     );
+    
+    /**
+     * Verifica si el rango de tiempo para un nuevo viaje se solapa con uno existente, creado o en curso.
+     * Es decir que se encuentra dentro del rango de un viaje, e inclusive 30 minutos antes del inicio del mismo
+     * @param driverId			Id del conductor
+     * @param newStart			Fecha y hora de inicio del viaje
+     * @param newEnd			Fecha y hora de llegada del viaje
+     * @param excludeTripId		Viaje que se desea excluir. Este parametro permite obviar el viaje que se esta editando para evitar superposicion.
+     * @return
+     */
+    @Query(value = """
+            SELECT COUNT(t.id) > 0
+            FROM trip t
+            JOIN trip_stop ts ON t.id = ts.trip_id
+            JOIN state_history sh ON t.id = sh.trip_id
+            JOIN state s ON s.id = sh.state_id
+            WHERE t.vehicle_id IN (SELECT v.id FROM vehicles v WHERE v.driver_id = :driverId)
+                AND t.id != :excludeTripId
+                AND ts.is_destination = true
+                AND sh.finish_datetime IS NULL
+                AND s.name IN ('CREATED', 'CLOSED', 'IN_PROGRESS')
+                AND :newStart < (ts.estimated_arrival_date_time + INTERVAL '30 minutes')
+                AND :newEnd > (t.start_date_time - INTERVAL '30 minutes')
+        """, nativeQuery = true)
+    boolean hasOverlappingScheduleUpdate(
+        @Param("driverId") Long driverId,
+        @Param("newStart") LocalDateTime newStart,
+        @Param("newEnd") LocalDateTime newEnd,
+        @Param("excludeTripId") Long excludeTripId
+    );
 
     /**
      * Verifica si en un instante de tiempo especifico para hacer un viaje, cae
      * dentro de un viaje programado o en curso
      * @param driverId
      * @param timeToCheck
+     * @param idTrip
      * @return
      */
     @Query(value = """
-        SELECT COUNT(t.id) > 0 
-        FROM trip t
-        JOIN trip_stop ts ON t.id = ts.trip_id
-        JOIN state_history sh ON t.id = sh.trip_id
-        JOIN state s ON s.id = sh.state_id
-        WHERE t.vehicle_id IN (SELECT v.id FROM vehicles v WHERE v.driver_id = :driverId)
-            AND ts.is_destination = true
-            AND sh.finish_datetime IS NULL
-            AND s.name IN ('CREATED', 'IN_PROGRESS')
-            AND :timeToCheck BETWEEN (t.start_date_time - INTERVAL '30 minutes') 
-                                AND ts.estimated_arrival_date_time
-    """, nativeQuery = true)
+    SELECT COUNT(t.id) > 0 
+    FROM trip t
+    JOIN trip_stop ts ON t.id = ts.trip_id
+    JOIN state_history sh ON t.id = sh.trip_id
+    JOIN state s ON s.id = sh.state_id
+    WHERE t.vehicle_id IN (SELECT v.id FROM vehicles v WHERE v.driver_id = :driverId)
+        AND ts.is_destination = true
+        AND sh.finish_datetime IS NULL
+        AND s.name IN ('CREATED', 'IN_PROGRESS')
+        AND (:idTrip IS NULL OR t.id <> :idTrip)
+        AND :timeToCheck BETWEEN (t.start_date_time - INTERVAL '30 minutes') 
+                            AND ts.estimated_arrival_date_time
+""", nativeQuery = true)
     boolean isTimeSlotOccupied(
-        @Param("driverId") Long driverId,
-        @Param("timeToCheck") LocalDateTime timeToCheck
+            @Param("driverId") Long driverId,
+            @Param("timeToCheck") LocalDateTime timeToCheck,
+            @Param("idTrip") Long idTrip
     );
 
     /**
@@ -251,4 +295,48 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         LIMIT 1
     """, nativeQuery = true)
     Optional<Trip> findCurrentTripByDriver(@Param("driverId") Long driverId);
+    
+	@Query(value = """
+			    SELECT DISTINCT t
+			    FROM Trip t
+			    JOIN Reservation r ON r.trip = t
+			    JOIN StateHistory sh ON sh.trip = t
+			    JOIN State s ON s = sh.state
+			    WHERE r.user.id = :userId
+			      AND sh.finishDateTime IS NULL
+			      AND s.name IN :states
+			""", countQuery = """
+			    SELECT COUNT(DISTINCT t.id)
+			    FROM Trip t
+			    JOIN Reservation r ON r.trip = t
+			    JOIN StateHistory sh ON sh.trip = t
+			    JOIN State s ON s = sh.state
+			    WHERE r.user.id = :userId
+			      AND sh.finishDateTime IS NULL
+			      AND s.name IN :states
+			""")
+	Page<Trip> findTripsByUserAndCurrentStates(@Param("userId") Long userId, @Param("states") List<String> states,
+			Pageable pageable);
+
+    /**
+     * Consulta que obtiene una lista con lso usuarios que participaron de un viaje en espcifico y tienen 
+     * sus reservas en un estado actual que coincide con alguno de la lista que se pasa por parametros
+     * @param tripId
+     * @param states
+     * @return
+     */
+    @Query("""
+    SELECT DISTINCT r.user
+    FROM Reservation r
+    JOIN StateHistory sh ON sh.reservation = r
+    JOIN State s ON s = sh.state
+    WHERE r.trip.id = :tripId
+      AND sh.finishDateTime IS NULL
+      AND s.name IN :states
+    """)
+    List<User> findUsersByTripIdAndReservationStates(
+            @Param("tripId") Long tripId,
+            @Param("states") List<String> states
+    );
+    
 }

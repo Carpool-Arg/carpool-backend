@@ -8,9 +8,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
+import com.carpool.carpool.dto.trip.PassengerTripDTO;
 import com.carpool.carpool.dto.trip.TripDriverDTO;
+import com.carpool.carpool.dto.trip.TripHistoryUserDTO;
+import com.carpool.carpool.dto.trip.TripPassengersResponseDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
-
+import com.carpool.carpool.repository.review.ReviewRepository;
+import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
 import org.springframework.stereotype.Component;
 
 import com.carpool.carpool.dto.driver.DriverSearchResponseDTO;
@@ -18,30 +22,31 @@ import com.carpool.carpool.dto.trip.TripRequestDTO;
 import com.carpool.carpool.dto.trip.TripResponseDTO;
 import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
 import com.carpool.carpool.dto.trip.tripStop.CurrentTripStopResponseDTO;
-import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopResponseDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopSearchResponseDTO;
 import com.carpool.carpool.dto.vehicle.VehicleResponseTripDTO;
 import com.carpool.carpool.enums.trip.BaggageEnum;
-import com.carpool.carpool.exception.ResourceNotFoundException;
+import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.model.driver.Driver;
-import com.carpool.carpool.model.province.city.City;
+import com.carpool.carpool.model.reservation.Reservation;
+import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
 import com.carpool.carpool.model.trip.tripStop.TripStop;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.model.vehicle.Vehicle;
-import com.carpool.carpool.repository.city.CityRepository;
 import com.carpool.carpool.service.media.IMediaService;
-import com.carpool.carpool.utils.CoordsUtils;
+import com.carpool.carpool.service.trip.tripStop.TripStopComponent;
 
 import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
 public class TripMapper {   
-    private final CityRepository cityRepository;
+	
     private final IMediaService mediaService;
-    final double AVERAGE_SPEED_KMH = 80.0; // Velocidad promedio en km/h
+    private final StateHistoryRepository stateHistoryRepository;
+    private final ReviewRepository reviewRepository;
+    private final TripStopComponent tripStopComponent;
     
     public Trip convertTripRequestDTOToTrip(TripRequestDTO tripRequestDTO, Vehicle vehicle){ 
         Trip trip = Trip.builder()
@@ -54,48 +59,15 @@ public class TripMapper {
             .tripStops(new ArrayList<>())
         .build();
         
-        City previousCity = null;
-        double totalDistanceAccumulated = 0.0;
-        LocalDateTime currentArrivalTime = tripRequestDTO.getStartDateTime();
+        LocalDateTime baseStartTime = tripRequestDTO.getStartDateTime();
 
-        // Recorremos las paradas en orden
-        for (TripStopRequestDTO tripStopDto : tripRequestDTO.getTripStops()) {
-            City currentCity = cityRepository.findById(tripStopDto.getCityId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                    "La ciudad con el ID " + tripStopDto.getCityId() + " no existe."
-                ));
-
-            double distanceFromPrevious = 0.0;
-            if (previousCity != null) {
-                distanceFromPrevious = CoordsUtils.calculateDistance(
-                    previousCity.getLatitude(), previousCity.getLongitude(),
-                    currentCity.getLatitude(), currentCity.getLongitude()
-                );
-            }
-
-            totalDistanceAccumulated += distanceFromPrevious;
-
-            double estimatedHours = totalDistanceAccumulated / AVERAGE_SPEED_KMH;
-            currentArrivalTime = tripRequestDTO.getStartDateTime()
-            .plusMinutes((long)(estimatedHours * 60));
-
-
-            
-            TripStop tripStop = TripStop.builder()
-                .city(currentCity)
-                .isStart(tripStopDto.isStart())
-                .isDestination(tripStopDto.isDestination())
-                .observation(tripStopDto.getObservation())
-                .stopOrder(tripStopDto.getOrder())
-                .trip(trip)
-                .distanceFromPrevious(distanceFromPrevious)
-                .estimatedArrivalDateTime(currentArrivalTime)
-                .build();
-
-            trip.getTripStops().add(tripStop);
-            previousCity = currentCity;           
-        };
-        trip.setKilometerPrice(tripRequestDTO.getSeatPrice() / totalDistanceAccumulated);
+        double totalDistance = tripStopComponent.buildStops(trip, tripRequestDTO.getTripStops(), baseStartTime);
+        
+        if (totalDistance <= 0) {
+            throw new ConflictException("No se pudo calcular la distancia total del viaje.");
+        }
+        
+        trip.setKilometerPrice(tripRequestDTO.getSeatPrice() / totalDistance);
         return trip;
 
     }
@@ -107,17 +79,10 @@ public class TripMapper {
         String profilePictureUrl = mediaService.getProfilePictureUrlByUserId(user.getId());
        
         List<TripStopResponseDTO> tripStopResponseDTOs = getTripstopResponseDTO(trip);
-        
-        Vehicle vehicleEntity = trip.getVehicle();
-        VehicleResponseTripDTO vehicle = VehicleResponseTripDTO.builder()
-            .domain(vehicleEntity.getDomain())
-            .vehicleTypeName(vehicleEntity.getVehicleType().getName())
-            .brand(vehicleEntity.getBrand())
-            .model(vehicleEntity.getModel())
-            .color(vehicleEntity.getColor())
-            .build();
+        VehicleResponseTripDTO vehicleEntity =  mapVehicleToVehicleResponseDTO(trip.getVehicle());
 
         DriverSearchResponseDTO driverSearchDTO = DriverSearchResponseDTO.builder()
+            .driverId(driver.getId())
             .fullName(user.getName() + " " + user.getLastname()) 
             .profileImageUrl(profilePictureUrl)
             .rating(driver.getRating()) 
@@ -127,13 +92,40 @@ public class TripMapper {
             .id(trip.getId())
             .driverInfo(driverSearchDTO)
             .tripStops(tripStopResponseDTOs)
-            .vehicle(vehicle)
+            .vehicle(vehicleEntity)
             .startDateTime(trip.getStartTripDateTime())
             .availableSeat(trip.getAvailableSeat())
             .currentAvailableSeats(trip.getCurrentAvailableSeats())
             .availableBaggage(trip.getAvailableBaggage().toString())
-            .seatPrice(roundPrice(trip.getPublishedSeatPrice())) 
+            .seatPrice(roundPrice(trip.getPublishedSeatPrice()))
+            .originalSeatPrice(trip.getSeatPrice())
             .build();
+    }
+    
+    public TripHistoryUserDTO convertTripToHistoryDTO(Trip trip, Reservation reservation, StateHistory stateHistory) {
+
+        Driver driver = trip.getVehicle().getDriver();
+        User user = driver.getUser();
+        VehicleResponseTripDTO vehicleEntity =  mapVehicleToVehicleResponseDTO(trip.getVehicle());
+        Long userId = reservation.getUser().getId();
+        
+        boolean tripReviewed = trip.getReviews()
+            .stream()
+            .anyMatch(review -> review.getReviewerUser().getId().equals(userId));
+
+        return TripHistoryUserDTO.builder()
+                .tripId(trip.getId())
+                .startDateTime(trip.getStartTripDateTime())
+                .driverName(user.getName() + " " + user.getLastname())
+                .driverProfileImage(mediaService.getProfilePictureUrlByUserId(user.getId()))
+                .driverRating(driver.getRating())
+                .vehicle(vehicleEntity)
+                .startCity(reservation.getStartCity().getCity().getName())
+                .destinationCity(reservation.getDestinationCity().getCity().getName())
+                .seatPrice(reservation.getTotal())
+                .reviewed(tripReviewed)
+                .tripState(stateHistory.getState().getName())
+                .build();
     }
 
     public CurrentTripResponseDTO covertTripToCurrentTripResponseDTO(Trip trip){
@@ -156,6 +148,11 @@ public class TripMapper {
 
         return listTrips.stream()
                 .map(trip -> {
+
+
+                    boolean hasReservations =
+                        stateHistoryRepository.hasActiveReservations(trip.getId());
+
                     Vehicle vehicle = trip.getVehicle();
 
                     VehicleResponseTripDTO vehicleDTO = VehicleResponseTripDTO.builder()
@@ -181,7 +178,7 @@ public class TripMapper {
                     LocalDateTime estimatedArrivalDate = trip.getTripStops().stream()
                             .filter(TripStop::isDestination)
                             .findFirst()
-                            .map(ts -> ts.getEstimatedArrivalDateTime())
+                            .map(TripStop::getEstimatedArrivalDateTime)
                             .orElse(null);
 
                     return TripDriverDTO.builder()
@@ -189,15 +186,17 @@ public class TripMapper {
                             .vehicle(vehicleDTO)
                             .startDateTime(trip.getStartTripDateTime())
                             .availableSeat(trip.getAvailableSeat())
+                            .currentAvailableSeats(trip.getCurrentAvailableSeats())
                             .startCity(startCity)
                             .destinationCity(destinationCity)
-                            .currentAvailableSeats(trip.getCurrentAvailableSeats())
                             .availableBaggage(trip.getAvailableBaggage().getTypeBaggage())
                             .seatPrice(roundPrice(trip.getSeatPrice() - trip.getDriverPriceDiscount()))
                             .estimatedArrivalDateTime(estimatedArrivalDate)
                             .tripState(getCurrentTripStatusName(trip))
+                            .hasReservations(hasReservations)
                             .build();
-                }).toList();
+                })
+                .toList();
     }
 
     public TripSearchResponseDTO converTripToTripSearchResponseDTO(Trip trip, double total) {
@@ -297,6 +296,41 @@ public class TripMapper {
             .orElseThrow(() -> new IllegalStateException(
                 "El viaje no tiene un estado actual"
             ));
+    }
+
+    private VehicleResponseTripDTO mapVehicleToVehicleResponseDTO(Vehicle vehicleEntity) {
+        return VehicleResponseTripDTO.builder()
+        		.id(vehicleEntity.getId())
+                .domain(vehicleEntity.getDomain())
+                .vehicleTypeName(vehicleEntity.getVehicleType().getName())
+                .brand(vehicleEntity.getBrand())
+                .model(vehicleEntity.getModel())
+                .color(vehicleEntity.getColor())
+                .availableSeats(vehicleEntity.getAvailableSeats())
+                .build();
+    }
+
+    public TripPassengersResponseDTO convertUserToTripPassengerDTO(List<User> users, Long idTrip){
+        TripPassengersResponseDTO response = TripPassengersResponseDTO.builder()
+        .passengers(
+            users.stream()
+                .map(user -> PassengerTripDTO.builder()
+                    .idPassenger(user.getId())
+                    .passengerName(user.getName())
+                    .passengerLastname(user.getLastname())
+                    .profilePhotoUrl(mediaService.getProfilePictureUrlByUserId(user.getId()))
+                    .review(
+                        reviewRepository
+                            .getTripPassengerReview(idTrip, user.getId())
+                            .orElse(null)
+                    )
+                    .build()
+                )
+                .toList()
+        )
+        .build();
+
+        return response;
     }
 
 }

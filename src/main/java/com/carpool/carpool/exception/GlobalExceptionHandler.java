@@ -76,6 +76,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Response<Void>> handleIllegalArgument(IllegalArgumentException ex) {
         return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(ex.getMessage())), HttpStatus.BAD_REQUEST);
     }
+    
+    /**
+     * Excepcion utilizada para realizar acciones o acceder a area restringida
+     * @param ex Excepción
+     * @return {@link ResponseEntity} que contiene {@link Response} con data {@link Void}
+     */
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Response<Void>> handleForbidden(ForbiddenException ex) {
+        return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(ex.getMessage())), HttpStatus.FORBIDDEN);
+    }
 
     /**
      * Excepcion utilizada para cuando hay un error del lado del cliente. Se agregó para manejar las excepciones por instnaciar las clases Utils.
