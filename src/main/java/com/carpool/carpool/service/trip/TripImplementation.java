@@ -22,18 +22,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
-import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
-import com.carpool.carpool.dto.trip.TripDriverDTO;
-import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
-import com.carpool.carpool.dto.trip.TripHistoryUserDTO;
-import com.carpool.carpool.dto.trip.TripHistoryUserResponseDTO;
-import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
-import com.carpool.carpool.dto.trip.TripRequestDTO;
-import com.carpool.carpool.dto.trip.TripResponseDTO;
-import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
-import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
-import com.carpool.carpool.dto.trip.TripUpdateRequestDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
@@ -418,6 +406,17 @@ public class TripImplementation implements ITripService {
         notifyPassengers(trip, NotificationEventEnum.TRIP_STARTED);
 
         stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CLOSED.name(),TripStateEnum.IN_PROGRESS.name());
+
+        List<Reservation> pendingReservations = reservationRepository
+            .findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
+
+        for (Reservation pending : pendingReservations) {
+            reservationService.cancelReservation(pending.getId());
+            notificationService.send(
+                    pending.getUser(),
+                    NotificationEventEnum.TRIP_CANCELLED,
+                    pending);
+        }
 
         this.startTripReservation(trip);
         return ResponseUtils.buildOKResponse(List.of("¡Viaje iniciado! Que tengas un buen recorrido."), null);
@@ -982,8 +981,13 @@ public class TripImplementation implements ITripService {
      */
     private void cancelAllReservations(Trip trip) {
         List<Reservation> reservations = reservationRepository.findByTripIdAndStateName(trip.getId(), STATE_ACCEPTED);
+        List<Reservation> pendingReservations  = reservationRepository.findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
 
         for (Reservation reservation : reservations) {
+            reservationService.cancelBySystem(reservation.getId());
+        }
+        
+        for (Reservation reservation : pendingReservations) {
             reservationService.cancelBySystem(reservation.getId());
         }
     }
