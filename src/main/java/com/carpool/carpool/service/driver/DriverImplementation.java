@@ -5,7 +5,10 @@ import java.util.List;
 import java.util.Optional;
 
 import com.carpool.carpool.model.licenseClass.LicenseClass;
+import com.carpool.carpool.model.media.Media;
 import com.carpool.carpool.repository.licenseClass.LicenseClassRepository;
+import com.carpool.carpool.repository.media.MediaRepository;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.carpool.carpool.dto.driver.DriverRequestDTO;
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
+import com.carpool.carpool.enums.licenseStatus.LicenseStatusEnum;
+import com.carpool.carpool.enums.media.CategoryMediaEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.mappers.driver.DriverMapper;
 import com.carpool.carpool.model.driver.Driver;
@@ -25,6 +30,7 @@ import com.carpool.carpool.repository.role.RoleRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.model.CustomUserDetails;
+import com.carpool.carpool.service.r2.IR2StorageService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,6 +49,8 @@ public class DriverImplementation implements IDriverService {
     private final UserRepository userRepository;
     private final CityRepository cityRepository;
     private final LicenseClassRepository licenseClassRepository;
+    private final IR2StorageService r2StorageService;
+    private final MediaRepository mediaRepository;
 
 
     //Para asignar roles a los choferes, se inyecta el RoleRepository
@@ -89,9 +97,18 @@ public class DriverImplementation implements IDriverService {
             driver.setRating(5.0); 
         }
 
+        //Se setea por defecto el valor de PEndding dentro de la aprobación. 
+        driver.setLicenseStatus(LicenseStatusEnum.PENDING);
+
         assignDriverRoleToUser(user);
         normalizedDriverFields(driver);
         driverRepository.save(driver);
+
+        Media frontMedia = r2StorageService.uploadFile(driverRequestDTO.getFrontLicensePhoto(), user, CategoryMediaEnum.LICENSE_FRONT);
+            mediaRepository.save(frontMedia);
+
+        Media backMedia = r2StorageService.uploadFile(driverRequestDTO.getBackLicensePhoto(), user, CategoryMediaEnum.LICENSE_BACK);
+            mediaRepository.save(backMedia);
 
         /*
          * Llamos al metodo provadi para actualizar el SecurityContextHolder.
