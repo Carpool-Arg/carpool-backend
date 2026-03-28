@@ -45,6 +45,9 @@ public class Reservation {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "cancellation_reason", length = 250)
+    private String cancellationReason;
+
     @ManyToOne
     @JoinColumn(
             name = "trip_id",

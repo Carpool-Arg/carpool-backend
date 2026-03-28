@@ -1,6 +1,7 @@
 package com.carpool.carpool.service.reservation;
 
 import com.carpool.carpool.dto.reservation.CreateReservationRequestDTO;
+import com.carpool.carpool.dto.reservation.DeleteTripPassengerRequestDTO;
 import com.carpool.carpool.dto.reservation.ReservationResponseDTO;
 import com.carpool.carpool.dto.reservation.ReservationUpdateRequestDTO;
 import com.carpool.carpool.exception.ConflictException;
@@ -78,4 +79,12 @@ public interface IReservationService {
      * @param reservation
      */
     void finishTripReservation(Reservation reservation);
+
+    /**
+     * Metodo para dar de baja a un pasajero de un viaje
+     * Valida que la reserva exista, que este en estado aceptada, horarios, entre otros
+     * @param request que contiene el motivo(opcionalmente) y el id de la reserva del pasajero que sera eliminado del viaje
+     * @return
+     */
+    Response<Void> deleteTripPassenger(DeleteTripPassengerRequestDTO request);
 }

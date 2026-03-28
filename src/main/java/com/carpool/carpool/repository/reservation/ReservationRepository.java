@@ -21,6 +21,7 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
         WHERE r.user.id = :userId
           AND st.name IN ('ACCEPTED', 'PENDING', 'REJECTED', 'COMPLETED')
           AND t.id = :tripId
+          AND sh.finishDateTime IS NULL
     """)
     Optional<Reservation> findReservationByUserAndTrip(
             @Param("userId") Long userId,

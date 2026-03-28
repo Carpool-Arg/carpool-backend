@@ -55,6 +55,7 @@ public class ReservationMapper {
         return listReservation.stream()
                 .map(reservation -> ReservationDTO.builder()
                         .id(reservation.getId())
+                        .tripStartDatetime(reservation.getTrip().getStartTripDateTime())
                         .createdAt(reservation.getCreatedAt())
                         .startCity(reservation.getStartCity().getCity().getName())
                         .destinationCity(reservation.getDestinationCity().getCity().getName())
