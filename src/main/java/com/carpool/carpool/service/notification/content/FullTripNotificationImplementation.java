@@ -7,6 +7,7 @@ import static com.carpool.carpool.utils.EmailMessageUtils.TITLE_GREETING;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
+import java.util.List;
 
 import org.springframework.stereotype.Component;
 
@@ -27,13 +28,13 @@ public class FullTripNotificationImplementation implements INotificationContentS
 
     @Override
     public NotificationPayloadDTO build(Trip context) {
-        final var driverName = context.getVehicle().getDriver().getUser().getName();
-        final var tripStops = context.getTripStops();
-        final var origin = tripStops.stream()
+        final String driverName = context.getVehicle().getDriver().getUser().getName();
+        final List<TripStop> tripStops = context.getTripStops();
+        final String origin = tripStops.stream()
                 .min(Comparator.comparing(TripStop::getStopOrder))
                 .map(tripStop -> tripStop.getCity().getName())
                 .orElse("No aplica");
-        final var destination = tripStops.stream()
+        final String destination = tripStops.stream()
                 .max(Comparator.comparing(TripStop::getStopOrder))
                 .map(tripStop -> tripStop.getCity().getName())
                 .orElse("No aplica");

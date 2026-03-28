@@ -177,7 +177,7 @@ public class ReservationImplementation implements IReservationService{
     @Override
     public Response<Void> updateStateReservation(ReservationUpdateRequestDTO reservationUpdateRequestDTO) {
     	log.info("Iniciando actualizacion de estado de reserva");
-    	final var idReservation = reservationUpdateRequestDTO.getIdReservation();
+    	final Long idReservation = reservationUpdateRequestDTO.getIdReservation();
         final Reservation reservation = reservationRepository.getReferenceById(idReservation);
 
         if(reservation == null){
@@ -186,7 +186,7 @@ public class ReservationImplementation implements IReservationService{
         }
 
         final StateHistory lastestStateReservation = stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservation.getId()).orElseThrow(() -> new ConflictException("La reserva no tiene un estado actual."));
-        final var currentStateReservation = lastestStateReservation.getState();
+        final State currentStateReservation = lastestStateReservation.getState();
         if(currentStateReservation.isFinish()){
         	log.error("La reserva se encuentra en un estado final: {}", currentStateReservation.getName());
             throw new ConflictException("No se puede realizar acciones a la reserva ya que se encuentra en un estado final");
