@@ -414,7 +414,7 @@ public class TripImplementation implements ITripService {
             reservationService.cancelReservation(pending.getId());
             notificationService.send(
                     pending.getUser(),
-                    NotificationEventEnum.TRIP_CANCELLED,
+                    NotificationEventEnum.RESERVATION_CANCELLED_BY_SYSTEM,
                     pending);
         }
 
