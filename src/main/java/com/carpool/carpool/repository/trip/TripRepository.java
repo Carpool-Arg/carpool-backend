@@ -1,6 +1,7 @@
 package com.carpool.carpool.repository.trip;
 
 import com.carpool.carpool.model.trip.Trip;
+import com.carpool.carpool.model.user.User;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -318,4 +319,26 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
 			""")
 	Page<Trip> findTripsByUserAndCurrentStates(@Param("userId") Long userId, @Param("states") List<String> states,
 			Pageable pageable);
+
+    /**
+     * Consulta que obtiene una lista con lso usuarios que participaron de un viaje en espcifico y tienen 
+     * sus reservas en un estado actual que coincide con alguno de la lista que se pasa por parametros
+     * @param tripId
+     * @param states
+     * @return
+     */
+    @Query("""
+    SELECT DISTINCT r.user
+    FROM Reservation r
+    JOIN StateHistory sh ON sh.reservation = r
+    JOIN State s ON s = sh.state
+    WHERE r.trip.id = :tripId
+      AND sh.finishDateTime IS NULL
+      AND s.name IN :states
+    """)
+    List<User> findUsersByTripIdAndReservationStates(
+            @Param("tripId") Long tripId,
+            @Param("states") List<String> states
+    );
+    
 }

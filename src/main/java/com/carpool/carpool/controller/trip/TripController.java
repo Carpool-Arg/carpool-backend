@@ -9,23 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
-import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
-import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
 
-import com.carpool.carpool.dto.trip.TripHistoryUserResponseDTO;
-import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
-import com.carpool.carpool.dto.trip.TripRequestDTO;
-import com.carpool.carpool.dto.trip.TripResponseDTO;
-import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
-import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
-import com.carpool.carpool.dto.trip.TripStartRequestDTO;
-import com.carpool.carpool.dto.trip.TripUpdateRequestDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.trip.ITripService;
 
@@ -72,21 +60,6 @@ public class TripController {
     }
 
     @Operation(
-            summary = "Obtener los datos de un viaje específico que se desea editar"
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Detalles del viaje obtenidos con éxito"),
-            @ApiResponse(responseCode = "400", description = "ID de viaje inválido"),
-            @ApiResponse(responseCode = "401", description = "No autenticado"),
-            @ApiResponse(responseCode = "403", description = "No autorizado para ver los detalles del viaje"),
-            @ApiResponse(responseCode = "404", description = "El viaje no existe", content = @Content),
-    })
-    @GetMapping("/edit/{id}")
-    public ResponseEntity<Response<TripResponseDTO>> getTripDetailsForEdit(@PathVariable Long id) {
-        return new ResponseEntity<>(tripService.getTripDetailsForEdit(id), HttpStatus.OK);
-    }
-
-    @Operation(
                 summary = "Verificar la disponibilidad de un viaje"
     )
     @ApiResponses({
@@ -110,6 +83,7 @@ public class TripController {
 
     @Operation(
             summary = "Obtener el feed inicial de viajes"
+
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista de viajes obtenida con éxito"),
@@ -226,25 +200,12 @@ public class TripController {
         Response<Void> response = tripService.startTrip(tripStartRequestDTO.getTripId());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-    
-    @Operation(
-            summary = "Modificar un viaje"
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Viaje modificado con éxito"),
-            @ApiResponse(responseCode = "404", description = "Recurso no encontrado"),
-            @ApiResponse(responseCode = "409", description = "Errores de estados relacionados con el viaje", content = @Content),
-    })
-    @PutMapping
-    public ResponseEntity<Response<Void>> updateTrip(@Valid @RequestBody TripUpdateRequestDTO tripUpdateRequestDTO){
-        return new ResponseEntity<Response<Void>>(tripService.updateTrip(tripUpdateRequestDTO), HttpStatus.OK);
-    }
-        
+
     @Operation(summary = "Cancelar un viaje programado")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Viaje cancelado con éxito"),
             @ApiResponse(responseCode = "400", description = "Solicitud inválida", content = @Content),
-            @ApiResponse(responseCode = "404", description = "El viaje no existe", content = @Content)
+            @ApiResponse(responseCode = "404", description = "El viaje no existe", content = @Content),
     })
     @PostMapping("/cancel")
     public ResponseEntity<Response<Void>> cancelTrip(@Valid @RequestBody TripCancellRequestDTO tripCancellRequestDTO) {

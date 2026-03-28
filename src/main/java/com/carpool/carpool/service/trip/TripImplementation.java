@@ -18,18 +18,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
-import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
-import com.carpool.carpool.dto.trip.TripDriverDTO;
-import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
-import com.carpool.carpool.dto.trip.TripHistoryUserDTO;
-import com.carpool.carpool.dto.trip.TripHistoryUserResponseDTO;
-import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
-import com.carpool.carpool.dto.trip.TripRequestDTO;
-import com.carpool.carpool.dto.trip.TripResponseDTO;
-import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
-import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
-import com.carpool.carpool.dto.trip.TripUpdateRequestDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
@@ -528,7 +516,7 @@ public class TripImplementation implements ITripService {
 	@Override
 	@Transactional
 	public Response<Void> updateTrip(TripUpdateRequestDTO tripUpdateRequestDTO) {
-		final var idTrip = tripUpdateRequestDTO.getIdTrip();
+		final Long idTrip = tripUpdateRequestDTO.getIdTrip();
 		Trip trip = tripRepository.findById(idTrip).orElseThrow(() -> {
 			log.error("No existe el viaje con id: {}", idTrip);
 			return new EntityNotFoundException("El viaje que desea modificar no existe.");
@@ -595,6 +583,34 @@ public class TripImplementation implements ITripService {
 
 		return ResponseUtils.buildOKResponse(List.of("Viaje modificado con éxito"), null);
 	}
+
+        @Override
+    public Response<TripPassengersResponseDTO> getTripPassengers(Long idTrip){
+        log.info("Comenzando la recuperacion de los pasajeros de un viaje.");
+
+        Driver driver = getAuthenticatedDriver();
+
+        Trip trip = findTrip(idTrip);
+        
+        if(trip.getVehicle().getDriver().getId() != driver.getId()){
+            throw new ConflictException("No puede realizar esta acción, el viaje no le pertenece");
+        }
+
+        final String message;
+        List<String> reservationStates = List.of("UNPAID", "COMPLETED","EXPIRED");
+
+        List<User> passengers = tripRepository.findUsersByTripIdAndReservationStates(idTrip, reservationStates);
+        TripPassengersResponseDTO response = tripMapper.convertUserToTripPassengerDTO(passengers, trip.getId());
+        if (passengers == null){
+            throw new ResourceNotFoundException("Ha ocurrido un error al recuperar los pasajeros del viaje.");
+        }
+        if (passengers.isEmpty()){
+            message = "El viaje no tiene pasajeros para reseñar";
+        }else{
+            message = "Pasajeros recuperados con exito";
+        }
+        return ResponseUtils.buildOKResponse(List.of(message), response);
+    }
 
     /**
      * Valida si un viaje puede ser modificado por el chofer autenticado.
@@ -671,7 +687,7 @@ public class TripImplementation implements ITripService {
      * @param nameState		Estado que se desea corroborar
      */
     private void validateStateTrip(Long idTrip , String nameState) {
-		final var currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(idTrip)
+		final StateHistory currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(idTrip)
 				.orElseThrow(() -> {
 					log.error("El viaje con id: {} no tiene un estado actual", idTrip);
 					return new EntityNotFoundException("El viaje no presenta un estado actual");
@@ -1047,6 +1063,7 @@ public class TripImplementation implements ITripService {
                     res);
         }
     }
+
 
     /**
      * Permite crear un objeto {@link Pageable} para filtrar por paginado

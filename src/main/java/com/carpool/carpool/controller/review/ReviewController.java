@@ -1,9 +1,13 @@
 package com.carpool.carpool.controller.review;
 
+import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.format.annotation.DateTimeFormat;
+import com.carpool.carpool.dto.review.ReviewPassengerRequestDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,8 +19,10 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 import com.carpool.carpool.dto.review.DriverReviewResponseDTO;
-import com.carpool.carpool.dto.review.ReviewRequestDTO;
+import com.carpool.carpool.dto.review.MyMadeReviewsResponseDTO;
+import com.carpool.carpool.dto.review.ReviewDriverRequestDTO;
 import com.carpool.carpool.dto.review.ReviewResponseDTO;
+import com.carpool.carpool.dto.review.ReviewsToMeResponseDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.review.IReviewService;
 
@@ -50,6 +56,46 @@ public class ReviewController {
     return new ResponseEntity<>(reviewService.getDriverReviews(driverId, skip, orderBy), HttpStatus.OK);
   }
 
+
+  @Operation(
+      summary = "Obtener las reseñas que me han realizado como chofer o pasajero",
+      description = "Permite obtener una lista paginada y filtrada de las reseñas que me han realizado como chofer o pasajero"
+  )
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Lista obtenida con exito"),
+      @ApiResponse(responseCode = "404", description = "No se pudo recuperar la lista"),
+      @ApiResponse(responseCode = "401", description = "No autorizado para acceder a este recurso")
+  })
+  @GetMapping("/my-reviews")
+  public ResponseEntity<Response<ReviewsToMeResponseDTO>> getMyReviews(
+    @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate fromDate,
+    @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate toDate,
+    @RequestParam(required = false, defaultValue = "driver") String role,
+    @RequestParam(required = false, defaultValue = "0") int skip,
+    @RequestParam(required = false, defaultValue = "RECENT") String orderBy
+  ) {
+    return ResponseEntity.ok(reviewService.getReviewsToMe(fromDate, toDate,role, skip, orderBy));
+  }
+  
+  @Operation(
+      summary = "Obtener las reseñas que he realizado",
+      description = "Permite obtener una lista paginada y filtrada de las reseñas que he realizado a choferes o pasajeros"
+  )
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Lista obtenida con éxito"),
+      @ApiResponse(responseCode = "401", description = "No autorizado para acceder a este recurso")
+  })
+  @GetMapping("/my-made-reviews")
+  public ResponseEntity<Response<MyMadeReviewsResponseDTO>> getMyMadeReviews(
+    @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate fromDate,
+    @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate toDate,
+    @RequestParam(required = false, defaultValue = "driver") String role,
+    @RequestParam(required = false, defaultValue = "0") int skip,
+    @RequestParam(required = false, defaultValue = "RECENT") String orderBy
+  ) {
+    return ResponseEntity.ok(reviewService.getMyMadeReviews(fromDate, toDate, role, skip, orderBy));
+  }
+
   @Operation(
         summary = "Verificar si se puede reseñar un viaje",
         description = "Valida si el usuario actual puede reseñar al conductor de un viaje específico"
@@ -63,10 +109,24 @@ public class ReviewController {
     public ResponseEntity<Response<Boolean>> canReview(@PathVariable("tripId") Long tripId) {
         return ResponseEntity.ok(reviewService.canUserReviewTrip(tripId));
     }
+
+    @Operation(
+            summary = "Verificar si un chofer puede reseñar un pasajero asociado a un viaje",
+            description = "Valida si el usuario actual puede reseñar al pasajero de un viaje específico"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Validación completada exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Viaje no encontrado"),
+            @ApiResponse(responseCode = "401", description = "No autorizado para acceder a este recurso")
+    })
+    @GetMapping("/can-driver-review/{tripId}/{passengerId}")
+    public ResponseEntity<Response<Boolean>> canDriverReview(@PathVariable("tripId") Long tripId, @PathVariable("passengerId") Long passengerId) {
+      return ResponseEntity.ok(reviewService.canDriverReviewTrip(tripId, passengerId));
+    }
     
     @Operation(
         summary = "Crear una nueva reseña",
-        description = "Permite a un pasajero reseñar a un chofer tras finalizar un viaje abonado. Valida estados de viaje y evita duplicados."
+        description = "Permite a un PASAJERO reseñar A un CHOFER tras finalizar un viaje abonado. Valida estados de viaje y evita duplicados."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "Reseña creada exitosamente"),
@@ -74,11 +134,38 @@ public class ReviewController {
         @ApiResponse(responseCode = "404", description = "Viaje o Usuario no encontrado"),
         @ApiResponse(responseCode = "409", description = "Conflicto: El viaje no terminó, no está pago o ya fue reseñado")
     })
-    @PostMapping
-    public ResponseEntity<Response<ReviewResponseDTO>> createReview(
-            @Valid @RequestBody ReviewRequestDTO reviewRequestDTO) {
+    @PostMapping("/driver")
+    public ResponseEntity<Response<ReviewResponseDTO>> createDriverReview(
+            @Valid @RequestBody ReviewDriverRequestDTO reviewDriverRequestDTO) {
         
-        Response<ReviewResponseDTO> serviceResponse = reviewService.createReview(reviewRequestDTO);
+        Response<ReviewResponseDTO> serviceResponse = reviewService.createDriverReview(reviewDriverRequestDTO);
         return new ResponseEntity<>(serviceResponse, HttpStatus.CREATED);
+    }
+
+    @Operation(
+            summary = "Crear una nueva reseña",
+            description = "Permite a un CHOFER reseñar A un PASAJERO tras finalizar un viaje abonado. Valida estados de viaje y evita duplicados."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Reseña creada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Error de validación en los campos"),
+            @ApiResponse(responseCode = "404", description = "Viaje o Usuario no encontrado"),
+            @ApiResponse(responseCode = "409", description = "Conflicto: El viaje no terminó o ya fue reseñado")
+    })
+    @PostMapping("/passenger")
+    public ResponseEntity<Response<ReviewResponseDTO>> createPassengerReview(
+            @Valid @RequestBody ReviewPassengerRequestDTO reviewPassengerRequestDTO) {
+      Response<ReviewResponseDTO> serviceResponse = reviewService.createPassengerReview(reviewPassengerRequestDTO);
+      return new ResponseEntity<>(serviceResponse, HttpStatus.CREATED);
+    }
+    @Operation(summary = "Eliminar una reseña", description = "Elimina físicamente una reseña y actualiza el promedio del chofer calificado.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Reseña eliminada con éxito"),
+        @ApiResponse(responseCode = "404", description = "Reseña no encontrada"),
+        @ApiResponse(responseCode = "403", description = "No autorizado para eliminar esta reseña")
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Response<Void>> deleteReview(@PathVariable Long id) {
+        return new ResponseEntity<>(reviewService.deleteReview(id), HttpStatus.OK);
     }
 }

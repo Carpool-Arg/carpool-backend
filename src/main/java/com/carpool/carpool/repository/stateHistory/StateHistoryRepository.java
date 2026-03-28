@@ -14,7 +14,13 @@ import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
 
 public interface StateHistoryRepository extends JpaRepository<StateHistory, Long> {
-	
+
+    Optional<StateHistory> findTopByTripAndState_NameAndState_ScopeOrderByStartDateTimeDesc(
+            Trip trip,
+            String name,
+            ScopeEnum scope
+    );
+
     Optional<StateHistory> findByTripAndFinishDateTimeIsNullAndReservationIdIsNull(Trip trip);
     
     Optional<StateHistory> findByTripIdAndFinishDateTimeIsNull(Long idTrip);
@@ -22,6 +28,7 @@ public interface StateHistoryRepository extends JpaRepository<StateHistory, Long
     Optional<StateHistory> findTopByTripAndFinishDateTimeIsNotNullOrderByFinishDateTimeDesc(Trip trip);
 
     Optional<StateHistory> findByReservationIdAndFinishDateTimeIsNull(Long idReservation);
+
 
     @Query("""
         SELECT CASE WHEN COUNT(sh) > 0 THEN true ELSE false END

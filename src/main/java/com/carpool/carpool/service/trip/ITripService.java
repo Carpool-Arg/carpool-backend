@@ -156,4 +156,11 @@ public interface ITripService {
     
     Response<Void> updateTrip(TripUpdateRequestDTO tripUpdateRequestDTO);
     
+    /**
+     * Metodo para obtener los pasajeros que se participaron d eun viaje y tienen sus reservas en estados especificos
+     * @param idTrip
+     * @return
+     */
+    Response<TripPassengersResponseDTO> getTripPassengers(Long idTrip);
+    
 }

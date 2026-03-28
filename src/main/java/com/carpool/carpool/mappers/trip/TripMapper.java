@@ -8,10 +8,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
+import com.carpool.carpool.dto.trip.PassengerTripDTO;
 import com.carpool.carpool.dto.trip.TripDriverDTO;
 import com.carpool.carpool.dto.trip.TripHistoryUserDTO;
+import com.carpool.carpool.dto.trip.TripPassengersResponseDTO;
 import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
-
+import com.carpool.carpool.repository.review.ReviewRepository;
 import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
 import org.springframework.stereotype.Component;
 
@@ -40,9 +42,10 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class TripMapper {   
-	
+
     private final IMediaService mediaService;
     private final StateHistoryRepository stateHistoryRepository;
+    private final ReviewRepository reviewRepository;
     private final TripStopComponent tripStopComponent;
     
     public Trip convertTripRequestDTOToTrip(TripRequestDTO tripRequestDTO, Vehicle vehicle){ 
@@ -59,11 +62,11 @@ public class TripMapper {
         LocalDateTime baseStartTime = tripRequestDTO.getStartDateTime();
 
         double totalDistance = tripStopComponent.buildStops(trip, tripRequestDTO.getTripStops(), baseStartTime);
-        
+
         if (totalDistance <= 0) {
             throw new ConflictException("No se pudo calcular la distancia total del viaje.");
         }
-        
+
         trip.setKilometerPrice(tripRequestDTO.getSeatPrice() / totalDistance);
         return trip;
 
@@ -76,6 +79,7 @@ public class TripMapper {
         String profilePictureUrl = mediaService.getProfilePictureUrlByUserId(user.getId());
        
         List<TripStopResponseDTO> tripStopResponseDTOs = getTripstopResponseDTO(trip);
+        
         VehicleResponseTripDTO vehicleEntity =  mapVehicleToVehicleResponseDTO(trip.getVehicle());
 
         DriverSearchResponseDTO driverSearchDTO = DriverSearchResponseDTO.builder()
@@ -145,7 +149,6 @@ public class TripMapper {
 
         return listTrips.stream()
                 .map(trip -> {
-
 
                     boolean hasReservations =
                         stateHistoryRepository.hasActiveReservations(trip.getId());
@@ -306,6 +309,29 @@ public class TripMapper {
                 .color(vehicleEntity.getColor())
                 .availableSeats(vehicleEntity.getAvailableSeats())
                 .build();
+    }
+
+    public TripPassengersResponseDTO convertUserToTripPassengerDTO(List<User> users, Long idTrip){
+        TripPassengersResponseDTO response = TripPassengersResponseDTO.builder()
+        .passengers(
+            users.stream()
+                .map(user -> PassengerTripDTO.builder()
+                    .idPassenger(user.getId())
+                    .passengerName(user.getName())
+                    .passengerLastname(user.getLastname())
+                    .profilePhotoUrl(mediaService.getProfilePictureUrlByUserId(user.getId()))
+                    .review(
+                        reviewRepository
+                            .getTripPassengerReview(idTrip, user.getId())
+                            .orElse(null)
+                    )
+                    .build()
+                )
+                .toList()
+        )
+        .build();
+
+        return response;
     }
 
 }
