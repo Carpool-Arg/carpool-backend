@@ -10,6 +10,7 @@ package com.carpool.carpool.enums.notificationEvent;
  *     {@code RESERVATION_ACCEPTED} Notificación para cuando se acepta una reserva
  *     {@code RESERVATION_REJECTED} Notificación para cuando se rechaza una reserva
  *     {@code RESERVATION_REJECTED} Notificación para cuando se finaliza el viaje y la reserva se tiene que pagar
+ *     {@code RESERVATION_CANCELLED_BY_SYSTEM} Notificación para cuando el sistema rechaza solicitudes cuando el viaje a Cerrado. Estado CLOSED. 
  *     {@code TRIP_FULL} Notificacion para cuando se cierra el viaje por cupo lleno
  * </p>
  */
@@ -17,6 +18,7 @@ public enum NotificationEventEnum {
     RESERVATION_CREATED,
     RESERVATION_ACCEPTED,
     RESERVATION_REJECTED,
+    RESERVATION_CANCELLED_BY_SYSTEM,
     TRIP_CLOSED_AUTOMATICALLY,
     TRIP_CANCELLED_BY_SYSTEM,
     TRIP_STARTED,

@@ -399,11 +399,22 @@ public class TripImplementation implements ITripService {
             .orElseThrow(() -> new ConflictException("No se encontró la parada inicial del viaje."));
 
         startStop.setArrivalDateTime(now);
-        notifyPassengers(trip, NotificationEventEnum.TRIP_STARTED);
 
         stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CLOSED.name(),TripStateEnum.IN_PROGRESS.name());
 
+        List<Reservation> pendingReservations = reservationRepository
+            .findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
+
+        for (Reservation pending : pendingReservations) {
+            reservationService.cancelReservation(pending.getId());
+            notificationService.send(
+                    pending.getUser(),
+                    NotificationEventEnum.RESERVATION_CANCELLED_BY_SYSTEM,
+                    pending);
+        }
+
         this.startTripReservation(trip);
+        notifyPassengers(trip, NotificationEventEnum.TRIP_STARTED);
         return ResponseUtils.buildOKResponse(List.of("¡Viaje iniciado! Que tengas un buen recorrido."), null);
     }
 
@@ -1026,8 +1037,13 @@ public class TripImplementation implements ITripService {
      */
     private void cancelAllReservations(Trip trip) {
         List<Reservation> reservations = reservationRepository.findByTripIdAndStateName(trip.getId(), STATE_ACCEPTED);
+        List<Reservation> pendingReservations  = reservationRepository.findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
 
         for (Reservation reservation : reservations) {
+            reservationService.cancelBySystem(reservation.getId());
+        }
+        
+        for (Reservation reservation : pendingReservations) {
             reservationService.cancelBySystem(reservation.getId());
         }
     }
