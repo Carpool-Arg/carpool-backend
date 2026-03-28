@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.hibernate.annotations.SQLRestriction;
+
 import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.trip.Trip;
@@ -22,8 +24,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.hibernate.annotations.SQLRestriction;
-import org.hibernate.annotations.Where;
 
 @Data
 @AllArgsConstructor

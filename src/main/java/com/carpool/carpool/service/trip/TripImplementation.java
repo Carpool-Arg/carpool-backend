@@ -802,10 +802,10 @@ public class TripImplementation implements ITripService {
     }
     
     /**
-     * Actualiza las paradas de un viaje, recalculando distancias, tiempos estimados,
-     * precio por kilómetro, comisión y precio publicado.
+     * Actualiza las paradas de un viaje y recalcula métricas asociadas.
+     *
      * @param trip     El viaje a actualizar
-     * @param stopDTOs La lista de paradas nuevas
+     * @param stopDTOs Lista de paradas nuevas
      */
     private void changeTripStops(Trip trip, List<TripStopUpdateRequestDTO> stopDTOs) {
 
@@ -814,61 +814,120 @@ public class TripImplementation implements ITripService {
 
         stopDTOs.sort(Comparator.comparingInt(TripStopRequestDTO::getOrder));
 
-        List<TripStop> currentStops = trip.getTripStops();
+        Map<Long, City> citiesMap = getCitiesMap(stopDTOs);
+        Map<Long, TripStop> currentById = getCurrentStopsMap(trip);
 
-        Map<Long, TripStop> currentById = currentStops.stream()
-                .filter(s -> s.getDeletedAt() == null)
-                .collect(Collectors.toMap(TripStop::getId, Function.identity()));
+        Set<Long> incomingIds = processStops(trip, stopDTOs, citiesMap, currentById);
 
-        Set<Long> incomingIds = new HashSet<>();
+        softDeleteMissingStops(trip.getTripStops(), incomingIds);
 
+        recalculateTripPricing(trip);
+    }
+
+    /**
+     * Obtiene un mapa de ciudades por ID.
+     */
+    private Map<Long, City> getCitiesMap(List<TripStopUpdateRequestDTO> stopDTOs) {
         Set<Long> cityIds = stopDTOs.stream()
                 .map(TripStopUpdateRequestDTO::getCityId)
                 .collect(Collectors.toSet());
 
-        Map<Long, City> citiesMap = cityRepository.findAllById(cityIds).stream()
+        return cityRepository.findAllById(cityIds).stream()
                 .collect(Collectors.toMap(City::getId, Function.identity()));
+    }
 
-        for (TripStopUpdateRequestDTO dto: stopDTOs) {
+    /**
+     * Obtiene las paradas actuales no eliminadas del viaje.
+     */
+    private Map<Long, TripStop> getCurrentStopsMap(Trip trip) {
+        return trip.getTripStops().stream()
+                .filter(s -> s.getDeletedAt() == null)
+                .collect(Collectors.toMap(TripStop::getId, Function.identity()));
+    }
+
+    /**
+     * Procesa las paradas: actualiza existentes y crea nuevas.
+     */
+    private Set<Long> processStops(
+            Trip trip,
+            List<TripStopUpdateRequestDTO> stopDTOs,
+            Map<Long, City> citiesMap,
+            Map<Long, TripStop> currentById) {
+
+        Set<Long> incomingIds = new HashSet<>();
+
+        for (TripStopUpdateRequestDTO dto : stopDTOs) {
+
+            City city = getCityOrThrow(citiesMap, dto.getCityId());
+
             if (dto.getTripStopId() != null) {
-                TripStop existing = currentById.get(dto.getTripStopId());
-
-                if (existing != null) {
-                    existing.setStopOrder(dto.getOrder());
-                    existing.setObservation(dto.getObservation());
-                    existing.setStart(dto.isStart());
-                    existing.setDestination(dto.isDestination());
-                    City city = citiesMap.get(dto.getCityId());
-                    if (city == null) {
-                        throw new ResourceNotFoundException("Localidad no encontrada");
-                    }
-                    existing.setCity(city);
-                    existing.setDeletedAt(null);
-
-                    incomingIds.add(existing.getId());
-                }
+                updateExistingStop(dto, currentById, city, incomingIds);
             } else {
-                City city = citiesMap.get(dto.getCityId());
-
-                if (city == null) {
-                    throw new ResourceNotFoundException("Localidad no encontrada");
-                }
-
-                TripStop newStop = TripStop.builder()
-                        .city(city)
-                        .isStart(dto.isStart())
-                        .isDestination(dto.isDestination())
-                        .observation(dto.getObservation())
-                        .stopOrder(dto.getOrder())
-                        .trip(trip)
-                        .distanceFromPrevious(0.0)
-                        .estimatedArrivalDateTime(trip.getStartTripDateTime())
-                        .deletedAt(null)
-                        .build();
-
-                trip.getTripStops().add(newStop);
+                createNewStop(trip, dto, city);
             }
         }
+
+        return incomingIds;
+    }
+
+    /**
+     * Actualiza una parada existente.
+     */
+    private void updateExistingStop(
+            TripStopUpdateRequestDTO dto,
+            Map<Long, TripStop> currentById,
+            City city,
+            Set<Long> incomingIds) {
+
+        TripStop existing = currentById.get(dto.getTripStopId());
+
+        if (existing != null) {
+            existing.setStopOrder(dto.getOrder());
+            existing.setObservation(dto.getObservation());
+            existing.setStart(dto.isStart());
+            existing.setDestination(dto.isDestination());
+            existing.setCity(city);
+            existing.setDeletedAt(null);
+
+            incomingIds.add(existing.getId());
+        }
+    }
+
+    /**
+     * Crea una nueva parada y la agrega al viaje.
+     */
+    private void createNewStop(Trip trip, TripStopUpdateRequestDTO dto, City city) {
+
+        TripStop newStop = TripStop.builder()
+                .city(city)
+                .isStart(dto.isStart())
+                .isDestination(dto.isDestination())
+                .observation(dto.getObservation())
+                .stopOrder(dto.getOrder())
+                .trip(trip)
+                .distanceFromPrevious(0.0)
+                .estimatedArrivalDateTime(trip.getStartTripDateTime())
+                .deletedAt(null)
+                .build();
+
+        trip.getTripStops().add(newStop);
+    }
+
+    /**
+     * Obtiene una ciudad o lanza excepción si no existe.
+     */
+    private City getCityOrThrow(Map<Long, City> citiesMap, Long cityId) {
+        City city = citiesMap.get(cityId);
+        if (city == null) {
+            throw new ResourceNotFoundException("Localidad no encontrada");
+        }
+        return city;
+    }
+
+    /**
+     * Marca como eliminadas las paradas que ya no vienen en la request.
+     */
+    private void softDeleteMissingStops(List<TripStop> currentStops, Set<Long> incomingIds) {
 
         for (TripStop existing : currentStops) {
             if (existing.getId() != 0 &&
@@ -878,6 +937,12 @@ public class TripImplementation implements ITripService {
                 existing.setDeletedAt(LocalDateTime.now());
             }
         }
+    }
+
+    /**
+     * Recalcula distancias y precios del viaje.
+     */
+    private void recalculateTripPricing(Trip trip) {
 
         LocalDateTime baseStartTime = trip.getStartTripDateTime();
 
@@ -894,6 +959,7 @@ public class TripImplementation implements ITripService {
         trip.setDriverPriceDiscount(commission);
         trip.setPublishedSeatPrice(seatPrice + commission);
     }
+
 
     /**
      * Validaciones del viaje en general. Comprobamos aspectos como:
