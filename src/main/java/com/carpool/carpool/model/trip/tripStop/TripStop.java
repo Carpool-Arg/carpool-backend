@@ -22,6 +22,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.Where;
 
 @Data
 @AllArgsConstructor
@@ -30,6 +32,7 @@ import lombok.ToString;
 @ToString
 @Entity
 @Table(name="trip_stop")
+@SQLRestriction("deleted_at IS NULL")
 public class TripStop implements Serializable{
     @Id
     @Column(name="id")
@@ -60,6 +63,9 @@ public class TripStop implements Serializable{
 
     @Column
     private LocalDateTime arrivalDateTime;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @ManyToOne
     @JoinColumn(name="city_id",nullable = false)

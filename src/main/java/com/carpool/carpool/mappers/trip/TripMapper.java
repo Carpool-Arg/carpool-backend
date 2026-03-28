@@ -233,6 +233,7 @@ public class TripMapper {
     private List<TripStopResponseDTO> getTripstopResponseDTO(Trip trip){
         return trip.getTripStops().stream()
             .map(tripStop -> TripStopResponseDTO.builder()
+                .tripStopId(tripStop.getId())
                 .cityId(tripStop.getCity().getId())
                 .cityName(tripStop.getCity().getName())
                 .estimatedArrivalDateTime(tripStop.getEstimatedArrivalDateTime())

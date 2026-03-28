@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface TripStopRepository extends JpaRepository<TripStop, Long> {
-    Optional<TripStop> findByTripIdAndCityId(Long tripId, Long cityId);
+    Optional<TripStop> findByTripIdAndCityIdAndDeletedAtIsNull(Long tripId, Long cityId);
 }

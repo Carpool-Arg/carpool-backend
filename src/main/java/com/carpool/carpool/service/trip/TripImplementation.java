@@ -2,16 +2,12 @@ package com.carpool.carpool.service.trip;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.carpool.carpool.dto.trip.*;
+import com.carpool.carpool.dto.trip.tripStop.TripStopUpdateRequestDTO;
 import com.carpool.carpool.enums.reservation.ReservationStateEnum;
 import com.carpool.carpool.enums.trip.TripStateEnum;
 import lombok.extern.slf4j.Slf4j;
@@ -532,7 +528,6 @@ public class TripImplementation implements ITripService {
 	@Override
 	@Transactional
 	public Response<Void> updateTrip(TripUpdateRequestDTO tripUpdateRequestDTO) {
-
 		final var idTrip = tripUpdateRequestDTO.getIdTrip();
 		Trip trip = tripRepository.findById(idTrip).orElseThrow(() -> {
 			log.error("No existe el viaje con id: {}", idTrip);
@@ -560,14 +555,14 @@ public class TripImplementation implements ITripService {
             }
         }
 
-		if (tripUpdateRequestDTO.getTripStops() != null) {
-			changeTripStops(trip, tripUpdateRequestDTO.getTripStops());
-		}
-
 		// Se valida que la nueva fecha sea futura y tenga al menos 12 horas desde el momento actual
 		if (tripUpdateRequestDTO.getStartDateTime() != null) {
 	        validateAndApplyNewStartDateTime(tripUpdateRequestDTO.getStartDateTime(), trip, driver.getId(), now);
 		}
+
+        if (tripUpdateRequestDTO.getTripStops() != null) {
+            changeTripStops(trip, tripUpdateRequestDTO.getTripStops());
+        }
 
 		Vehicle finalVehicle = trip.getVehicle();
 		Integer finalSeatCapacity = trip.getAvailableSeat();
@@ -785,19 +780,81 @@ public class TripImplementation implements ITripService {
      * @param trip     El viaje a actualizar
      * @param stopDTOs La lista de paradas nuevas
      */
-    private void changeTripStops(Trip trip, List<TripStopRequestDTO> stopDTOs) {
+    private void changeTripStops(Trip trip, List<TripStopUpdateRequestDTO> stopDTOs) {
 
         startDestinationValidation(stopDTOs);
         validateTripStopsOrder(stopDTOs);
 
         stopDTOs.sort(Comparator.comparingInt(TripStopRequestDTO::getOrder));
 
-        tripStopRepository.deleteAll(trip.getTripStops());
-        trip.getTripStops().clear();
+        List<TripStop> currentStops = trip.getTripStops();
+
+        Map<Long, TripStop> currentById = currentStops.stream()
+                .filter(s -> s.getDeletedAt() == null)
+                .collect(Collectors.toMap(TripStop::getId, Function.identity()));
+
+        Set<Long> incomingIds = new HashSet<>();
+
+        Set<Long> cityIds = stopDTOs.stream()
+                .map(TripStopUpdateRequestDTO::getCityId)
+                .collect(Collectors.toSet());
+
+        Map<Long, City> citiesMap = cityRepository.findAllById(cityIds).stream()
+                .collect(Collectors.toMap(City::getId, Function.identity()));
+
+        for (TripStopUpdateRequestDTO dto: stopDTOs) {
+            if (dto.getTripStopId() != null) {
+                TripStop existing = currentById.get(dto.getTripStopId());
+
+                if (existing != null) {
+                    existing.setStopOrder(dto.getOrder());
+                    existing.setObservation(dto.getObservation());
+                    existing.setStart(dto.isStart());
+                    existing.setDestination(dto.isDestination());
+                    City city = citiesMap.get(dto.getCityId());
+                    if (city == null) {
+                        throw new ResourceNotFoundException("Localidad no encontrada");
+                    }
+                    existing.setCity(city);
+                    existing.setDeletedAt(null);
+
+                    incomingIds.add(existing.getId());
+                }
+            } else {
+                City city = citiesMap.get(dto.getCityId());
+
+                if (city == null) {
+                    throw new ResourceNotFoundException("Localidad no encontrada");
+                }
+
+                TripStop newStop = TripStop.builder()
+                        .city(city)
+                        .isStart(dto.isStart())
+                        .isDestination(dto.isDestination())
+                        .observation(dto.getObservation())
+                        .stopOrder(dto.getOrder())
+                        .trip(trip)
+                        .distanceFromPrevious(0.0)
+                        .estimatedArrivalDateTime(trip.getStartTripDateTime())
+                        .deletedAt(null)
+                        .build();
+
+                trip.getTripStops().add(newStop);
+            }
+        }
+
+        for (TripStop existing : currentStops) {
+            if (existing.getId() != 0 &&
+                    existing.getDeletedAt() == null &&
+                    !incomingIds.contains(existing.getId())) {
+
+                existing.setDeletedAt(LocalDateTime.now());
+            }
+        }
 
         LocalDateTime baseStartTime = trip.getStartTripDateTime();
 
-        double totalDistance = tripStopComponent.buildStops(trip, stopDTOs, baseStartTime);
+        double totalDistance = tripStopComponent.recalculateStops(trip, baseStartTime);
 
         if (totalDistance <= 0) {
             throw new ConflictException("No se pudo calcular la distancia total del viaje.");
@@ -858,7 +915,7 @@ public class TripImplementation implements ITripService {
      * @param tripStops la lista de paradas de un viaje
      * @throws ConflictException si alguna de las validaciones falla
      */
-    private void startDestinationValidation(List<TripStopRequestDTO> tripStops) {
+    private void startDestinationValidation(List<? extends TripStopRequestDTO> tripStops) {
 
         // Validacion para comprobar que la ciudad de origen y la de destino no son la
         // misma
@@ -901,7 +958,7 @@ public class TripImplementation implements ITripService {
      * @param tripStops la lista de paradas del viaje
      * @throws ConflictException si la validacion falla
      */
-    private void validateTripStopsOrder(List<TripStopRequestDTO> tripStops) {
+    private void validateTripStopsOrder(List<? extends TripStopRequestDTO> tripStops) {
         // Validacion para controlar que los numeros de orden no se repitan en la lista
         // de paradas
         boolean allOrderUnique = tripStops.stream()

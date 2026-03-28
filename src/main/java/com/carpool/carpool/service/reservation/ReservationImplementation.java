@@ -403,10 +403,10 @@ public class ReservationImplementation implements IReservationService{
             throw new ConflictException("La ciudad origen y destino no pueden ser iguales");
         }
 
-        TripStop stopStartCity = tripStopRepository.findByTripIdAndCityId(trip.getId(), startCity)
+        TripStop stopStartCity = tripStopRepository.findByTripIdAndCityIdAndDeletedAtIsNull(trip.getId(), startCity)
                 .orElseThrow(()->new ConflictException("La ciudad origen ingresada no pertenece al viaje"));
 
-        TripStop stopDestinationCity =  tripStopRepository.findByTripIdAndCityId(trip.getId(), destinationCity)
+        TripStop stopDestinationCity =  tripStopRepository.findByTripIdAndCityIdAndDeletedAtIsNull(trip.getId(), destinationCity)
                 .orElseThrow(()->new ConflictException("La ciudad destino ingresada no pertenece al viaje"));
 
         if (stopStartCity.getStopOrder() > stopDestinationCity.getStopOrder()){
