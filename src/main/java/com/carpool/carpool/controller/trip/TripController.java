@@ -6,26 +6,8 @@ import java.util.List;
 import com.carpool.carpool.dto.trip.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
-import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
-import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
+import org.springframework.web.bind.annotation.*;
 
-import com.carpool.carpool.dto.trip.TripHistoryUserResponseDTO;
-import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
-import com.carpool.carpool.dto.trip.TripRequestDTO;
-import com.carpool.carpool.dto.trip.TripResponseDTO;
-import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
-import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
-import com.carpool.carpool.dto.trip.TripStartRequestDTO;
-import com.carpool.carpool.dto.trip.TripUpdateRequestDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.trip.ITripService;
 
@@ -87,7 +69,7 @@ public class TripController {
     }
 
     @Operation(
-                summary = "Verificar la disponibilidad de un viaje."
+                summary = "Verificar la disponibilidad de un viaje"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "El viaje es posible"),
@@ -110,6 +92,7 @@ public class TripController {
 
     @Operation(
             summary = "Obtener el feed inicial de viajes"
+
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista de viajes obtenida con éxito"),
@@ -164,21 +147,6 @@ public class TripController {
     @GetMapping("/current-trip")
     public ResponseEntity<Response<CurrentTripResponseDTO>> getDriverCurrentTrip() {
         Response<CurrentTripResponseDTO> response = tripService.getCurrentTrip();
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
-
-    @Operation(
-            summary = "Obtiene los pasajeros que participaron de un viaje")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Pasajeros obtenidos con exito."),
-            @ApiResponse(responseCode = "404", description = "No se pudieron recuperar los pasajeros.", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Error interno del servidor al obtener el viaje.", content = @Content),
-    })
-    @GetMapping("/passengers")
-    public ResponseEntity<Response<TripPassengersResponseDTO>> getTripPassengers(
-        @RequestParam(required = true) Long tripId
-    ) {
-        Response<TripPassengersResponseDTO> response = tripService.getTripPassengers(tripId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
@@ -241,7 +209,7 @@ public class TripController {
         Response<Void> response = tripService.startTrip(tripStartRequestDTO.getTripId());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-    
+
     @Operation(
             summary = "Modificar un viaje"
     )
@@ -254,12 +222,12 @@ public class TripController {
     public ResponseEntity<Response<Void>> updateTrip(@Valid @RequestBody TripUpdateRequestDTO tripUpdateRequestDTO){
         return new ResponseEntity<Response<Void>>(tripService.updateTrip(tripUpdateRequestDTO), HttpStatus.OK);
     }
-        
+
     @Operation(summary = "Cancelar un viaje programado")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Viaje cancelado con éxito"),
             @ApiResponse(responseCode = "400", description = "Solicitud inválida", content = @Content),
-            @ApiResponse(responseCode = "404", description = "El viaje no existe", content = @Content)
+            @ApiResponse(responseCode = "404", description = "El viaje no existe", content = @Content),
     })
     @PostMapping("/cancel")
     public ResponseEntity<Response<Void>> cancelTrip(@Valid @RequestBody TripCancellRequestDTO tripCancellRequestDTO) {

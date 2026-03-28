@@ -58,7 +58,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
      * Solo trae viajes con asientos disponibles y que pasen por la localidad del usuario
      */
     @Query("SELECT DISTINCT t FROM Trip t " + 
-        "JOIN t.tripStops ts " +
+        "JOIN t.tripStops ts ON ts.deletedAt IS NULL " +
         "JOIN t.vehicle v " +
         "JOIN v.driver d " + 
         "JOIN t.stateHistory sh " +
@@ -67,7 +67,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         "AND t.startTripDateTime >= :now " +
         "AND ts.city.id = :cityId " +
         "AND d.user.id != :userId " +
-        "AND ts.stopOrder < (SELECT MAX(tsMax.stopOrder) FROM TripStop tsMax WHERE tsMax.trip.id = t.id) " +
+        "AND ts.stopOrder < (SELECT MAX(tsMax.stopOrder) FROM TripStop tsMax WHERE tsMax.trip.id = t.id AND tsMax.deletedAt IS NULL) " +
         "AND NOT EXISTS (" + 
         "  SELECT r FROM Reservation r " +
         "  JOIN StateHistory shR ON shR.reservation.id = r.id " + 
@@ -109,7 +109,9 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         " AND ts2.city_id = :destinationCityId " + 
         " AND ts1.stop_order < ts2.stop_order " +
         " AND t.id = ts1.trip_id " +
-        " AND t.id = ts2.trip_id) " +
+        " AND t.id = ts2.trip_id " +
+        "AND ts1.deleted_at IS NULL " +
+        "AND ts2.deleted_at IS NULL)" +
         "AND (:minPrice IS NULL OR t.published_seat_price >= :minPrice) " + 
         "AND (:maxPrice IS NULL OR t.published_seat_price <= :maxPrice) " +
         "ORDER BY " +
@@ -132,7 +134,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     JOIN state_history sh ON sh.trip_id = t.id
     JOIN state s ON s.id = sh.state_id
     JOIN vehicles v ON v.id = t.vehicle_id
-    JOIN trip_stop ts ON ts.trip_id = t.id AND ts.is_destination = true
+    JOIN trip_stop ts ON ts.trip_id = t.id AND ts.is_destination = true AND ts.deleted_at IS NULL
         
     LEFT JOIN reservation r ON r.trip_id = t.id
     LEFT JOIN state_history sh_r 
@@ -182,7 +184,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query(value = """
         SELECT COUNT(t.id) > 0 
         FROM trip t
-        JOIN trip_stop ts ON t.id = ts.trip_id
+        JOIN trip_stop ts ON t.id = ts.trip_id AND ts.deleted_at IS NULL
         JOIN state_history sh ON t.id = sh.trip_id
         JOIN state s ON s.id = sh.state_id
         WHERE t.vehicle_id IN (SELECT v.id FROM vehicles v WHERE v.driver_id = :driverId)
@@ -210,7 +212,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query(value = """
             SELECT COUNT(t.id) > 0
             FROM trip t
-            JOIN trip_stop ts ON t.id = ts.trip_id
+            JOIN trip_stop ts ON t.id = ts.trip_id AND ts.deleted_at IS NULL
             JOIN state_history sh ON t.id = sh.trip_id
             JOIN state s ON s.id = sh.state_id
             WHERE t.vehicle_id IN (SELECT v.id FROM vehicles v WHERE v.driver_id = :driverId)
@@ -239,7 +241,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query(value = """
     SELECT COUNT(t.id) > 0 
     FROM trip t
-    JOIN trip_stop ts ON t.id = ts.trip_id
+    JOIN trip_stop ts ON t.id = ts.trip_id AND ts.deleted_at IS NULL
     JOIN state_history sh ON t.id = sh.trip_id
     JOIN state s ON s.id = sh.state_id
     WHERE t.vehicle_id IN (SELECT v.id FROM vehicles v WHERE v.driver_id = :driverId)
@@ -283,7 +285,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         JOIN state_history sh ON sh.trip_id = t.id
         JOIN state s ON s.id = sh.state_id
         JOIN vehicles v ON v.id = t.vehicle_id
-        JOIN trip_stop ts ON ts.trip_id = t.id
+        JOIN trip_stop ts ON ts.trip_id = t.id AND ts.deleted_at IS NULL
         WHERE v.driver_id = :driverId
           AND s.name = 'IN_PROGRESS'
           AND s.scope = 'TRIP'
