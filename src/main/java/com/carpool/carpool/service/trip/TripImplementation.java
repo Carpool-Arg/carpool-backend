@@ -403,7 +403,6 @@ public class TripImplementation implements ITripService {
             .orElseThrow(() -> new ConflictException("No se encontró la parada inicial del viaje."));
 
         startStop.setArrivalDateTime(now);
-        notifyPassengers(trip, NotificationEventEnum.TRIP_STARTED);
 
         stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CLOSED.name(),TripStateEnum.IN_PROGRESS.name());
 
@@ -419,6 +418,7 @@ public class TripImplementation implements ITripService {
         }
 
         this.startTripReservation(trip);
+        notifyPassengers(trip, NotificationEventEnum.TRIP_STARTED);
         return ResponseUtils.buildOKResponse(List.of("¡Viaje iniciado! Que tengas un buen recorrido."), null);
     }
 
