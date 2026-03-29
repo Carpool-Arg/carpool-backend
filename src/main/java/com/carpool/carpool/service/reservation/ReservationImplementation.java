@@ -47,6 +47,7 @@ import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.notification.INotificationService;
+import com.carpool.carpool.service.review.ModerationService;
 import com.carpool.carpool.service.state.StateTransitionService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
@@ -70,6 +71,7 @@ public class ReservationImplementation implements IReservationService{
     private final IMediaService mediaService;
     private final CityRepository cityRepository;
     private final StateTransitionService stateTransitionService;
+    private final ModerationService moderationService;
 
 
     @Override
@@ -379,18 +381,22 @@ public class ReservationImplementation implements IReservationService{
         stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, ReservationStateEnum.ACCEPTED.name(), ReservationStateEnum.CANCELLED.name());
 
         if(request.getReason() != null && !request.getReason().isEmpty()){
+            if (moderationService.isToxic(request.getReason())) {
+                log.warn("Comentario bloqueado por contenido ofensivo (IA)");
+                throw new ConflictException("Tu comentario ha sido detectado como ofensivo. Por favor, mantén el respeto.");
+            }
             reservation.setCancellationReason(request.getReason());
         }
 
+        log.info("Guardando la reserva en la base de datos");
+        reservationRepository.save(reservation);
+        
         log.info("Enviando notificacion a pasajero");
         this.notificationService.send(
                 reservation.getUser(),
                 NotificationEventEnum.PASSENGER_DELETED_FROM_TRIP,
                 reservation
         );
-
-        log.info("Guardando la reserva en la base de datos");
-        reservationRepository.save(reservation);
 
         return ResponseUtils.buildOKResponse(List.of("Pasajero eliminado correctamente"), null);
     }
