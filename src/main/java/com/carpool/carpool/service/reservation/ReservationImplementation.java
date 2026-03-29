@@ -52,6 +52,7 @@ import com.carpool.carpool.service.state.StateTransitionService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -356,6 +357,7 @@ public class ReservationImplementation implements IReservationService{
     }
 
     @Override
+    @Transactional
     public Response<Void> deleteTripPassenger(DeleteTripPassengerRequestDTO request){
         log.info("Ejecutando eliminacion de un pasajero de un viaje");
 
