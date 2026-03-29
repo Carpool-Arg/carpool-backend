@@ -52,4 +52,6 @@ public interface IMediaService {
      * @param user
      */             
     void saveDefaultProfilePicture(User user);
+
+    String generatePresignedUrlPublic(Media media);
 }

@@ -1,5 +1,9 @@
 package com.carpool.carpool.service.driver;
 
+import java.util.List;
+
+import com.carpool.carpool.dto.driver.DriverLicenseVerifyRequestDTO;
+import com.carpool.carpool.dto.driver.DriverPendingResponseDTO;
 import com.carpool.carpool.dto.driver.DriverRequestDTO;
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
 import com.carpool.carpool.response.Response;
@@ -15,5 +19,19 @@ public interface IDriverService {
      * @throws ConflictException si el usuario es menor de edad, ya tiene un perfil de chofer, o no se encuentra el usuario o el rol correspondiente.
      */
     Response<TokenResponseDTO> saveDriver(DriverRequestDTO driverRequestDTO);
+
+    /**
+     * 
+     * @return
+     */
+    Response<List<DriverPendingResponseDTO>> getPendingLicenses();
+    
+    /**
+     * 
+     * @param driverId
+     * @param dto
+     * @return
+     */
+    Response<Void> verifyLicense(Long driverId, DriverLicenseVerifyRequestDTO dto);
 
 }

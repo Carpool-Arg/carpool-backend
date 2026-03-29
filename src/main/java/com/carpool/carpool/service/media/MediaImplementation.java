@@ -196,6 +196,11 @@ public class MediaImplementation implements IMediaService{
         mediaRepository.save(defaultMedia);
     }
 
+    @Override
+    public String generatePresignedUrlPublic(Media media) {
+        return generatePresignedUrl(media);
+    }
+
     /**
      * Obtiene el ID del usuario autenticado en el contexto de seguridad. 
      * @return El ID del usuario autenticado en el contexto de seguridad.

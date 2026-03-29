@@ -3,6 +3,7 @@ package com.carpool.carpool.mappers.driver;
 import com.carpool.carpool.model.licenseClass.LicenseClass;
 import org.springframework.stereotype.Component;
 
+import com.carpool.carpool.dto.driver.DriverPendingResponseDTO;
 import com.carpool.carpool.dto.driver.DriverRequestDTO;
 import com.carpool.carpool.model.driver.Driver;
 import com.carpool.carpool.model.province.city.City;
@@ -18,6 +19,23 @@ public class DriverMapper {
                 .addressNumber(driverRequestDTO.getAddressNumber())
                 .city(city)
                 .user(user)
+                .build();
+    }
+
+    public DriverPendingResponseDTO convertDriverToDriverPendingResponseDTO(
+        Driver driver, String frontUrl, String backUrl){
+
+            return DriverPendingResponseDTO.builder()
+                .driverId(driver.getId())
+                .userId(driver.getUser().getId())
+                .fullName(driver.getUser().getName() + " " + driver.getUser().getLastname())
+                .email(driver.getUser().getEmail())
+                .phone(driver.getUser().getPhone())
+                .licenseExpirationDate(driver.getLicenseExpirationDate())
+                .licenseClass(driver.getLicenseClass().getName())
+                .licenseStatus(driver.getLicenseStatus())
+                .frontLicensePhotoUrl(frontUrl)
+                .backLicensePhotoUrl(backUrl)
                 .build();
     }
 }

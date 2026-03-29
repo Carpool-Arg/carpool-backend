@@ -1,6 +1,7 @@
 package com.carpool.carpool.service.trip;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -22,19 +23,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
-import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
-import com.carpool.carpool.dto.trip.TripDriverDTO;
-import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
-import com.carpool.carpool.dto.trip.TripHistoryUserDTO;
-import com.carpool.carpool.dto.trip.TripHistoryUserResponseDTO;
-import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
-import com.carpool.carpool.dto.trip.TripRequestDTO;
-import com.carpool.carpool.dto.trip.TripResponseDTO;
-import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
-import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
-import com.carpool.carpool.dto.trip.TripUpdateRequestDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
+import com.carpool.carpool.enums.licenseStatus.LicenseStatusEnum;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.enums.trip.BaggageEnum;
@@ -102,6 +92,16 @@ public class TripImplementation implements ITripService {
     public Response<Void> createTrip(TripRequestDTO tripRequestDTO) {
 
         Driver authenticatedDriver = getAuthenticatedDriver();
+
+        // Validar que el carnet esté aprobado
+        if (authenticatedDriver.getLicenseStatus() != LicenseStatusEnum.APPROVED) {
+            throw new ConflictException("No podés publicar viajes hasta que tu carnet de conducir sea verificado y aprobado.");
+        }
+
+        // Validar que el carnet no esté vencido
+        if (authenticatedDriver.getLicenseExpirationDate().isBefore(LocalDate.now())) {
+            throw new ConflictException("Tu carnet de conducir se encuentra vencido. Por favor, actualizá tu información.");
+        }
 
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())
                 .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe."));

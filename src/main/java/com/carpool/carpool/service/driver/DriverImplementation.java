@@ -14,11 +14,16 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.carpool.carpool.dto.driver.DriverLicenseVerifyRequestDTO;
+import com.carpool.carpool.dto.driver.DriverPendingResponseDTO;
 import com.carpool.carpool.dto.driver.DriverRequestDTO;
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
 import com.carpool.carpool.enums.licenseStatus.LicenseStatusEnum;
 import com.carpool.carpool.enums.media.CategoryMediaEnum;
+import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.exception.ConflictException;
+import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.driver.DriverMapper;
 import com.carpool.carpool.model.driver.Driver;
 import com.carpool.carpool.model.province.city.City;
@@ -30,6 +35,8 @@ import com.carpool.carpool.repository.role.RoleRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.model.CustomUserDetails;
+import com.carpool.carpool.service.media.IMediaService;
+import com.carpool.carpool.service.notification.INotificationService;
 import com.carpool.carpool.service.r2.IR2StorageService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -51,7 +58,8 @@ public class DriverImplementation implements IDriverService {
     private final LicenseClassRepository licenseClassRepository;
     private final IR2StorageService r2StorageService;
     private final MediaRepository mediaRepository;
-
+    private final IMediaService mediaService; 
+    private final INotificationService notificationService;
 
     //Para asignar roles a los choferes, se inyecta el RoleRepository
     private final RoleRepository roleRepository;
@@ -161,6 +169,66 @@ public class DriverImplementation implements IDriverService {
         TokenResponseDTO tokens = new TokenResponseDTO(accessToken, refreshToken);
 
         return ResponseUtils.buildOKResponse(List.of("El perfil de chofer ha sido creado correctamente."), tokens);
+    }
+
+    @Override
+    public Response<List<DriverPendingResponseDTO>> getPendingLicenses() {
+        List<Driver> pendingDrivers = driverRepository.findAllPendingLicenses(); 
+
+        if (pendingDrivers.isEmpty()) {
+            return ResponseUtils.buildOKResponse(
+                List.of("No hay carnets pendientes de verificación."), List.of());
+        }
+
+        List<DriverPendingResponseDTO> response = pendingDrivers.stream().map(driver -> {
+            String frontUrl = mediaRepository
+                    .findByUserIdAndCategory(driver.getUser().getId(), CategoryMediaEnum.LICENSE_FRONT)
+                    .map(mediaService::generatePresignedUrlPublic)
+                    .orElse(null);
+
+            String backUrl = mediaRepository
+                    .findByUserIdAndCategory(driver.getUser().getId(), CategoryMediaEnum.LICENSE_BACK)
+                    .map(mediaService::generatePresignedUrlPublic)
+                    .orElse(null);
+
+            return driverMapper.convertDriverToDriverPendingResponseDTO(driver, frontUrl, backUrl);
+        }).toList();
+
+        return ResponseUtils.buildOKResponse(List.of("Carnets pendientes obtenidos con éxito."), response);
+    }
+
+    @Override
+    @Transactional
+    public Response<Void> verifyLicense(Long driverId, DriverLicenseVerifyRequestDTO dto) {
+        Driver driver = driverRepository.findById(driverId)
+                .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado."));
+
+        if (driver.getLicenseStatus() != LicenseStatusEnum.PENDING) {
+            throw new ConflictException("El carnet de este chofer ya fue procesado.");
+        }
+
+        if (dto.getApproved()) {
+            driver.setLicenseStatus(LicenseStatusEnum.APPROVED);
+            driver.setRejectionReason(null);
+            driverRepository.save(driver);
+            notificationService.send(
+                    driver.getUser(),
+                    NotificationEventEnum.LICENSE_APPROVED,
+                    driver);
+        } else {
+
+            driver.setLicenseStatus(LicenseStatusEnum.REJECTED);
+            driver.setRejectionReason(dto.getRejectionReason());
+            driverRepository.save(driver);
+            notificationService.send(
+                    driver.getUser(),
+                    NotificationEventEnum.LICENSE_REJECTED,
+                    driver);
+        }
+
+        return ResponseUtils.buildOKResponse(
+            List.of(dto.getApproved() ? "Carnet aprobado con éxito." : "Carnet rechazado con éxito."),
+                null);
     }
 
     /**
