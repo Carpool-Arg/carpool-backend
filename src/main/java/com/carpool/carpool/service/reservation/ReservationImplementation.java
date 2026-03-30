@@ -17,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.carpool.carpool.dto.reservation.CreateReservationRequestDTO;
+import com.carpool.carpool.dto.reservation.DeleteTripPassengerRequestDTO;
 import com.carpool.carpool.dto.reservation.ReservationDTO;
 import com.carpool.carpool.dto.reservation.ReservationResponseDTO;
 import com.carpool.carpool.dto.reservation.ReservationUpdateRequestDTO;
@@ -26,6 +27,7 @@ import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.enums.trip.TripStateEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
+import com.carpool.carpool.exception.UnauthorizedException;
 import com.carpool.carpool.mappers.reservation.ReservationMapper;
 import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.reservation.Reservation;
@@ -45,10 +47,12 @@ import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.notification.INotificationService;
+import com.carpool.carpool.service.review.ModerationService;
 import com.carpool.carpool.service.state.StateTransitionService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -68,6 +72,7 @@ public class ReservationImplementation implements IReservationService{
     private final IMediaService mediaService;
     private final CityRepository cityRepository;
     private final StateTransitionService stateTransitionService;
+    private final ModerationService moderationService;
 
 
     @Override
@@ -125,6 +130,7 @@ public class ReservationImplementation implements IReservationService{
     
         if (existingReservation.isPresent()) {
             // Obtenemos el estado actual de esa reserva existente
+            
             StateHistory currentSh = stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(existingReservation.get().getId())
                     .orElseThrow(() -> new ConflictException("Error al recuperar el estado de la reserva existente."));
 
@@ -350,6 +356,87 @@ public class ReservationImplementation implements IReservationService{
         stateHistoryRepository.save(newHistory);
     }
 
+    @Override
+    @Transactional
+    public Response<Void> deleteTripPassenger(DeleteTripPassengerRequestDTO request){
+        log.info("Ejecutando eliminacion de un pasajero de un viaje");
+
+        log.info("Buscando la reserva del pasajero");
+        Reservation reservation = reservationRepository.findById(request.getReservationId())
+        .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada con ID: " + request.getReservationId()));
+        
+        Trip trip = reservation.getTrip();
+        StateHistory currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(trip.getId())
+        .orElseThrow(() -> new ConflictException("Error al recuperar el estado del viaje de la reserva."));
+        
+        deleteTripPassengerValidations(reservation, trip, currentStateTrip);
+
+        log.info("Liberando asiento");
+        trip.setCurrentAvailableSeats(trip.getCurrentAvailableSeats()+1);
+
+        if(currentStateTrip.getState().getName().equals("CLOSED")){
+            log.info("Cambiando el estado del viaje");
+            stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CLOSED.name(), TripStateEnum.CREATED.name());
+        }
+        
+        log.info("Cambiando el estado de la reserva");
+        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, ReservationStateEnum.ACCEPTED.name(), ReservationStateEnum.CANCELLED.name());
+
+        if(request.getReason() != null && !request.getReason().isEmpty()){
+            if (moderationService.isToxic(request.getReason())) {
+                log.warn("Comentario bloqueado por contenido ofensivo (IA)");
+                throw new ConflictException("Tu comentario ha sido detectado como ofensivo. Por favor, mantén el respeto.");
+            }
+            reservation.setCancellationReason(request.getReason());
+        }
+
+        log.info("Guardando la reserva en la base de datos");
+        reservationRepository.save(reservation);
+        
+        log.info("Enviando notificacion a pasajero");
+        this.notificationService.send(
+                reservation.getUser(),
+                NotificationEventEnum.PASSENGER_DELETED_FROM_TRIP,
+                reservation
+        );
+
+        return ResponseUtils.buildOKResponse(List.of("Pasajero eliminado correctamente"), null);
+    }
+
+    private void deleteTripPassengerValidations(Reservation reservation, Trip trip, StateHistory currentStateTrip){
+        log.info("Validando usuario de eliminacion de pasajero");
+
+        User user = getAuthenticatedActiveUser();
+        if(trip.getVehicle().getDriver().getUser().getId() != user.getId()){
+            throw new UnauthorizedException("Solamente el chofer que publicó el viaje puede eliminar pasajeros del mismo");
+        }
+
+        log.info("Validando estado del viaje");
+        if(!currentStateTrip.getState().getName().equals("CREATED") && !currentStateTrip.getState().getName().equals("CLOSED")){
+            throw new ConflictException("No es posible eliminar al pasajero del viaje por el estado del mismo.");
+        }
+        
+        log.info("Validando horario de la eliminacion de pasajero del viaje");
+        LocalDateTime startTrip = reservation.getTrip().getStartTripDateTime();
+        LocalDateTime nowPlusOneHour = LocalDateTime.now().plusHours(1);
+
+        if (startTrip.isBefore(nowPlusOneHour)) {
+            throw new ConflictException("Esta acción debe realizarse con al menos una hora de antelación al inicio del viaje.");
+        }
+
+        log.info("Validando el estado de la reserva");
+        StateHistory currentSh = stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservation.getId())
+            .orElseThrow(() -> new ConflictException("Error al recuperar el estado de la reserva existente."));
+
+        String currentState = currentSh.getState().getName();
+
+        if (!currentState.equals("ACCEPTED")){
+            throw new ConflictException("No es posible dar de baja al pasajero del viaje por el estado de su reserva.");
+        }
+
+
+    }   
+
     /**
      * Validaciones relacionadas al viaje. Comprobamos lo siguiente:
      * - Que el viaje NO esté lleno
@@ -367,7 +454,6 @@ public class ReservationImplementation implements IReservationService{
         State currentState = null;
         // 2. obtener el estado actual (sin fecha fin)
         Optional<StateHistory> currentStateOptional = stateHistoryRepository.findByTripAndFinishDateTimeIsNullAndReservationIdIsNull(trip);
-
         if(!currentStateOptional.isPresent()){
             //3. Si no se encuentra un estado actual, obtener el ultimo estado con fecha fin
             StateHistory stateHistory = currentStateOptional
@@ -379,7 +465,6 @@ public class ReservationImplementation implements IReservationService{
         } else {
             currentState = currentStateOptional.get().getState();
         }
-
         // 4. validar estados
         if (!currentState.getName().equals("CREATED")){
             throw new ConflictException("No es posible reservar el viaje, debido a su estado actual.");
