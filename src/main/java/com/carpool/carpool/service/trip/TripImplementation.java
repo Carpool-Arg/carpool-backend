@@ -2,16 +2,12 @@ package com.carpool.carpool.service.trip;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.carpool.carpool.dto.trip.*;
+import com.carpool.carpool.dto.trip.tripStop.TripStopUpdateRequestDTO;
 import com.carpool.carpool.enums.reservation.ReservationStateEnum;
 import com.carpool.carpool.enums.trip.TripStateEnum;
 import lombok.extern.slf4j.Slf4j;
@@ -22,18 +18,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import com.carpool.carpool.dto.trip.CurrentTripResponseDTO;
-import com.carpool.carpool.dto.trip.TripArriveRequestDTO;
-import com.carpool.carpool.dto.trip.TripDriverDTO;
-import com.carpool.carpool.dto.trip.TripDriverResponseDTO;
-import com.carpool.carpool.dto.trip.TripHistoryUserDTO;
-import com.carpool.carpool.dto.trip.TripHistoryUserResponseDTO;
-import com.carpool.carpool.dto.trip.TripPriceCalculationResponseDTO;
-import com.carpool.carpool.dto.trip.TripRequestDTO;
-import com.carpool.carpool.dto.trip.TripResponseDTO;
-import com.carpool.carpool.dto.trip.TripSearchRequestDTO;
-import com.carpool.carpool.dto.trip.TripSearchResponseDTO;
-import com.carpool.carpool.dto.trip.TripUpdateRequestDTO;
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
@@ -428,11 +412,22 @@ public class TripImplementation implements ITripService {
             .orElseThrow(() -> new ConflictException("No se encontró la parada inicial del viaje."));
 
         startStop.setArrivalDateTime(now);
-        notifyPassengers(trip, NotificationEventEnum.TRIP_STARTED);
 
         stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CLOSED.name(),TripStateEnum.IN_PROGRESS.name());
 
+        List<Reservation> pendingReservations = reservationRepository
+            .findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
+
+        for (Reservation pending : pendingReservations) {
+            reservationService.cancelReservation(pending.getId());
+            notificationService.send(
+                    pending.getUser(),
+                    NotificationEventEnum.RESERVATION_CANCELLED_BY_SYSTEM,
+                    pending);
+        }
+
         this.startTripReservation(trip);
+        notifyPassengers(trip, NotificationEventEnum.TRIP_STARTED);
         return ResponseUtils.buildOKResponse(List.of("¡Viaje iniciado! Que tengas un buen recorrido."), null);
     }
 
@@ -545,8 +540,7 @@ public class TripImplementation implements ITripService {
 	@Override
 	@Transactional
 	public Response<Void> updateTrip(TripUpdateRequestDTO tripUpdateRequestDTO) {
-
-		final var idTrip = tripUpdateRequestDTO.getIdTrip();
+		final Long idTrip = tripUpdateRequestDTO.getIdTrip();
 		Trip trip = tripRepository.findById(idTrip).orElseThrow(() -> {
 			log.error("No existe el viaje con id: {}", idTrip);
 			return new EntityNotFoundException("El viaje que desea modificar no existe.");
@@ -573,14 +567,14 @@ public class TripImplementation implements ITripService {
             }
         }
 
-		if (tripUpdateRequestDTO.getTripStops() != null) {
-			changeTripStops(trip, tripUpdateRequestDTO.getTripStops());
-		}
-
 		// Se valida que la nueva fecha sea futura y tenga al menos 12 horas desde el momento actual
 		if (tripUpdateRequestDTO.getStartDateTime() != null) {
 	        validateAndApplyNewStartDateTime(tripUpdateRequestDTO.getStartDateTime(), trip, driver.getId(), now);
 		}
+
+        if (tripUpdateRequestDTO.getTripStops() != null) {
+            changeTripStops(trip, tripUpdateRequestDTO.getTripStops());
+        }
 
 		Vehicle finalVehicle = trip.getVehicle();
 		Integer finalSeatCapacity = trip.getAvailableSeat();
@@ -614,8 +608,7 @@ public class TripImplementation implements ITripService {
 		return ResponseUtils.buildOKResponse(List.of("Viaje modificado con éxito"), null);
 	}
 
-
-    @Override
+        @Override
     public Response<TripPassengersResponseDTO> getTripPassengers(Long idTrip){
         log.info("Comenzando la recuperacion de los pasajeros de un viaje.");
 
@@ -718,7 +711,7 @@ public class TripImplementation implements ITripService {
      * @param nameState		Estado que se desea corroborar
      */
     private void validateStateTrip(Long idTrip , String nameState) {
-		final var currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(idTrip)
+		final StateHistory currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(idTrip)
 				.orElseThrow(() -> {
 					log.error("El viaje con id: {} no tiene un estado actual", idTrip);
 					return new EntityNotFoundException("El viaje no presenta un estado actual");
@@ -822,24 +815,151 @@ public class TripImplementation implements ITripService {
     }
     
     /**
-     * Actualiza las paradas de un viaje, recalculando distancias, tiempos estimados,
-     * precio por kilómetro, comisión y precio publicado.
+     * Actualiza las paradas de un viaje y recalcula métricas asociadas.
+     *
      * @param trip     El viaje a actualizar
-     * @param stopDTOs La lista de paradas nuevas
+     * @param stopDTOs Lista de paradas nuevas
      */
-    private void changeTripStops(Trip trip, List<TripStopRequestDTO> stopDTOs) {
+    private void changeTripStops(Trip trip, List<TripStopUpdateRequestDTO> stopDTOs) {
 
         startDestinationValidation(stopDTOs);
         validateTripStopsOrder(stopDTOs);
 
         stopDTOs.sort(Comparator.comparingInt(TripStopRequestDTO::getOrder));
 
-        tripStopRepository.deleteAll(trip.getTripStops());
-        trip.getTripStops().clear();
+        Map<Long, City> citiesMap = getCitiesMap(stopDTOs);
+        Map<Long, TripStop> currentById = getCurrentStopsMap(trip);
+
+        Set<Long> incomingIds = processStops(trip, stopDTOs, citiesMap, currentById);
+
+        softDeleteMissingStops(trip.getTripStops(), incomingIds);
+
+        recalculateTripPricing(trip);
+    }
+
+    /**
+     * Obtiene un mapa de ciudades por ID.
+     */
+    private Map<Long, City> getCitiesMap(List<TripStopUpdateRequestDTO> stopDTOs) {
+        Set<Long> cityIds = stopDTOs.stream()
+                .map(TripStopUpdateRequestDTO::getCityId)
+                .collect(Collectors.toSet());
+
+        return cityRepository.findAllById(cityIds).stream()
+                .collect(Collectors.toMap(City::getId, Function.identity()));
+    }
+
+    /**
+     * Obtiene las paradas actuales no eliminadas del viaje.
+     */
+    private Map<Long, TripStop> getCurrentStopsMap(Trip trip) {
+        return trip.getTripStops().stream()
+                .filter(s -> s.getDeletedAt() == null)
+                .collect(Collectors.toMap(TripStop::getId, Function.identity()));
+    }
+
+    /**
+     * Procesa las paradas: actualiza existentes y crea nuevas.
+     */
+    private Set<Long> processStops(
+            Trip trip,
+            List<TripStopUpdateRequestDTO> stopDTOs,
+            Map<Long, City> citiesMap,
+            Map<Long, TripStop> currentById) {
+
+        Set<Long> incomingIds = new HashSet<>();
+
+        for (TripStopUpdateRequestDTO dto : stopDTOs) {
+
+            City city = getCityOrThrow(citiesMap, dto.getCityId());
+
+            if (dto.getTripStopId() != null) {
+                updateExistingStop(dto, currentById, city, incomingIds);
+            } else {
+                createNewStop(trip, dto, city);
+            }
+        }
+
+        return incomingIds;
+    }
+
+    /**
+     * Actualiza una parada existente.
+     */
+    private void updateExistingStop(
+            TripStopUpdateRequestDTO dto,
+            Map<Long, TripStop> currentById,
+            City city,
+            Set<Long> incomingIds) {
+
+        TripStop existing = currentById.get(dto.getTripStopId());
+
+        if (existing != null) {
+            existing.setStopOrder(dto.getOrder());
+            existing.setObservation(dto.getObservation());
+            existing.setStart(dto.isStart());
+            existing.setDestination(dto.isDestination());
+            existing.setCity(city);
+            existing.setDeletedAt(null);
+
+            incomingIds.add(existing.getId());
+        }
+    }
+
+    /**
+     * Crea una nueva parada y la agrega al viaje.
+     */
+    private void createNewStop(Trip trip, TripStopUpdateRequestDTO dto, City city) {
+
+        TripStop newStop = TripStop.builder()
+                .city(city)
+                .isStart(dto.isStart())
+                .isDestination(dto.isDestination())
+                .observation(dto.getObservation())
+                .stopOrder(dto.getOrder())
+                .trip(trip)
+                .distanceFromPrevious(0.0)
+                .estimatedArrivalDateTime(trip.getStartTripDateTime())
+                .deletedAt(null)
+                .build();
+
+        trip.getTripStops().add(newStop);
+    }
+
+    /**
+     * Obtiene una ciudad o lanza excepción si no existe.
+     */
+    private City getCityOrThrow(Map<Long, City> citiesMap, Long cityId) {
+        City city = citiesMap.get(cityId);
+        if (city == null) {
+            throw new ResourceNotFoundException("Localidad no encontrada");
+        }
+        return city;
+    }
+
+    /**
+     * Marca como eliminadas las paradas que ya no vienen en la request.
+     */
+    private void softDeleteMissingStops(List<TripStop> currentStops, Set<Long> incomingIds) {
+
+        for (TripStop existing : currentStops) {
+            if (existing.getId() != 0 &&
+                    existing.getDeletedAt() == null &&
+                    !incomingIds.contains(existing.getId())) {
+
+                existing.setDeletedAt(LocalDateTime.now());
+            }
+        }
+    }
+
+    /**
+     * Recalcula distancias y precios del viaje.
+     */
+    private void recalculateTripPricing(Trip trip) {
 
         LocalDateTime baseStartTime = trip.getStartTripDateTime();
 
-        double totalDistance = tripStopComponent.buildStops(trip, stopDTOs, baseStartTime);
+        double totalDistance = tripStopComponent.recalculateStops(trip, baseStartTime);
 
         if (totalDistance <= 0) {
             throw new ConflictException("No se pudo calcular la distancia total del viaje.");
@@ -852,6 +972,7 @@ public class TripImplementation implements ITripService {
         trip.setDriverPriceDiscount(commission);
         trip.setPublishedSeatPrice(seatPrice + commission);
     }
+
 
     /**
      * Validaciones del viaje en general. Comprobamos aspectos como:
@@ -900,7 +1021,7 @@ public class TripImplementation implements ITripService {
      * @param tripStops la lista de paradas de un viaje
      * @throws ConflictException si alguna de las validaciones falla
      */
-    private void startDestinationValidation(List<TripStopRequestDTO> tripStops) {
+    private void startDestinationValidation(List<? extends TripStopRequestDTO> tripStops) {
 
         // Validacion para comprobar que la ciudad de origen y la de destino no son la
         // misma
@@ -943,7 +1064,7 @@ public class TripImplementation implements ITripService {
      * @param tripStops la lista de paradas del viaje
      * @throws ConflictException si la validacion falla
      */
-    private void validateTripStopsOrder(List<TripStopRequestDTO> tripStops) {
+    private void validateTripStopsOrder(List<? extends TripStopRequestDTO> tripStops) {
         // Validacion para controlar que los numeros de orden no se repitan en la lista
         // de paradas
         boolean allOrderUnique = tripStops.stream()
@@ -995,8 +1116,13 @@ public class TripImplementation implements ITripService {
      */
     private void cancelAllReservations(Trip trip) {
         List<Reservation> reservations = reservationRepository.findByTripIdAndStateName(trip.getId(), STATE_ACCEPTED);
+        List<Reservation> pendingReservations  = reservationRepository.findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
 
         for (Reservation reservation : reservations) {
+            reservationService.cancelBySystem(reservation.getId());
+        }
+        
+        for (Reservation reservation : pendingReservations) {
             reservationService.cancelBySystem(reservation.getId());
         }
     }
@@ -1032,6 +1158,7 @@ public class TripImplementation implements ITripService {
                     res);
         }
     }
+
 
     /**
      * Permite crear un objeto {@link Pageable} para filtrar por paginado

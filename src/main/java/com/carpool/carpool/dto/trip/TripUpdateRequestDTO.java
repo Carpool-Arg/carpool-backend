@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 
+import com.carpool.carpool.dto.trip.tripStop.TripStopUpdateRequestDTO;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Min;
@@ -35,5 +36,5 @@ public class TripUpdateRequestDTO {
     private Long idVehicle;
 
     @Size(min = 2, message = "Debe haber 2 o mas paradas.")
-    private List<TripStopRequestDTO> tripStops;
+    private List<TripStopUpdateRequestDTO> tripStops;
 }

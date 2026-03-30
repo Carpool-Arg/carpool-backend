@@ -7,14 +7,18 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
+import com.carpool.carpool.enums.reservation.ReservationStateEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
+import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.state.State;
 import com.carpool.carpool.model.stateHistory.StateHistory;
 import com.carpool.carpool.model.trip.Trip;
+import com.carpool.carpool.repository.reservation.ReservationRepository;
 import com.carpool.carpool.repository.state.StateRepository;
 import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
 import com.carpool.carpool.repository.trip.TripRepository;
 import com.carpool.carpool.service.notification.INotificationService;
+import com.carpool.carpool.service.reservation.IReservationService;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +32,8 @@ public class TripAutomaticClosureTask {
     private final StateRepository stateRepository; 
     private final StateHistoryRepository stateHistoryRepository;
     private final INotificationService notificationService;
+    private final IReservationService reservationService; 
+    private final ReservationRepository reservationRepository; 
 
     @Scheduled(cron = "0 */5 * * * *")
     @Transactional
@@ -57,6 +63,23 @@ public class TripAutomaticClosureTask {
                 
                 stateHistoryRepository.save(newStateHistory);
                 
+                List<Reservation> pendingReservations = reservationRepository
+                    .findByTripIdAndStateName(trip.getId(),ReservationStateEnum.PENDING.name());  
+                
+                for(Reservation r : pendingReservations){
+                    try{
+                        reservationService.cancelReservation(r.getId());
+                        notificationService.send(
+                            r.getUser(), 
+                            NotificationEventEnum.RESERVATION_CANCELLED_BY_SYSTEM,
+                            r);
+                        log.info("Reserva PENDING {} cancelada por cierre automático del viaje {}", 
+                                r.getId(), trip.getId());
+                    }catch (Exception e) {
+                        log.error("Error al cancelar reserva {} del viaje {}: {}", 
+                                r.getId(), trip.getId(), e.getMessage());
+                    }
+                }
                 try {
                     notificationService.send(
                         trip.getVehicle().getDriver().getUser(), 

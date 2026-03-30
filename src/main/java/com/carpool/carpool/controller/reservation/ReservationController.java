@@ -1,6 +1,7 @@
 package com.carpool.carpool.controller.reservation;
 
 import com.carpool.carpool.dto.reservation.CreateReservationRequestDTO;
+import com.carpool.carpool.dto.reservation.DeleteTripPassengerRequestDTO;
 import com.carpool.carpool.dto.reservation.ReservationResponseDTO;
 import com.carpool.carpool.dto.reservation.ReservationUpdateRequestDTO;
 import com.carpool.carpool.response.Response;
@@ -99,5 +100,18 @@ public class ReservationController {
     @PutMapping
     public ResponseEntity<Response<Void>> updateReservation(@Valid @RequestBody ReservationUpdateRequestDTO reservationUpdateRequestDTO){
         return new ResponseEntity<>(reservationService.updateStateReservation(reservationUpdateRequestDTO), HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Eliminar a un pasajero de un viaje"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Pasajero eliminado correctamente"),
+            @ApiResponse(responseCode = "404", description = "Recurso no encontrado"),
+            @ApiResponse(responseCode = "409", description = "Ocurrio un error al eliminar al pasajero.", content = @Content),
+    })
+    @PutMapping("/delete-trip-passenger")
+    public ResponseEntity<Response<Void>> deleteTripPassenger(@Valid @RequestBody DeleteTripPassengerRequestDTO deleteTripPassengerRequestDTO){
+        return new ResponseEntity<>(reservationService.deleteTripPassenger(deleteTripPassengerRequestDTO), HttpStatus.OK);
     }
 }

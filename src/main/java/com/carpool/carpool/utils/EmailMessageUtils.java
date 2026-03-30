@@ -140,4 +140,17 @@ public class EmailMessageUtils {
     public static final String MESSAGE_TRIP_CANCELLED = "El viaje que tenías reservado desde <strong>{origin}</strong> con destino a <strong>{destination}</strong> fue cancelado por el conductor {driver}.";
     public static final String MESSAGE_TRIP_CANCELLED_REASON = " El motivo informado fue el siguiente: {reason}.";
     public static final String FOOTER_TRIP_CANCELLED = "Sabemos que esto puede generar inconvenientes. Te invitamos a buscar otro viaje disponible o a contactarnos si necesitas ayuda.";
+
+    // --- RESERVATION CANCELLED BY DRIVER ---
+    public static final String SUBJECT_RESERVATION_CANCELLED_BY_DRIVER = "Reserva Cancelada por el Conductor - Carpool";
+    public static final String TITLE_RESERVATION_CANCELLED_BY_DRIVER = "El conductor ha cancelado tu reserva";
+    public static final String MESSAGE_RESERVATION_CANCELLED_BY_DRIVER = "El conductor {driver} ha cancelado tu reserva para el viaje desde <strong>{origin}</strong> con destino a <strong>{destination}</strong>.";
+    public static final String MESSAGE_RESERVATION_CANCELLED_BY_DRIVER_REASON = " El motivo informado fue el siguiente: {reason}.";
+    public static final String FOOTER_RESERVATION_CANCELLED_BY_DRIVER = "Recuerda que puedes volver a solicitar un lugar en el viaje. Lamentamos los inconvenientes ocasionados. Si necesitás ayuda, no dudes en contactarnos.";
+    // --- RESERVATION_CANCELLED_BY_SYSTEM ---
+    public static final String SUBJECT_EMAIL_RESERVATION_CANCELLED_SYSTEM = "Tu solicitud de reserva ha sido cancelada";
+    public static final String MESSAGE_RESERVATION_CANCELLED_SYSTEM = "Te informamos que tu solicitud de reserva para el viaje <strong>{origin}</strong> → <strong>{destination}</strong> ha sido cancelada automáticamente.<br><br>" +
+            "Esto se debe a que el viaje ha sido **cerrado** para nuevas admisiones al estar próximo a su hora de salida.<br>" +
+            "¡Te invitamos a buscar otros viajes disponibles en la plataforma! \uD83D\uDE4C";
+    public static final String MESSAGE_FOOTER_RESERVATION_CANCELLED_SYSTEM = "El equipo de Carpool";
 }
