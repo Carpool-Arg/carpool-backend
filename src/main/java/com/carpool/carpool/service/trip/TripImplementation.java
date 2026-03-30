@@ -161,6 +161,19 @@ public class TripImplementation implements ITripService {
     }
 
     @Override
+    public Response<TripResponseDTO> getMyTripDetails(Long id) {
+        Trip trip = findTrip(id);
+        Driver driver = getAuthenticatedDriver();
+        
+        if(trip.getVehicle().getDriver().getId() != driver.getId()) {
+            throw new ConflictException("No puedes visualizar los detalles de este viaje, debido que no te pertenece.");
+        }
+
+        TripResponseDTO tripResponseDTO = tripMapper.convertTripToTripResponseDTO(trip);
+        return ResponseUtils.buildOKResponse(List.of("Viaje encontrado con éxito"), tripResponseDTO);
+    }
+
+    @Override
     public Response<TripDriverResponseDTO> getTrips(List<String> tripState) {
         Driver driver = getAuthenticatedDriver();
 
