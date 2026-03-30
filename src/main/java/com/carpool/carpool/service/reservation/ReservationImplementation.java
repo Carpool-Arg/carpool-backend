@@ -183,7 +183,7 @@ public class ReservationImplementation implements IReservationService{
     @Override
     public Response<Void> updateStateReservation(ReservationUpdateRequestDTO reservationUpdateRequestDTO) {
     	log.info("Iniciando actualizacion de estado de reserva");
-    	final var idReservation = reservationUpdateRequestDTO.getIdReservation();
+    	final Long idReservation = reservationUpdateRequestDTO.getIdReservation();
         final Reservation reservation = reservationRepository.getReferenceById(idReservation);
 
         if(reservation == null){
@@ -192,7 +192,7 @@ public class ReservationImplementation implements IReservationService{
         }
 
         final StateHistory lastestStateReservation = stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservation.getId()).orElseThrow(() -> new ConflictException("La reserva no tiene un estado actual."));
-        final var currentStateReservation = lastestStateReservation.getState();
+        final State currentStateReservation = lastestStateReservation.getState();
         if(currentStateReservation.isFinish()){
         	log.error("La reserva se encuentra en un estado final: {}", currentStateReservation.getName());
             throw new ConflictException("No se puede realizar acciones a la reserva ya que se encuentra en un estado final");
@@ -488,10 +488,10 @@ public class ReservationImplementation implements IReservationService{
             throw new ConflictException("La ciudad origen y destino no pueden ser iguales");
         }
 
-        TripStop stopStartCity = tripStopRepository.findByTripIdAndCityId(trip.getId(), startCity)
+        TripStop stopStartCity = tripStopRepository.findByTripIdAndCityIdAndDeletedAtIsNull(trip.getId(), startCity)
                 .orElseThrow(()->new ConflictException("La ciudad origen ingresada no pertenece al viaje"));
 
-        TripStop stopDestinationCity =  tripStopRepository.findByTripIdAndCityId(trip.getId(), destinationCity)
+        TripStop stopDestinationCity =  tripStopRepository.findByTripIdAndCityIdAndDeletedAtIsNull(trip.getId(), destinationCity)
                 .orElseThrow(()->new ConflictException("La ciudad destino ingresada no pertenece al viaje"));
 
         if (stopStartCity.getStopOrder() > stopDestinationCity.getStopOrder()){

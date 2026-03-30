@@ -147,4 +147,10 @@ public class EmailMessageUtils {
     public static final String MESSAGE_RESERVATION_CANCELLED_BY_DRIVER = "El conductor {driver} ha cancelado tu reserva para el viaje desde <strong>{origin}</strong> con destino a <strong>{destination}</strong>.";
     public static final String MESSAGE_RESERVATION_CANCELLED_BY_DRIVER_REASON = " El motivo informado fue el siguiente: {reason}.";
     public static final String FOOTER_RESERVATION_CANCELLED_BY_DRIVER = "Recuerda que puedes volver a solicitar un lugar en el viaje. Lamentamos los inconvenientes ocasionados. Si necesitás ayuda, no dudes en contactarnos.";
+    // --- RESERVATION_CANCELLED_BY_SYSTEM ---
+    public static final String SUBJECT_EMAIL_RESERVATION_CANCELLED_SYSTEM = "Tu solicitud de reserva ha sido cancelada";
+    public static final String MESSAGE_RESERVATION_CANCELLED_SYSTEM = "Te informamos que tu solicitud de reserva para el viaje <strong>{origin}</strong> → <strong>{destination}</strong> ha sido cancelada automáticamente.<br><br>" +
+            "Esto se debe a que el viaje ha sido **cerrado** para nuevas admisiones al estar próximo a su hora de salida.<br>" +
+            "¡Te invitamos a buscar otros viajes disponibles en la plataforma! \uD83D\uDE4C";
+    public static final String MESSAGE_FOOTER_RESERVATION_CANCELLED_SYSTEM = "El equipo de Carpool";
 }

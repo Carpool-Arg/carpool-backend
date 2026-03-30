@@ -42,7 +42,7 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class TripMapper {   
-	
+
     private final IMediaService mediaService;
     private final StateHistoryRepository stateHistoryRepository;
     private final ReviewRepository reviewRepository;
@@ -62,11 +62,11 @@ public class TripMapper {
         LocalDateTime baseStartTime = tripRequestDTO.getStartDateTime();
 
         double totalDistance = tripStopComponent.buildStops(trip, tripRequestDTO.getTripStops(), baseStartTime);
-        
+
         if (totalDistance <= 0) {
             throw new ConflictException("No se pudo calcular la distancia total del viaje.");
         }
-        
+
         trip.setKilometerPrice(tripRequestDTO.getSeatPrice() / totalDistance);
         return trip;
 
@@ -79,6 +79,7 @@ public class TripMapper {
         String profilePictureUrl = mediaService.getProfilePictureUrlByUserId(user.getId());
        
         List<TripStopResponseDTO> tripStopResponseDTOs = getTripstopResponseDTO(trip);
+        
         VehicleResponseTripDTO vehicleEntity =  mapVehicleToVehicleResponseDTO(trip.getVehicle());
 
         DriverSearchResponseDTO driverSearchDTO = DriverSearchResponseDTO.builder()
@@ -148,7 +149,6 @@ public class TripMapper {
 
         return listTrips.stream()
                 .map(trip -> {
-
 
                     boolean hasReservations =
                         stateHistoryRepository.hasActiveReservations(trip.getId());
@@ -236,6 +236,7 @@ public class TripMapper {
     private List<TripStopResponseDTO> getTripstopResponseDTO(Trip trip){
         return trip.getTripStops().stream()
             .map(tripStop -> TripStopResponseDTO.builder()
+                .tripStopId(tripStop.getId())
                 .cityId(tripStop.getCity().getId())
                 .cityName(tripStop.getCity().getName())
                 .estimatedArrivalDateTime(tripStop.getEstimatedArrivalDateTime())
