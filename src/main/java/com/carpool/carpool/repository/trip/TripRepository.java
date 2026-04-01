@@ -193,8 +193,25 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             AND s.name IN ('CREATED', 'CLOSED', 'IN_PROGRESS')
             AND :newStart < (ts.estimated_arrival_date_time + INTERVAL '30 minutes')
             AND :newEnd > (t.start_date_time - INTERVAL '30 minutes')
+
+            OR EXISTS (
+                SELECT 1
+                FROM reservation r
+                JOIN trip_stop ts_start ON r.start_city_id = ts_start.id
+                JOIN trip_stop ts_end ON r.destination_city_id = ts_end.id
+                JOIN state_history sh_r ON r.id = sh_r.reservation_id
+                JOIN state s_r ON s_r.id = sh_r.state_id
+                WHERE r.user_id = :userId
+                    AND sh_r.finish_datetime IS NULL
+                    AND s_r.name IN ('PENDING', 'ACCEPTED', 'IN_PROGRESS')
+
+                    -- Validación de solapamiento con margen de 30 minutos
+                    AND :newStart < (ts_end.estimated_arrival_date_time + INTERVAL '30 minutes')
+                    AND :newEnd > (ts_start.estimated_arrival_date_time - INTERVAL '30 minutes')
+            )
     """, nativeQuery = true)
     boolean hasOverlappingSchedule(
+        @Param("userId") Long userId,
         @Param("driverId") Long driverId,
         @Param("newStart") LocalDateTime newStart,
         @Param("newEnd") LocalDateTime newEnd
@@ -341,4 +358,28 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             @Param("states") List<String> states
     );
     
+    @Query(value = """
+        SELECT COUNT(t.id) > 0
+        FROM trip t
+        JOIN trip_stop ts_start ON t.id = ts_start.trip_id
+                            AND ts_start.deleted_at IS NULL
+                            AND ts_start.is_start = true
+        JOIN trip_stop ts_end   ON t.id = ts_end.trip_id
+                            AND ts_end.deleted_at IS NULL
+                            AND ts_end.is_destination = true
+        JOIN vehicles v          ON t.vehicle_id = v.id
+        JOIN state_history sh   ON t.id = sh.trip_id
+        JOIN state s            ON s.id = sh.state_id
+        WHERE v.driver_id = :driverId
+        AND sh.finish_datetime IS NULL
+        AND s.name IN ('CREATED', 'CLOSED', 'IN_PROGRESS')
+        AND :newStart < (ts_end.estimated_arrival_date_time   + INTERVAL '30 minutes')
+        AND :newEnd   > (ts_start.estimated_arrival_date_time - INTERVAL '30 minutes')
+    """, nativeQuery = true)
+    boolean hasOverlappingTripAsDriver(
+        @Param("driverId")   Long driverId,
+        @Param("newStart") LocalDateTime newStart,
+        @Param("newEnd")   LocalDateTime newEnd
+    );
+
 }

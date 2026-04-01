@@ -109,6 +109,7 @@ public class ReservationImplementation implements IReservationService{
     }
 
     @Override
+    @Transactional
     public Response<Void> createReservation(CreateReservationRequestDTO createReservationRequestDTO) {
         State statePending = stateRepository.findByNameAndScope("PENDING", ScopeEnum.RESERVATION)
                 .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para crear la reserva."));
@@ -151,7 +152,7 @@ public class ReservationImplementation implements IReservationService{
         }
 
         // Validaciones de las ciudades
-        TripStop[] tripStops =  cityValidations(createReservationRequestDTO.getStartCity(), createReservationRequestDTO.getDestinationCity(), trip);
+        TripStop[] tripStops =  cityValidations(userAuth,createReservationRequestDTO.getStartCity(), createReservationRequestDTO.getDestinationCity(), trip);
 
         Reservation newReservation = reservationMapper.convertReservationRequestDTOToReservation(
                 createReservationRequestDTO,
@@ -483,7 +484,7 @@ public class ReservationImplementation implements IReservationService{
      * @return TripStop[] Arreglo con los TripStops correspondientes a las ciudades de origen y destino válidas.
      * @throws ConflictException si las ciudades son iguales, si no existen en tripStop o no respetan el orden.
      */
-    private TripStop[] cityValidations(Long startCity, Long destinationCity, Trip trip){
+    private TripStop[] cityValidations(User user,Long startCity, Long destinationCity, Trip trip){
         if (Objects.equals(startCity, destinationCity)){
             throw new ConflictException("La ciudad origen y destino no pueden ser iguales");
         }
@@ -498,6 +499,25 @@ public class ReservationImplementation implements IReservationService{
             throw new ConflictException("El orden de las ciudades seleccionadas no es válido para este viaje.");
         }
 
+        LocalDateTime newStart = stopStartCity.getEstimatedArrivalDateTime();
+        LocalDateTime newEnd   = stopDestinationCity.getEstimatedArrivalDateTime();
+
+        log.info("Validando que el usuario no tenga reservas en progreso o aceptadass para el horario que quiere reservar");
+        if (reservationRepository.hasOverlappingReservation(user.getId(), newStart, newEnd)) {
+            throw new ConflictException(
+                "Ya tenés una reserva activa que se superpone con el horario de este viaje."
+            );
+        }   
+        
+        log.info("Verificando si el usuario tiene el rol de chofer.");
+        if(user.hasRole("ROLE_DRIVER")){
+            log.info("Validando que el usuario no tenga viajes pendientes, cerrados o en progreso para la hora a la que quiere reservar");
+            if (tripRepository.hasOverlappingTripAsDriver(user.getDriver().getId(), newStart, newEnd)) {
+                throw new ConflictException(
+                "Tenés un viaje propio activo que se superpone con el horario de esta reserva."
+                );
+            }
+        }
         // Retornar un arreglo de TripStop con las ciudades de inicio y destino
         return new TripStop[] { stopStartCity, stopDestinationCity };
     }

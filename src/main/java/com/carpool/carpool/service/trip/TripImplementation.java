@@ -115,7 +115,7 @@ public class TripImplementation implements ITripService {
             throw new ConflictException("No podés publicar un nuevo viaje mientras tenés uno en curso.");
         }
         // Se verifica si el nuevo viaje interfiere con otros viajes del chofer.
-        if (tripRepository.hasOverlappingSchedule(authenticatedDriver.getId(), tripRequestDTO.getStartDateTime(),
+        if (tripRepository.hasOverlappingSchedule(authenticatedDriver.getUser().getId(),authenticatedDriver.getId(), tripRequestDTO.getStartDateTime(),
                 newEnd)) {
             throw new ConflictException(
                     "El horario para iniciar el viaje se superpone con otro viaje activo. Por favor, elige otro horario.");
