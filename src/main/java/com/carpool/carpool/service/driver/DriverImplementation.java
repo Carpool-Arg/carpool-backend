@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.carpool.carpool.dto.driver.DriverLicenseVerifyRequestDTO;
 import com.carpool.carpool.dto.driver.DriverPendingResponseDTO;
@@ -71,19 +72,9 @@ public class DriverImplementation implements IDriverService {
     public final static String AUTHORITIES_CLAIM = "authorities";
     private final static String USERNAME_CLAIM = "username";
 
-
-
-    /**
-     * Metodo utilizado para guardar un nuevo perfil de chofer.
-     * Este metodo verifica si el usuario tiene al menos 18 años de edad,
-     * verifica si ya existe un perfil de chofer para el usuario,
-     * @param driverRequestDTO
-     * @return Response<TokenResponseDTO> respuesta con el token de acceso y refresh token
-     * @throws ConflictException si el usuario no se encuentra o ya existe un perfil de cho
-     */
     @Override
     @Transactional
-    public Response<TokenResponseDTO> saveDriver(DriverRequestDTO driverRequestDTO) {
+    public Response<TokenResponseDTO> saveDriver(DriverRequestDTO driverRequestDTO, MultipartFile frontPhoto, MultipartFile backPhoto) {
 
         checkIfDriverProfileExists();
 
@@ -112,10 +103,14 @@ public class DriverImplementation implements IDriverService {
         normalizedDriverFields(driver);
         driverRepository.save(driver);
 
-        Media frontMedia = r2StorageService.uploadFile(driverRequestDTO.getFrontLicensePhoto(), user, CategoryMediaEnum.LICENSE_FRONT);
+        /*
+            * Subimos las fotos del carnet a R2 Storage y guardamos la información de los archivos en la base de datos.
+            * Esto es necesario para que el sistema pueda acceder a las fotos del carnet cuando sea necesario, para la verificación de los carnets por parte de los administradores.
+         */
+        Media frontMedia = r2StorageService.uploadFile(frontPhoto, user, CategoryMediaEnum.LICENSE_FRONT);
             mediaRepository.save(frontMedia);
 
-        Media backMedia = r2StorageService.uploadFile(driverRequestDTO.getBackLicensePhoto(), user, CategoryMediaEnum.LICENSE_BACK);
+        Media backMedia = r2StorageService.uploadFile(backPhoto, user, CategoryMediaEnum.LICENSE_BACK);
             mediaRepository.save(backMedia);
 
         /*

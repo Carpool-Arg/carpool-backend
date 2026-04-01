@@ -95,12 +95,12 @@ public class TripImplementation implements ITripService {
 
         // Validar que el carnet esté aprobado
         if (authenticatedDriver.getLicenseStatus() != LicenseStatusEnum.APPROVED) {
-            throw new ConflictException("No podés publicar viajes hasta que tu carnet de conducir sea verificado y aprobado.");
+            throw new ForbiddenException("No podés publicar viajes hasta que tu carnet de conducir sea verificado y aprobado.");
         }
 
         // Validar que el carnet no esté vencido
         if (authenticatedDriver.getLicenseExpirationDate().isBefore(LocalDate.now())) {
-            throw new ConflictException("Tu carnet de conducir se encuentra vencido. Por favor, actualizá tu información.");
+            throw new ForbiddenException("Tu carnet de conducir se encuentra vencido. Por favor, actualizá tu información.");
         }
 
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())

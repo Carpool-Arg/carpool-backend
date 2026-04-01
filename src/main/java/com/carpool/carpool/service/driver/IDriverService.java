@@ -2,6 +2,8 @@ package com.carpool.carpool.service.driver;
 
 import java.util.List;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import com.carpool.carpool.dto.driver.DriverLicenseVerifyRequestDTO;
 import com.carpool.carpool.dto.driver.DriverPendingResponseDTO;
 import com.carpool.carpool.dto.driver.DriverRequestDTO;
@@ -15,10 +17,13 @@ public interface IDriverService {
      * Metodo utilizado para almacenar un conductor en la base de datos. 
      * Se realizan controles para lanzar las excepciones correspondientes.
      * @param driverRequestDTO request con los datos del conductor a guardar
+     * @param frontPhoto foto del frente del carnet de conducir
+     * @param backPhoto foto del dorso del carnet de conducir
      * @return Response<Void> devolviendo el mensaje si el conductor fue creado
      * @throws ConflictException si el usuario es menor de edad, ya tiene un perfil de chofer, o no se encuentra el usuario o el rol correspondiente.
+     * 
      */
-    Response<TokenResponseDTO> saveDriver(DriverRequestDTO driverRequestDTO);
+    Response<TokenResponseDTO> saveDriver(DriverRequestDTO driverRequestDTO, MultipartFile frontPhoto, MultipartFile backPhoto);
 
     /**
      * 

@@ -2,8 +2,6 @@ package com.carpool.carpool.dto.driver;
 
 import java.time.LocalDate;
 
-import org.springframework.web.multipart.MultipartFile;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import jakarta.validation.constraints.*;
@@ -41,10 +39,4 @@ public class DriverRequestDTO {
     @NotNull(message = "El ID de la clase de la licencia de conducir es obligatorio.")
     @Min(value = 1, message = "El ID de la clase de licencia debe ser un número positivo.")
     private Long licenseClassId;
-
-    @NotNull(message = "La foto del frente del carnet es obligatoria.")
-    private MultipartFile frontLicensePhoto;
-
-    @NotNull(message = "La foto del dorso del carnet es obligatoria.")
-    private MultipartFile backLicensePhoto;
 }
