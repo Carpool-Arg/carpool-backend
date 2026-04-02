@@ -25,17 +25,19 @@ public interface IDriverService {
      */
     Response<TokenResponseDTO> saveDriver(DriverRequestDTO driverRequestDTO, MultipartFile frontPhoto, MultipartFile backPhoto);
 
-    /**
-     * 
-     * @return
+    /** 
+     * Metodo utilizado para obtener la lista de conductores con licencias pendientes de verificación.
+      * @return Response<List<DriverPendingResponseDTO>> devolviendo la lista de conductores con licencias pendientes de verificación.
      */
     Response<List<DriverPendingResponseDTO>> getPendingLicenses();
     
     /**
-     * 
-     * @param driverId
-     * @param dto
-     * @return
+     * Metodo utilizado para verificar la licencia de un conductor. Se realizan controles para lanzar las excepciones correspondientes.
+     * @param driverId id del conductor a verificar
+     * @param dto request con los datos de la verificación de la licencia
+     * @return Response<Void> devolviendo el mensaje si la licencia fue verificada
+      * @throws ConflictException si no se encuentra el conductor o la licencia ya fue verificada.
+      *
      */
     Response<Void> verifyLicense(Long driverId, DriverLicenseVerifyRequestDTO dto);
 
