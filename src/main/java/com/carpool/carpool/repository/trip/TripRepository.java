@@ -193,6 +193,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             AND s.name IN ('CREATED', 'CLOSED', 'IN_PROGRESS')
             AND :newStart < (ts.estimated_arrival_date_time + INTERVAL '30 minutes')
             AND :newEnd > (t.start_date_time - INTERVAL '30 minutes')
+            AND (:idTrip IS NULL OR t.id <> :idTrip) 
 
             OR EXISTS (
                 SELECT 1
@@ -214,7 +215,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         @Param("userId") Long userId,
         @Param("driverId") Long driverId,
         @Param("newStart") LocalDateTime newStart,
-        @Param("newEnd") LocalDateTime newEnd
+        @Param("newEnd") LocalDateTime newEnd,
+        @Param("idTrip") Long idTrip
     );
     
     /**
@@ -265,10 +267,10 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         AND ts.is_destination = true
         AND sh.finish_datetime IS NULL
         AND s.name IN ('CREATED', 'IN_PROGRESS')
-        AND (:idTrip IS NULL OR t.id <> :idTrip)
+        AND (:idTrip IS NULL OR t.id <> :idTrip) 
         AND :timeToCheck BETWEEN (t.start_date_time - INTERVAL '30 minutes') 
                             AND ts.estimated_arrival_date_time
-""", nativeQuery = true)
+    """, nativeQuery = true)
     boolean isTimeSlotOccupied(
             @Param("driverId") Long driverId,
             @Param("timeToCheck") LocalDateTime timeToCheck,

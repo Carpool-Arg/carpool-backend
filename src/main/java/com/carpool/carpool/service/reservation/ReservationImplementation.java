@@ -74,7 +74,6 @@ public class ReservationImplementation implements IReservationService{
     private final StateTransitionService stateTransitionService;
     private final ModerationService moderationService;
 
-
     @Override
     public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, Boolean baggage, String nameState, int page, int size) {
         User driver = getAuthenticatedActiveUser();
@@ -187,6 +186,8 @@ public class ReservationImplementation implements IReservationService{
     	final Long idReservation = reservationUpdateRequestDTO.getIdReservation();
         final Reservation reservation = reservationRepository.getReferenceById(idReservation);
 
+        boolean hasOverlappingCancelled = false;
+
         if(reservation == null){
         	log.error("No se pudo encontrar la reserva en la base de datos con el id: {}", idReservation);
             throw new ResourceNotFoundException("La reserva no existe");
@@ -202,10 +203,17 @@ public class ReservationImplementation implements IReservationService{
         final Trip trip = reservation.getTrip();
 
         NotificationEventEnum notification = NotificationEventEnum.RESERVATION_REJECTED;
+
         if(!reservationUpdateRequestDTO.isReject()){
-        	log.info("Iniciando el proceso para aceptar la reserva");
-        	acceptReservation(trip, reservation);
-        	notification = NotificationEventEnum.RESERVATION_ACCEPTED;
+            log.info("Iniciando el proceso para aceptar la reserva");
+            hasOverlappingCancelled = acceptReservation(trip, reservation);
+
+            if(hasOverlappingCancelled){
+                notification = NotificationEventEnum.RESERVATION_ACCEPTED_WITH_OVERLAP;
+            } else {
+                notification = NotificationEventEnum.RESERVATION_ACCEPTED;
+            }
+            
         }else{
         	log.info("Iniciando el proceso para rechazar la reserva");
         	stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, ReservationStateEnum.PENDING.name(), ReservationStateEnum.REJECTED.name());
@@ -230,12 +238,21 @@ public class ReservationImplementation implements IReservationService{
      * @param trip				El viaje al que se le realizaron las reservas
      * @param reservation		Reserva realizada al viaje
      */
-    private void acceptReservation(Trip trip, Reservation reservation) {
-    	final int discountAvailableSeat = trip.getCurrentAvailableSeats() - 1;
+    private boolean acceptReservation(Trip trip, Reservation reservation) {
+    	
+        TripStop stopStartCity = reservation.getStartCity();
+        TripStop stopDestinationCity = reservation.getDestinationCity();
+
+        LocalDateTime newStart = stopStartCity.getEstimatedArrivalDateTime();
+        LocalDateTime newEnd   = stopDestinationCity.getEstimatedArrivalDateTime();
+
+        final int discountAvailableSeat = trip.getCurrentAvailableSeats() - 1;
+        
         if(discountAvailableSeat < 0){
         	log.error("El viaje ya alcanzo el cupo maximo. Asientos disponibles: [ {} ]", discountAvailableSeat);
             throw new ConflictException("Se alcanzó el cupo disponible, no se puede aceptar la reserva.");
         }
+        
         if(discountAvailableSeat == 0){
         	stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CREATED.name(), TripStateEnum.CLOSED.name());
 
@@ -247,6 +264,27 @@ public class ReservationImplementation implements IReservationService{
         stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, ReservationStateEnum.PENDING.name(), ReservationStateEnum.ACCEPTED.name());
         trip.setCurrentAvailableSeats(discountAvailableSeat);
         tripRepository.save(trip);
+
+        List<Reservation> overlappingPending = reservationRepository.findOverlappingPendingReservations(
+            reservation.getUser().getId(),
+            newStart,
+            newEnd,
+            reservation.getId()
+        );
+    
+        if(!overlappingPending.isEmpty()){
+            log.info("Se encontraron reservas en estado PENDING que se solapan con la reserva aceptada. Se procederá a cancelar por sistema dichas reservas.");
+        
+            for (Reservation r : overlappingPending) {
+                cancelBySystem(r.getId());
+            }
+        }
+
+        if(overlappingPending.size() > 0){
+            log.info("Se encontraron {} reservas en estado PENDING que se solapan con la reserva aceptada. Se procederá a cancelar por sistema dichas reservas.", overlappingPending.size());
+        }
+
+        return !overlappingPending.isEmpty();
     }
 
     @Override
