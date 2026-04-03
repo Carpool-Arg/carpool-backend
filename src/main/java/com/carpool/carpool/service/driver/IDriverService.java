@@ -1,12 +1,11 @@
 package com.carpool.carpool.service.driver;
 
-import java.util.List;
-
 import org.springframework.web.multipart.MultipartFile;
 
 import com.carpool.carpool.dto.driver.DriverLicenseVerifyRequestDTO;
-import com.carpool.carpool.dto.driver.DriverPendingResponseDTO;
+import com.carpool.carpool.dto.driver.DriverPendingPageResponseDTO;
 import com.carpool.carpool.dto.driver.DriverRequestDTO;
+import com.carpool.carpool.dto.driver.DriverResponseDTO;
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.exception.ConflictException;
@@ -29,7 +28,7 @@ public interface IDriverService {
      * Metodo utilizado para obtener la lista de conductores con licencias pendientes de verificación.
       * @return Response<List<DriverPendingResponseDTO>> devolviendo la lista de conductores con licencias pendientes de verificación.
      */
-    Response<List<DriverPendingResponseDTO>> getPendingLicenses();
+    Response<DriverPendingPageResponseDTO> getPendingLicenses(int skip, String orderBy);
     
     /**
      * Metodo utilizado para verificar la licencia de un conductor. Se realizan controles para lanzar las excepciones correspondientes.
@@ -41,4 +40,9 @@ public interface IDriverService {
      */
     Response<Void> verifyLicense(Long driverId, DriverLicenseVerifyRequestDTO dto);
 
+    /**
+     * Metodo utilizado para obtener el perfil del conductor autenticado. Se realizan controles para lanzar las excepciones correspondientes.
+     * @return Response<DriverResponseDTO> devolviendo el perfil del conductor autenticado
+     */
+    Response<DriverResponseDTO> getMyDriverProfile();
 }

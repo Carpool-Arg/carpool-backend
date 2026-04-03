@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.carpool.carpool.dto.driver.DriverRequestDTO;
+import com.carpool.carpool.dto.driver.DriverResponseDTO;
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.driver.IDriverService;
@@ -27,6 +28,20 @@ public class DriverController {
 
     
     private final IDriverService driverService;
+
+    @Operation(
+        summary =  "Obtener el perfil del conductor autenticado",
+        description = "Permite al conductor autenticado obtener su perfil"
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Perfil obtenido con éxito"),
+        @ApiResponse(responseCode = "404", description = "No se encontró el perfil"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
+    @GetMapping()
+    public ResponseEntity<Response<DriverResponseDTO>> getMyDriverProfile() {
+        return ResponseEntity.ok(driverService.getMyDriverProfile());
+    }
 
     @Operation(
         summary = "Registrar un nuevo conductor",

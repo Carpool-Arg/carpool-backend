@@ -9,6 +9,10 @@ import com.carpool.carpool.model.media.Media;
 import com.carpool.carpool.repository.licenseClass.LicenseClassRepository;
 import com.carpool.carpool.repository.media.MediaRepository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,8 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.carpool.carpool.dto.driver.DriverLicenseVerifyRequestDTO;
+import com.carpool.carpool.dto.driver.DriverPendingPageResponseDTO;
 import com.carpool.carpool.dto.driver.DriverPendingResponseDTO;
 import com.carpool.carpool.dto.driver.DriverRequestDTO;
+import com.carpool.carpool.dto.driver.DriverResponseDTO;
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
 import com.carpool.carpool.enums.licenseStatus.LicenseStatusEnum;
 import com.carpool.carpool.enums.media.CategoryMediaEnum;
@@ -45,8 +51,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import static com.carpool.carpool.security.utils.JwtUtils.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DriverImplementation implements IDriverService {
@@ -167,15 +176,16 @@ public class DriverImplementation implements IDriverService {
     }
 
     @Override
-    public Response<List<DriverPendingResponseDTO>> getPendingLicenses() {
-        List<Driver> pendingDrivers = driverRepository.findAllPendingLicenses(); 
+    public Response<DriverPendingPageResponseDTO> getPendingLicenses(int skip, String orderBy) {
 
-        if (pendingDrivers.isEmpty()) {
-            return ResponseUtils.buildOKResponse(
-                List.of("No hay carnets pendientes de verificación."), List.of());
-        }
+        log.info("Obteniendo conductores con licencias pendientes. Skip: {}, OrderBy: {}", skip, orderBy);
 
-        List<DriverPendingResponseDTO> response = pendingDrivers.stream().map(driver -> {
+        Page<Driver> page = driverRepository.findAllPendingLicenses(
+            getPageable(orderBy, skip)
+        );
+
+        List<DriverPendingResponseDTO> drivers = page.getContent().stream().map(driver -> {
+
             String frontUrl = mediaRepository
                     .findByUserIdAndCategory(driver.getUser().getId(), CategoryMediaEnum.LICENSE_FRONT)
                     .map(mediaService::generatePresignedUrlPublic)
@@ -187,9 +197,19 @@ public class DriverImplementation implements IDriverService {
                     .orElse(null);
 
             return driverMapper.convertDriverToDriverPendingResponseDTO(driver, frontUrl, backUrl);
+
         }).toList();
 
-        return ResponseUtils.buildOKResponse(List.of("Carnets pendientes obtenidos con éxito."), response);
+        String message = drivers.isEmpty()
+            ? "No hay carnets pendientes de verificación."
+            : "Carnets pendientes obtenidos con éxito.";
+
+        DriverPendingPageResponseDTO response = DriverPendingPageResponseDTO.builder()
+            .total(page.getTotalElements())
+            .drivers(drivers)
+            .build();
+
+        return ResponseUtils.buildOKResponse(List.of(message), response);
     }
 
     @Override
@@ -224,6 +244,39 @@ public class DriverImplementation implements IDriverService {
         return ResponseUtils.buildOKResponse(
             List.of(dto.getApproved() ? "Carnet aprobado con éxito." : "Carnet rechazado con éxito."),
                 null);
+    }
+
+
+    @Override
+    public Response<DriverResponseDTO> getMyDriverProfile() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        User user = userRepository.findByUsernameAndDeletedAtIsNull(username)
+            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+
+        Driver driver = driverRepository.findByUserId(user.getId())
+            .orElseThrow(() -> new ResourceNotFoundException("El usuario no tiene perfil de chofer."));
+
+        String frontUrl = mediaRepository
+            .findByUserIdAndCategory(user.getId(), CategoryMediaEnum.LICENSE_FRONT)
+            .map(mediaService::generatePresignedUrlPublic)
+            .orElse(null
+        );
+
+        String backUrl = mediaRepository
+            .findByUserIdAndCategory(user.getId(), CategoryMediaEnum.LICENSE_BACK)
+            .map(mediaService::generatePresignedUrlPublic)
+            .orElse(null
+        );
+
+        DriverResponseDTO response = driverMapper.convertDriverToDriverResponseDTO(
+            driver,
+            frontUrl,
+            backUrl
+        );
+
+        return ResponseUtils.buildOKResponse( List.of("Perfil de chofer obtenido con éxito."), response);
     }
 
     /**
@@ -298,5 +351,24 @@ public class DriverImplementation implements IDriverService {
      */
     private void normalizedDriverFields(Driver driver){
         driver.setAddressStreet(driver.getAddressStreet().toUpperCase().trim());
+    }
+
+    /**
+     * Metodo utilizado para obtener un objeto Pageable a partir de los parametros de ordenamiento y paginacion.
+     * @param type tipo de ordenamiento (RECENT, OLD)
+     * @param skip cantidad de registros a saltar para la paginacion
+     * @return Pageable objeto Pageable con la configuracion de paginacion y ordenamiento
+     */
+    private Pageable getPageable(String type, int skip) {
+        final int PAGE_SIZE = 10;
+        int page = skip / PAGE_SIZE;
+
+        Sort sort = switch (type) {
+            case "RECENT" -> Sort.by("id").descending();
+            case "OLD"    -> Sort.by("id").ascending();
+            default       -> Sort.by("id").descending();
+        };
+
+        return PageRequest.of(page, PAGE_SIZE, sort);
     }
 }

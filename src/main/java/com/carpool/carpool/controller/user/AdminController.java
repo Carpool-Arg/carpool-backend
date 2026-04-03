@@ -1,16 +1,15 @@
 package com.carpool.carpool.controller.user;
 
-import java.util.List;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.carpool.carpool.dto.driver.DriverLicenseVerifyRequestDTO;
-import com.carpool.carpool.dto.driver.DriverPendingResponseDTO;
+import com.carpool.carpool.dto.driver.DriverPendingPageResponseDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.driver.IDriverService;
 
@@ -31,14 +30,20 @@ public class AdminController {
 
     private final IDriverService driverService;
 
-    @Operation(summary = "Obtener choferes con carnet pendiente de verificación")
+    @Operation(
+        summary = "Obtener choferes con carnet pendiente de verificación",
+        description = "Permite obtener una lista paginada de choferes con licencias pendientes"
+    )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Listado de choferes pendientes obtenido con éxito"),
-            @ApiResponse(responseCode = "401", description = "No autorizado")
+        @ApiResponse(responseCode = "200", description = "Listado de choferes pendientes obtenido con éxito"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
     })
     @GetMapping("/drivers/pending")
-    public ResponseEntity<Response<List<DriverPendingResponseDTO>>> getPendingLicenses() {
-        return new ResponseEntity<>(driverService.getPendingLicenses(), HttpStatus.OK);
+    public ResponseEntity<Response<DriverPendingPageResponseDTO>> getPendingLicenses(
+        @RequestParam(required = false, defaultValue = "0") int skip,
+        @RequestParam(required = false, defaultValue = "RECENT") String orderBy
+    ) {
+        return ResponseEntity.ok(driverService.getPendingLicenses(skip, orderBy));
     }
 
     @Operation(summary = "Aprobar o rechazar el carnet de un chofer")
