@@ -218,64 +218,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
         @Param("newEnd") LocalDateTime newEnd,
         @Param("idTrip") Long idTrip
     );
-    
-    /**
-     * Verifica si el rango de tiempo para un nuevo viaje se solapa con uno existente, creado o en curso.
-     * Es decir que se encuentra dentro del rango de un viaje, e inclusive 30 minutos antes del inicio del mismo
-     * @param driverId			Id del conductor
-     * @param newStart			Fecha y hora de inicio del viaje
-     * @param newEnd			Fecha y hora de llegada del viaje
-     * @param excludeTripId		Viaje que se desea excluir. Este parametro permite obviar el viaje que se esta editando para evitar superposicion.
-     * @return
-     */
-    @Query(value = """
-            SELECT COUNT(t.id) > 0
-            FROM trip t
-            JOIN trip_stop ts ON t.id = ts.trip_id AND ts.deleted_at IS NULL
-            JOIN state_history sh ON t.id = sh.trip_id
-            JOIN state s ON s.id = sh.state_id
-            WHERE t.vehicle_id IN (SELECT v.id FROM vehicles v WHERE v.driver_id = :driverId)
-                AND t.id != :excludeTripId
-                AND ts.is_destination = true
-                AND sh.finish_datetime IS NULL
-                AND s.name IN ('CREATED', 'CLOSED', 'IN_PROGRESS')
-                AND :newStart < (ts.estimated_arrival_date_time + INTERVAL '30 minutes')
-                AND :newEnd > (t.start_date_time - INTERVAL '30 minutes')
-        """, nativeQuery = true)
-    boolean hasOverlappingScheduleUpdate(
-        @Param("driverId") Long driverId,
-        @Param("newStart") LocalDateTime newStart,
-        @Param("newEnd") LocalDateTime newEnd,
-        @Param("excludeTripId") Long excludeTripId
-    );
-
-    /**
-     * Verifica si en un instante de tiempo especifico para hacer un viaje, cae
-     * dentro de un viaje programado o en curso
-     * @param driverId
-     * @param timeToCheck
-     * @param idTrip
-     * @return
-     */
-    @Query(value = """
-    SELECT COUNT(t.id) > 0 
-    FROM trip t
-    JOIN trip_stop ts ON t.id = ts.trip_id AND ts.deleted_at IS NULL
-    JOIN state_history sh ON t.id = sh.trip_id
-    JOIN state s ON s.id = sh.state_id
-    WHERE t.vehicle_id IN (SELECT v.id FROM vehicles v WHERE v.driver_id = :driverId)
-        AND ts.is_destination = true
-        AND sh.finish_datetime IS NULL
-        AND s.name IN ('CREATED', 'IN_PROGRESS')
-        AND (:idTrip IS NULL OR t.id <> :idTrip) 
-        AND :timeToCheck BETWEEN (t.start_date_time - INTERVAL '30 minutes') 
-                            AND ts.estimated_arrival_date_time
-    """, nativeQuery = true)
-    boolean isTimeSlotOccupied(
-            @Param("driverId") Long driverId,
-            @Param("timeToCheck") LocalDateTime timeToCheck,
-            @Param("idTrip") Long idTrip
-    );
 
     /**
      * Verifica que el chofer tenga un viaje en progreso
