@@ -1,5 +1,6 @@
 package com.carpool.carpool.service.reservation;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -398,6 +399,71 @@ public class ReservationImplementation implements IReservationService {
                 .build();
 
         stateHistoryRepository.save(newHistory);
+    }
+
+    @Override
+    public Response<Void>  cancelReservationByPassenger(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada."));
+
+        StateHistory currentStateReservation= stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservationId)
+                .orElseThrow(() -> new ConflictException("Error al recuperar el estado actual de la reserva."));
+
+        // La cancelación de la reserva sólo podrá ser realizada por el usuario que la registró.
+        User user = this.getAuthenticatedActiveUser();
+
+        if (!user.getId().equals(reservation.getUser().getId())) {
+            throw new ConflictException("El usuario en sesión no tiene permisos para cancelar la reserva");
+        }
+
+        // La cancelación se podrá realizar, al menos 1 (una) hora antes del inicio del viaje.
+        Trip trip = tripRepository.findById(reservation.getTrip().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Viaje no encontrado."));
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime tripStart = trip.getStartTripDateTime();
+
+        long minutesUntilTrip = Duration.between(now, tripStart).toMinutes();
+
+        if (minutesUntilTrip < 60) {
+            throw new ConflictException("La reserva solo puede cancelarse con al menos 1 hora de anticipación.");
+        }
+
+        // Cancelar reserva
+        stateTransitionService.transition(
+                reservation,
+                ScopeEnum.RESERVATION,
+                List.of(
+                        ReservationStateEnum.PENDING.name(),
+                        ReservationStateEnum.ACCEPTED.name()),
+                ReservationStateEnum.CANCELLED.name());
+
+        // Si el viaje se encuentra cerrado por cupo completo, se tiene que abrir nuevamente para habilitar nuevas solicitudes de reservas.
+        trip.setCurrentAvailableSeats(trip.getCurrentAvailableSeats()-1);
+
+        StateHistory currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(trip.getId())
+                .orElseThrow(() -> new ConflictException("Error al recuperar el estado del viaje de la reserva."));
+
+        if (currentStateTrip.getState().getName().equals(TripStateEnum.CLOSED.name())) {
+            stateTransitionService.transition(
+                    trip,
+                    ScopeEnum.TRIP,
+                    List.of(TripStateEnum.CLOSED.name()),
+                    TripStateEnum.CREATED.name()
+            );
+        }
+
+        // El chofer será notificado si un pasajero que ya fue confirmado cancela la reserva, y el asiento del vehículo será liberado.
+        if (currentStateReservation.getState().getName().equals(ReservationStateEnum.ACCEPTED.name())){
+            log.info("Enviando notificacion a chofer");
+            this.notificationService.send(
+                    reservation.getTrip().getVehicle().getDriver().getUser(),
+                    NotificationEventEnum.RESERVATION_CANCELLED_BY_PASSENGER,
+                    reservation);
+        }
+
+        return ResponseUtils.buildOKResponse(List.of("Reserva cancelada correctamente"), null);
+
     }
 
     @Override

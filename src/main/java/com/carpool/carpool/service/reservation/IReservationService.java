@@ -75,6 +75,13 @@ public interface IReservationService {
     void startTripReservation(Long reservationId);
 
     /**
+     * Método para que el usuario en sesión realice la cancelación de una reserva
+     *
+     * @param reservationId id de la reserva del usuario para un viaje.
+     */
+    Response<Void> cancelReservationByPassenger(Long reservationId);
+
+    /**
      * Método para que cambia el estado de las reservas a CANCELLED que señala la
      * cancelación de las mismas (por motivos propios o cancelar un viaje)
      * 

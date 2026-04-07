@@ -1,9 +1,6 @@
 package com.carpool.carpool.controller.reservation;
 
-import com.carpool.carpool.dto.reservation.CreateReservationRequestDTO;
-import com.carpool.carpool.dto.reservation.DeleteTripPassengerRequestDTO;
-import com.carpool.carpool.dto.reservation.ReservationResponseDTO;
-import com.carpool.carpool.dto.reservation.ReservationUpdateRequestDTO;
+import com.carpool.carpool.dto.reservation.*;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.reservation.IReservationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -126,6 +123,19 @@ public class ReservationController {
     public ResponseEntity<Response<Void>> deleteTripPassenger(
             @Valid @RequestBody DeleteTripPassengerRequestDTO deleteTripPassengerRequestDTO) {
         return new ResponseEntity<>(reservationService.deleteTripPassenger(deleteTripPassengerRequestDTO),
+                HttpStatus.OK);
+    }
+
+    @Operation(summary = "Cancelar la reserva de un viaje viaje")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reserva cancelada correctamente"),
+            @ApiResponse(responseCode = "404", description = "Recurso no encontrado"),
+            @ApiResponse(responseCode = "409", description = "Ocurrio un error al cancelar la reserva.", content = @Content),
+    })
+    @PutMapping("/cancel")
+    public ResponseEntity<Response<Void>> cancelReservationByPassenger(
+            @Valid @RequestBody CancelReservationByPassengerRequestDTO cancelReservationByPassengerRequestDTO) {
+        return new ResponseEntity<>(reservationService.cancelReservationByPassenger(cancelReservationByPassengerRequestDTO.getReservationId()),
                 HttpStatus.OK);
     }
 }
