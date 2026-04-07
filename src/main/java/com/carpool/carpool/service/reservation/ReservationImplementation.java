@@ -74,7 +74,6 @@ public class ReservationImplementation implements IReservationService{
     private final StateTransitionService stateTransitionService;
     private final ModerationService moderationService;
 
-
     @Override
     public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, Boolean baggage, String nameState, int page, int size) {
         User driver = getAuthenticatedActiveUser();
@@ -109,6 +108,7 @@ public class ReservationImplementation implements IReservationService{
     }
 
     @Override
+    @Transactional
     public Response<Void> createReservation(CreateReservationRequestDTO createReservationRequestDTO) {
         State statePending = stateRepository.findByNameAndScope("PENDING", ScopeEnum.RESERVATION)
                 .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para crear la reserva."));
@@ -151,7 +151,7 @@ public class ReservationImplementation implements IReservationService{
         }
 
         // Validaciones de las ciudades
-        TripStop[] tripStops =  cityValidations(createReservationRequestDTO.getStartCity(), createReservationRequestDTO.getDestinationCity(), trip);
+        TripStop[] tripStops =  cityValidations(userAuth,createReservationRequestDTO.getStartCity(), createReservationRequestDTO.getDestinationCity(), trip);
 
         Reservation newReservation = reservationMapper.convertReservationRequestDTOToReservation(
                 createReservationRequestDTO,
@@ -186,6 +186,8 @@ public class ReservationImplementation implements IReservationService{
     	final Long idReservation = reservationUpdateRequestDTO.getIdReservation();
         final Reservation reservation = reservationRepository.getReferenceById(idReservation);
 
+        boolean hasOverlappingCancelled = false;
+
         if(reservation == null){
         	log.error("No se pudo encontrar la reserva en la base de datos con el id: {}", idReservation);
             throw new ResourceNotFoundException("La reserva no existe");
@@ -201,10 +203,17 @@ public class ReservationImplementation implements IReservationService{
         final Trip trip = reservation.getTrip();
 
         NotificationEventEnum notification = NotificationEventEnum.RESERVATION_REJECTED;
+
         if(!reservationUpdateRequestDTO.isReject()){
-        	log.info("Iniciando el proceso para aceptar la reserva");
-        	acceptReservation(trip, reservation);
-        	notification = NotificationEventEnum.RESERVATION_ACCEPTED;
+            log.info("Iniciando el proceso para aceptar la reserva");
+            hasOverlappingCancelled = acceptReservation(trip, reservation);
+
+            if(hasOverlappingCancelled){
+                notification = NotificationEventEnum.RESERVATION_ACCEPTED_WITH_OVERLAP;
+            } else {
+                notification = NotificationEventEnum.RESERVATION_ACCEPTED;
+            }
+            
         }else{
         	log.info("Iniciando el proceso para rechazar la reserva");
         	stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, ReservationStateEnum.PENDING.name(), ReservationStateEnum.REJECTED.name());
@@ -229,12 +238,21 @@ public class ReservationImplementation implements IReservationService{
      * @param trip				El viaje al que se le realizaron las reservas
      * @param reservation		Reserva realizada al viaje
      */
-    private void acceptReservation(Trip trip, Reservation reservation) {
-    	final int discountAvailableSeat = trip.getCurrentAvailableSeats() - 1;
+    private boolean acceptReservation(Trip trip, Reservation reservation) {
+    	
+        TripStop stopStartCity = reservation.getStartCity();
+        TripStop stopDestinationCity = reservation.getDestinationCity();
+
+        LocalDateTime newStart = stopStartCity.getEstimatedArrivalDateTime();
+        LocalDateTime newEnd   = stopDestinationCity.getEstimatedArrivalDateTime();
+
+        final int discountAvailableSeat = trip.getCurrentAvailableSeats() - 1;
+        
         if(discountAvailableSeat < 0){
         	log.error("El viaje ya alcanzo el cupo maximo. Asientos disponibles: [ {} ]", discountAvailableSeat);
             throw new ConflictException("Se alcanzó el cupo disponible, no se puede aceptar la reserva.");
         }
+        
         if(discountAvailableSeat == 0){
         	stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CREATED.name(), TripStateEnum.CLOSED.name());
 
@@ -246,6 +264,27 @@ public class ReservationImplementation implements IReservationService{
         stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, ReservationStateEnum.PENDING.name(), ReservationStateEnum.ACCEPTED.name());
         trip.setCurrentAvailableSeats(discountAvailableSeat);
         tripRepository.save(trip);
+
+        List<Reservation> overlappingPending = reservationRepository.findOverlappingPendingReservations(
+            reservation.getUser().getId(),
+            newStart,
+            newEnd,
+            reservation.getId()
+        );
+    
+        if(!overlappingPending.isEmpty()){
+            log.info("Se encontraron reservas en estado PENDING que se solapan con la reserva aceptada. Se procederá a cancelar por sistema dichas reservas.");
+        
+            for (Reservation r : overlappingPending) {
+                cancelBySystem(r.getId());
+            }
+        }
+
+        if(overlappingPending.size() > 0){
+            log.info("Se encontraron {} reservas en estado PENDING que se solapan con la reserva aceptada. Se procederá a cancelar por sistema dichas reservas.", overlappingPending.size());
+        }
+
+        return !overlappingPending.isEmpty();
     }
 
     @Override
@@ -483,7 +522,7 @@ public class ReservationImplementation implements IReservationService{
      * @return TripStop[] Arreglo con los TripStops correspondientes a las ciudades de origen y destino válidas.
      * @throws ConflictException si las ciudades son iguales, si no existen en tripStop o no respetan el orden.
      */
-    private TripStop[] cityValidations(Long startCity, Long destinationCity, Trip trip){
+    private TripStop[] cityValidations(User user,Long startCity, Long destinationCity, Trip trip){
         if (Objects.equals(startCity, destinationCity)){
             throw new ConflictException("La ciudad origen y destino no pueden ser iguales");
         }
@@ -498,6 +537,25 @@ public class ReservationImplementation implements IReservationService{
             throw new ConflictException("El orden de las ciudades seleccionadas no es válido para este viaje.");
         }
 
+        LocalDateTime newStart = stopStartCity.getEstimatedArrivalDateTime();
+        LocalDateTime newEnd   = stopDestinationCity.getEstimatedArrivalDateTime();
+
+        log.info("Validando que el usuario no tenga reservas en progreso o aceptadass para el horario que quiere reservar");
+        if (reservationRepository.hasOverlappingReservation(user.getId(), newStart, newEnd)) {
+            throw new ConflictException(
+                "Ya tenés una reserva activa que se superpone con el horario de este viaje."
+            );
+        }   
+        
+        log.info("Verificando si el usuario tiene el rol de chofer.");
+        if(user.hasRole("ROLE_DRIVER")){
+            log.info("Validando que el usuario no tenga viajes pendientes, cerrados o en progreso para la hora a la que quiere reservar");
+            if (tripRepository.hasOverlappingTripAsDriver(user.getDriver().getId(), newStart, newEnd)) {
+                throw new ConflictException(
+                "Tenés un viaje propio activo que se superpone con el horario de esta reserva."
+                );
+            }
+        }
         // Retornar un arreglo de TripStop con las ciudades de inicio y destino
         return new TripStop[] { stopStartCity, stopDestinationCity };
     }

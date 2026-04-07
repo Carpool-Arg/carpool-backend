@@ -64,6 +64,9 @@ public class EmailMessageUtils {
     public static final String SUBJECT_EMAIL_RESERVATION_ACCEPTED = "¡Tu solicitud de reserva ha sido aceptada!";
     public static final String MESSAGE_RESERVATION_ACCEPTED ="\uD83E\uDD73 ¡Buenas noticias! Tu reserva para el viaje <strong>{origin}</strong> → <strong>{destination}</strong> fue aceptada por <strong>{driverName}</strong>.<br><br>" +
             "Ya tenés tu lugar confirmado. ¡Gracias por elegir <strong>Carpool</strong> y buen viaje!";
+    public static final String MESSAGE_RESERVATION_ACCEPTED_WITH_OLVERLAP = "\uD83E\uDD73 ¡Buenas noticias! Tu reserva para el viaje <strong>{origin}</strong> → <strong>{destination}</strong> fue aceptada por <strong>{driverName}</strong>.<br>" +
+            "Ya tenés tu lugar confirmado. ¡Gracias por elegir <strong>Carpool</strong> y buen viaje! <br><br> " +
+            "Te informamos que, al momento de aceptar tu reserva, habia reservas pendientes para el mismo rango horario. Por lo tanto, fueron canceladas automáticamente.";
     public static final String MESSAGE_FOOTER_RESERVATION_ACCEPTED = "El equipo de Carpool";
 
     //RESERVATION REJECTED
