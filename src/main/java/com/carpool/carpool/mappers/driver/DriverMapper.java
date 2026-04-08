@@ -46,6 +46,8 @@ public class DriverMapper {
                 .fullName(driver.getUser().getName() + " " + driver.getUser().getLastname())
                 .rating(driver.getRating())
                 .licenseStatus(driver.getLicenseStatus())
+                .licenseExpirationDate(driver.getLicenseExpirationDate())
+                .addressStreetAndNumber(driver.getAddressStreet() + " " + driver.getAddressNumber())
                 .frontLicenseUrl(frontUrl)
                 .backLicenseUrl(backUrl)
                 .city(driver.getCity().getName())
