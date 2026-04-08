@@ -1,5 +1,6 @@
 package com.carpool.carpool.service.media;
 
+import com.carpool.carpool.dto.driver.LicenseUrlsResponse;
 import com.carpool.carpool.enums.media.CategoryMediaEnum;
 import com.carpool.carpool.model.media.Media;
 import com.carpool.carpool.model.user.User;
@@ -12,20 +13,22 @@ public interface IMediaService {
     * Metodo encargado de realizar una peticion al R2 para obtener la URL de un archivo asociado a un usuario.
     * @return URL de la imagen de perfil del usuario logeado en ese momento. 
     */
-    Response<String> getFileUser();
+    Response<String> getProfilePictureUrl();
+
+    Response<LicenseUrlsResponse> getLicensePhotoUrls();
 
     /**
      * Se encarga de subir un archivo al R2 y guardar su referencia en la base de datos.
      * @param file Archivo a subir del tipo {@link MultipartFile}
      * @return {@link Response} sin data.
      */
-    Response<Void> uploadAndSaveFileUser(MultipartFile file);
+    Response<Void> uploadMedia(MultipartFile frontFile, MultipartFile backFile, CategoryMediaEnum category);
 
     /**
      * Elimina el archivo de imagen de perfil del usuario autenticado y restaura la imagen por defecto.
      * @return {@link Response}
      */
-    Response<Void> deleteFileUser();
+    Response<Void> deleteMedia(CategoryMediaEnum category);
 
     /**
      * Obtiene la URL de la imagen de perfil por defecto de un usuario dado su ID.
