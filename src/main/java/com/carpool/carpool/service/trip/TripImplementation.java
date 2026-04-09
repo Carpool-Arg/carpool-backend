@@ -201,6 +201,11 @@ public class TripImplementation implements ITripService {
 
         Driver driver = getAuthenticatedDriver();
 
+        // Validar que el carnet no esté vencido
+        if (driver.getLicenseExpirationDate().isBefore(startDateTime.toLocalDate())) {
+            throw new ConflictException("Tu carnet de conducir se encontrará vencido para la fecha del viaje.");
+        }
+
         if (tripRepository.isTimeSlotOccupied(driver.getId(), startDateTime, idTrip)) {
             throw new ConflictException("Ese horario coincide con un viaje que ya tenés en curso.");
         }
