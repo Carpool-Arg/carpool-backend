@@ -116,7 +116,7 @@ public class ReservationImplementation implements IReservationService {
     }
 
     @Override
-    public Response<ReservationResponseDTO> getMyReservation(String nameState, LocalDate dateFrom, LocalDate dateTo, int skip, String orderBy) {
+    public Response<ReservationResponseDTO> getMyReservation(LocalDate dateFrom, LocalDate dateTo, int skip, String orderBy) {
         User user = getAuthenticatedActiveUser();
 
         if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
@@ -134,12 +134,11 @@ public class ReservationImplementation implements IReservationService {
         }
 
         log.info("Buscando reservas solicitadas para el usuario con el ID {}. Filtros: Fecha desde: {}. Fecha hasta: {}. Estado: {}. Skip: {}. Orden: {}",
-                user.getId(),fromDateTime, toDateTime, nameState,skip,orderBy
+                user.getId(),fromDateTime, toDateTime,skip,orderBy
         );
 
         Page<Reservation> page = reservationRepository.findMyReservationsWithFilters(
                 user.getId(),
-                nameState,
                 fromDateTime,
                 toDateTime,
                 getPageable(orderBy, skip)
@@ -160,14 +159,14 @@ public class ReservationImplementation implements IReservationService {
                                 .orElse(null)
                 ));
 
-        Map<Long, String> urlImagesUsers = page.getContent().stream()
+        Map<Long, String> urlImagesDrivers = page.getContent().stream()
                 .collect(Collectors.toMap(
-                        r -> r.getUser().getId(),
-                        r -> mediaService.getProfilePictureUrlByUserId(r.getUser().getId())
+                        r -> r.getTrip().getVehicle().getDriver().getUser().getId(),
+                        r -> mediaService.getProfilePictureUrlByUserId(r.getTrip().getVehicle().getDriver().getUser().getId())
                 ));
 
         List<ReservationDTO> list = ReservationMapper
-                .convertReservationToReservationDTO(page, urlImagesUsers, stateHistoryMap);
+                .convertMyReservationsToReservationDTO(page, urlImagesDrivers, stateHistoryMap);
 
         ReservationResponseDTO response = new ReservationResponseDTO();
 
