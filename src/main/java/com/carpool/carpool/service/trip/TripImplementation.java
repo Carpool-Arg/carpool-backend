@@ -103,6 +103,10 @@ public class TripImplementation implements ITripService {
             throw new ForbiddenException("Tu carnet de conducir se encuentra vencido. Por favor, actualizá tu información.");
         }
 
+        if (authenticatedDriver.getLicenseExpirationDate().isBefore(tripRequestDTO.getStartDateTime().toLocalDate())) {
+            throw new ForbiddenException("Tu carnet de conducir se va a encontrar vencido para la fecha de inicio del viaje. Por favor, actualizá tu información.");
+        }
+
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())
                 .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe."));
 
