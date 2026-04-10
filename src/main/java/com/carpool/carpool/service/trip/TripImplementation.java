@@ -1,6 +1,7 @@
 package com.carpool.carpool.service.trip;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
+import com.carpool.carpool.enums.licenseStatus.LicenseStatusEnum;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.enums.parameters.ParametersEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
@@ -92,6 +94,20 @@ public class TripImplementation implements ITripService {
     public Response<Void> createTrip(TripRequestDTO tripRequestDTO) {
 
         Driver authenticatedDriver = getAuthenticatedDriver();
+
+        // Validar que el carnet esté aprobado
+        if (authenticatedDriver.getLicenseStatus() != LicenseStatusEnum.APPROVED) {
+            throw new ForbiddenException("No podés publicar viajes hasta que tu carnet de conducir sea verificado y aprobado.");
+        }
+
+        // Validar que el carnet no esté vencido
+        if (authenticatedDriver.getLicenseExpirationDate().isBefore(LocalDate.now())) {
+            throw new ForbiddenException("Tu carnet de conducir se encuentra vencido. Por favor, actualizá tu información.");
+        }
+
+        if (authenticatedDriver.getLicenseExpirationDate().isBefore(tripRequestDTO.getStartDateTime().toLocalDate())) {
+            throw new ForbiddenException("Tu carnet de conducir se va a encontrar vencido para la fecha de inicio del viaje. Por favor, actualizá tu información.");
+        }
 
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())
                 .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe."));
@@ -199,6 +215,11 @@ public class TripImplementation implements ITripService {
     public Response<Void> checkTripAvailability(LocalDateTime startDateTime, Long idTrip, Long idOriginCity, Long idDestinationCity) {
 
         Driver driver = getAuthenticatedDriver();
+
+        // Validar que el carnet no esté vencido
+        if (driver.getLicenseExpirationDate().isBefore(startDateTime.toLocalDate())) {
+            throw new ConflictException("Tu carnet de conducir se encontrará vencido para la fecha del viaje.");
+        }
 
         City originCity = cityRepository.findById(idOriginCity)
                 .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de origen."));
