@@ -49,11 +49,12 @@ public class ReservationController {
     })
     @GetMapping("/me")
     public ResponseEntity<Response<ReservationResponseDTO>> getMyReservations(
+            @RequestParam(required = false, defaultValue = "PENDING") String state,
             @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate toDate,
             @RequestParam(required = false, defaultValue = "0") int skip,
             @RequestParam(required = false, defaultValue = "DATE_DESC") String orderBy) {
-        return new ResponseEntity<>(reservationService.getMyReservation(fromDate,  toDate, skip, orderBy), HttpStatus.OK);
+        return new ResponseEntity<>(reservationService.getMyReservation(state, fromDate,  toDate, skip, orderBy), HttpStatus.OK);
     }
 
     @Operation(summary = "Calcular total a pagar para una reserva")

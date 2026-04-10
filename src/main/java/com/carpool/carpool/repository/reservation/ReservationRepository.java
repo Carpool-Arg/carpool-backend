@@ -146,11 +146,12 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
     JOIN sh.state s
     WHERE r.user.id = :userId
       AND sh.finishDateTime IS NULL
-      AND s.name IN ('PENDING', 'ACCEPTED')
+      AND s.name = :state
       AND (CAST(:fromDate AS timestamp) IS NULL OR r.createdAt >= :fromDate)
       AND (CAST(:toDate AS timestamp) IS NULL OR r.createdAt <= :toDate)
 """)
     Page<Reservation> findMyReservationsWithFilters(
+            @Param ("state") String state,
             @Param("userId") Long userId,
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate,

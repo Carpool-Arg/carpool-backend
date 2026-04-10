@@ -116,7 +116,7 @@ public class ReservationImplementation implements IReservationService {
     }
 
     @Override
-    public Response<ReservationResponseDTO> getMyReservation(LocalDate dateFrom, LocalDate dateTo, int skip, String orderBy) {
+    public Response<ReservationResponseDTO> getMyReservation(String state, LocalDate dateFrom, LocalDate dateTo, int skip, String orderBy) {
         User user = getAuthenticatedActiveUser();
 
         if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
@@ -138,6 +138,7 @@ public class ReservationImplementation implements IReservationService {
         );
 
         Page<Reservation> page = reservationRepository.findMyReservationsWithFilters(
+                state,
                 user.getId(),
                 fromDateTime,
                 toDateTime,
@@ -438,18 +439,21 @@ public class ReservationImplementation implements IReservationService {
                 ReservationStateEnum.CANCELLED.name());
 
         // Si el viaje se encuentra cerrado por cupo completo, se tiene que abrir nuevamente para habilitar nuevas solicitudes de reservas.
-        trip.setCurrentAvailableSeats(trip.getCurrentAvailableSeats()-1);
 
-        StateHistory currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(trip.getId())
-                .orElseThrow(() -> new ConflictException("Error al recuperar el estado del viaje de la reserva."));
+        if(currentStateReservation.getState().getName().equals(ReservationStateEnum.ACCEPTED.name())){
+            trip.setCurrentAvailableSeats(trip.getCurrentAvailableSeats()+1);
 
-        if (currentStateTrip.getState().getName().equals(TripStateEnum.CLOSED.name())) {
-            stateTransitionService.transition(
-                    trip,
-                    ScopeEnum.TRIP,
-                    List.of(TripStateEnum.CLOSED.name()),
-                    TripStateEnum.CREATED.name()
-            );
+            StateHistory currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(trip.getId())
+                    .orElseThrow(() -> new ConflictException("Error al recuperar el estado del viaje de la reserva."));
+
+            if (currentStateTrip.getState().getName().equals(TripStateEnum.CLOSED.name())) {
+                stateTransitionService.transition(
+                        trip,
+                        ScopeEnum.TRIP,
+                        List.of(TripStateEnum.CLOSED.name()),
+                        TripStateEnum.CREATED.name()
+                );
+            }
         }
 
         // El chofer será notificado si un pasajero que ya fue confirmado cancela la reserva, y el asiento del vehículo será liberado.
@@ -462,7 +466,6 @@ public class ReservationImplementation implements IReservationService {
         }
 
         return ResponseUtils.buildOKResponse(List.of("Reserva cancelada correctamente"), null);
-
     }
 
     @Override

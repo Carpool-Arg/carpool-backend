@@ -45,14 +45,15 @@ public interface IReservationService {
 
     /**
      * Metodo encargado de obtener las reservas realizadas por el usuario.
-     * 
+     *
+     * @param state
      * @param skip
      * @param orderBy
      * @return Response<ReservationResponseDTO> devolviendo el mensaje con las
      *         reservas de un viaje o sin ellas
      * @throws UnauthorizedException
      */
-    Response<ReservationResponseDTO> getMyReservation(LocalDate dateFrom, LocalDate dateTo, int skip, String orderBy);
+    Response<ReservationResponseDTO> getMyReservation(String state, LocalDate dateFrom, LocalDate dateTo, int skip, String orderBy);
 
     /**
      * Metodo encargado para aceptar o rechazar una reserva.
