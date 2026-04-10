@@ -78,6 +78,9 @@ public class ReservationImplementation implements IReservationService {
     private final StateTransitionService stateTransitionService;
     private final ModerationService moderationService;
 
+    private static final String RESERVATION_NOT_FOUND_MESSAGE = "Reserva no encontrada.";
+    private static final String CREATED_AT = "createdAt";
+
     @Override
     public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity,
             Boolean baggage, String nameState, int page, int size) {
@@ -85,7 +88,7 @@ public class ReservationImplementation implements IReservationService {
 
         Specification<Reservation> filter = ReservationSpecification.byFilter(idTrip, idStartCity, idDestinationCity,
                 baggage, nameState, driver.getId());
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by(CREATED_AT).descending());
 
         Page<Reservation> reservations = reservationRepository.findAll(filter, pageable);
         if (reservations.getTotalElements() == 0) {
@@ -415,7 +418,7 @@ public class ReservationImplementation implements IReservationService {
     @Override
     public void startTripReservation(Long reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada."));
+                .orElseThrow(() -> new ResourceNotFoundException(RESERVATION_NOT_FOUND_MESSAGE));
 
         State inProgressState = stateRepository
                 .findByNameAndScope(ReservationStateEnum.IN_PROGRESS.name(), ScopeEnum.RESERVATION)
@@ -441,7 +444,7 @@ public class ReservationImplementation implements IReservationService {
     @Override
     public Response<Void>  cancelReservationByPassenger(Long reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada."));
+                .orElseThrow(() -> new ResourceNotFoundException(RESERVATION_NOT_FOUND_MESSAGE));
 
         StateHistory currentStateReservation= stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservationId)
                 .orElseThrow(() -> new ConflictException("Error al recuperar el estado actual de la reserva."));
@@ -538,7 +541,7 @@ public class ReservationImplementation implements IReservationService {
     public void cancelReservation(Long reservationId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada."));
+                .orElseThrow(() -> new ResourceNotFoundException(RESERVATION_NOT_FOUND_MESSAGE));
 
         stateTransitionService.transition(
                 reservation,
@@ -767,11 +770,11 @@ public class ReservationImplementation implements IReservationService {
         int page = skip / PAGE_SIZE;
 
         Sort sort = switch (type) {
-            case "DATE_ASC"  -> Sort.by("createdAt").ascending();
-            case "DATE_DESC" -> Sort.by("createdAt").descending();
+            case "DATE_ASC"  -> Sort.by(CREATED_AT).ascending();
+            case "DATE_DESC" -> Sort.by(CREATED_AT).descending();
             case "TRIP_DATE_ASC" -> Sort.by("trip.startDateTime").ascending();
             case "TRIP_DATE_DESC" -> Sort.by("trip.startDateTime").descending();
-            default -> Sort.by("createdAt").descending();
+            default -> Sort.by(CREATED_AT).descending();
         };
 
         return PageRequest.of(page, PAGE_SIZE, sort);
