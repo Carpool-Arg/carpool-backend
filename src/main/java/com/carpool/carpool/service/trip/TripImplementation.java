@@ -1,6 +1,7 @@
 package com.carpool.carpool.service.trip;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -19,7 +20,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
+import com.carpool.carpool.enums.licenseStatus.LicenseStatusEnum;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
+import com.carpool.carpool.enums.parameters.ParametersEnum;
 import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.enums.trip.BaggageEnum;
 import com.carpool.carpool.exception.BadRequestException;
@@ -38,6 +41,7 @@ import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.model.vehicle.Vehicle;
 import com.carpool.carpool.repository.city.CityRepository;
 import com.carpool.carpool.repository.driver.DriverRepository;
+import com.carpool.carpool.repository.parameters.ParametersRepository;
 import com.carpool.carpool.repository.reservation.ReservationRepository;
 import com.carpool.carpool.repository.state.StateRepository;
 import com.carpool.carpool.repository.stateHistory.StateHistoryRepository;
@@ -50,6 +54,7 @@ import com.carpool.carpool.service.parameters.IParametersService;
 import com.carpool.carpool.service.reservation.IReservationService;
 import com.carpool.carpool.service.state.StateTransitionService;
 import com.carpool.carpool.service.trip.tripStop.TripStopComponent;
+import com.carpool.carpool.utils.CoordsUtils;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
 import com.carpool.carpool.service.notification.INotificationService;
@@ -78,6 +83,9 @@ public class TripImplementation implements ITripService {
     private final INotificationService notificationService;
     private final StateTransitionService stateTransitionService;
     private final TripStopComponent tripStopComponent;
+    private final ParametersRepository parametersRepository;
+    
+
 
     private static final String STATE_ACCEPTED = "ACCEPTED";
 
@@ -86,6 +94,20 @@ public class TripImplementation implements ITripService {
     public Response<Void> createTrip(TripRequestDTO tripRequestDTO) {
 
         Driver authenticatedDriver = getAuthenticatedDriver();
+
+        // Validar que el carnet esté aprobado
+        if (authenticatedDriver.getLicenseStatus() != LicenseStatusEnum.APPROVED) {
+            throw new ForbiddenException("No podés publicar viajes hasta que tu carnet de conducir sea verificado y aprobado.");
+        }
+
+        // Validar que el carnet no esté vencido
+        if (authenticatedDriver.getLicenseExpirationDate().isBefore(LocalDate.now())) {
+            throw new ForbiddenException("Tu carnet de conducir se encuentra vencido. Por favor, actualizá tu información.");
+        }
+
+        if (authenticatedDriver.getLicenseExpirationDate().isBefore(tripRequestDTO.getStartDateTime().toLocalDate())) {
+            throw new ForbiddenException("Tu carnet de conducir se va a encontrar vencido para la fecha de inicio del viaje. Por favor, actualizá tu información.");
+        }
 
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())
                 .orElseThrow(() -> new ResourceNotFoundException("El vehiculo no existe."));
@@ -115,8 +137,8 @@ public class TripImplementation implements ITripService {
             throw new ConflictException("No podés publicar un nuevo viaje mientras tenés uno en curso.");
         }
         // Se verifica si el nuevo viaje interfiere con otros viajes del chofer.
-        if (tripRepository.hasOverlappingSchedule(authenticatedDriver.getId(), tripRequestDTO.getStartDateTime(),
-                newEnd)) {
+        if (tripRepository.hasOverlappingSchedule(authenticatedDriver.getUser().getId(),authenticatedDriver.getId(), tripRequestDTO.getStartDateTime(),
+                newEnd, null)) {
             throw new ConflictException(
                     "El horario para iniciar el viaje se superpone con otro viaje activo. Por favor, elige otro horario.");
         }
@@ -190,12 +212,37 @@ public class TripImplementation implements ITripService {
     }
 
     @Override
-    public Response<Void> checkTripAvailability(LocalDateTime startDateTime, Long idTrip) {
+    public Response<Void> checkTripAvailability(LocalDateTime startDateTime, Long idTrip, Long idOriginCity, Long idDestinationCity) {
 
         Driver driver = getAuthenticatedDriver();
 
-        if (tripRepository.isTimeSlotOccupied(driver.getId(), startDateTime, idTrip)) {
-            throw new ConflictException("Ese horario coincide con un viaje que ya tenés en curso.");
+        // Validar que el carnet no esté vencido
+        if (driver.getLicenseExpirationDate().isBefore(startDateTime.toLocalDate())) {
+            throw new ConflictException("Tu carnet de conducir se encontrará vencido para la fecha del viaje.");
+        }
+
+        City originCity = cityRepository.findById(idOriginCity)
+                .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de origen."));
+        City destinationCity = cityRepository.findById(idDestinationCity)
+                .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de destino."));
+
+        Double distance = CoordsUtils.calculateDistance(originCity.getLatitude(), originCity.getLongitude(), destinationCity.getLatitude(), destinationCity.getLongitude());
+        log.info("Distancia calculada entre {} y {}: {} km", originCity.getName(), destinationCity.getName(), distance);
+        Double averageSpeed = getAverageSpeed();
+        log.info("Velocidad promedio utilizada para el cálculo: {} km/h", averageSpeed);
+        Double estimatedHours = distance / averageSpeed;
+        log.info("Tiempo estimado de viaje: {} horas", estimatedHours);
+
+        LocalDateTime estimatedEndTime = startDateTime.plusMinutes((long) (estimatedHours * 60));
+
+        if (estimatedEndTime.isBefore(LocalDateTime.now())) {
+            log.warn("La fecha y hora de inicio estimada para este viaje ya ha pasado. startDateTime={}, estimatedEndTime={}", startDateTime, estimatedEndTime);
+            throw new ConflictException("La fecha y hora de inicio estimada para este viaje ya ha pasado. Por favor, elige una fecha y hora futuras.");
+        }
+
+        if (tripRepository.hasOverlappingSchedule(driver.getUser().getId(),driver.getId(), startDateTime, estimatedEndTime, idTrip)) {
+            log.warn("El viaje no está disponible. Se superpone con otro viaje activo del chofer. startDateTime={}, estimatedEndTime={}, driverId={}, idTrip={}", startDateTime, estimatedEndTime, driver.getId(), idTrip);
+            throw new ConflictException("El viaje esta superpuesto con otro de tus viajes o reservas.");
         }
 
         return ResponseUtils.buildOKResponse(List.of("El horario de inicio está disponible"), null);
@@ -569,7 +616,7 @@ public class TripImplementation implements ITripService {
 
 		// Se valida que la nueva fecha sea futura y tenga al menos 12 horas desde el momento actual
 		if (tripUpdateRequestDTO.getStartDateTime() != null) {
-	        validateAndApplyNewStartDateTime(tripUpdateRequestDTO.getStartDateTime(), trip, driver.getId(), now);
+	        validateAndApplyNewStartDateTime(tripUpdateRequestDTO.getStartDateTime(), trip, driver.getId(), now, driver.getUser().getId());
 		}
 
         if (tripUpdateRequestDTO.getTripStops() != null) {
@@ -778,7 +825,7 @@ public class TripImplementation implements ITripService {
      * @param driverId				El id del conductor
      * @param now					Fecha y hora actual
      */
-    private void validateAndApplyNewStartDateTime(LocalDateTime newStartDateTime, Trip trip, Long driverId, LocalDateTime now) {
+    private void validateAndApplyNewStartDateTime(LocalDateTime newStartDateTime, Trip trip, Long driverId, LocalDateTime now, Long userId) {
         Duration newDuration = Duration.between(now, newStartDateTime);
 
         if (newDuration.isNegative() || newDuration.toHours() < 12) {
@@ -791,7 +838,7 @@ public class TripImplementation implements ITripService {
                 .findFirst()
                 .orElseThrow(() -> new ConflictException("No se pudo calcular la fecha de llegada."));
 
-        if (tripRepository.hasOverlappingScheduleUpdate(driverId, newStartDateTime, newEnd, trip.getId())) {
+        if (tripRepository.hasOverlappingSchedule(userId,driverId, newStartDateTime, newEnd, trip.getId())) {
             throw new ConflictException(
                     "El horario para iniciar el viaje se superpone con otro viaje activo. Por favor, elige otro horario.");
         }
@@ -1170,5 +1217,15 @@ public class TripImplementation implements ITripService {
         int page = skip / PAGE_SIZE;
 
         return PageRequest.of(page, PAGE_SIZE);
-      }
+    }
+
+    /**
+     * 
+     * @return
+     */
+    private double getAverageSpeed() {
+        return parametersRepository.findByKeyName(ParametersEnum.AVERAGE_SPEED_KMH.getKey())
+                .map(config -> Double.parseDouble(config.getKeyValue()))
+                .orElse(80.0);
+    }
 }

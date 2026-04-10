@@ -5,15 +5,32 @@ import java.util.List;
 import java.util.Optional;
 
 import com.carpool.carpool.model.licenseClass.LicenseClass;
+import com.carpool.carpool.model.media.Media;
 import com.carpool.carpool.repository.licenseClass.LicenseClassRepository;
+import com.carpool.carpool.repository.media.MediaRepository;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.carpool.carpool.dto.driver.DriverLicenseVerifyRequestDTO;
+import com.carpool.carpool.dto.driver.DriverPendingPageResponseDTO;
+import com.carpool.carpool.dto.driver.DriverPendingResponseDTO;
 import com.carpool.carpool.dto.driver.DriverRequestDTO;
+import com.carpool.carpool.dto.driver.DriverResponseDTO;
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
+import com.carpool.carpool.enums.licenseStatus.LicenseStatusEnum;
+import com.carpool.carpool.enums.media.CategoryMediaEnum;
+import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.exception.ConflictException;
+import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.driver.DriverMapper;
 import com.carpool.carpool.model.driver.Driver;
 import com.carpool.carpool.model.province.city.City;
@@ -25,14 +42,20 @@ import com.carpool.carpool.repository.role.RoleRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.security.model.CustomUserDetails;
+import com.carpool.carpool.service.media.IMediaService;
+import com.carpool.carpool.service.notification.INotificationService;
+import com.carpool.carpool.service.r2.IR2StorageService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import static com.carpool.carpool.security.utils.JwtUtils.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DriverImplementation implements IDriverService {
@@ -43,7 +66,10 @@ public class DriverImplementation implements IDriverService {
     private final UserRepository userRepository;
     private final CityRepository cityRepository;
     private final LicenseClassRepository licenseClassRepository;
-
+    private final IR2StorageService r2StorageService;
+    private final MediaRepository mediaRepository;
+    private final IMediaService mediaService; 
+    private final INotificationService notificationService;
 
     //Para asignar roles a los choferes, se inyecta el RoleRepository
     private final RoleRepository roleRepository;
@@ -55,19 +81,9 @@ public class DriverImplementation implements IDriverService {
     public final static String AUTHORITIES_CLAIM = "authorities";
     private final static String USERNAME_CLAIM = "username";
 
-
-
-    /**
-     * Metodo utilizado para guardar un nuevo perfil de chofer.
-     * Este metodo verifica si el usuario tiene al menos 18 años de edad,
-     * verifica si ya existe un perfil de chofer para el usuario,
-     * @param driverRequestDTO
-     * @return Response<TokenResponseDTO> respuesta con el token de acceso y refresh token
-     * @throws ConflictException si el usuario no se encuentra o ya existe un perfil de cho
-     */
     @Override
     @Transactional
-    public Response<TokenResponseDTO> saveDriver(DriverRequestDTO driverRequestDTO) {
+    public Response<TokenResponseDTO> saveDriver(DriverRequestDTO driverRequestDTO, MultipartFile frontPhoto, MultipartFile backPhoto) {
 
         checkIfDriverProfileExists();
 
@@ -89,9 +105,22 @@ public class DriverImplementation implements IDriverService {
             driver.setRating(5.0); 
         }
 
+        //Se setea por defecto el valor de PEndding dentro de la aprobación. 
+        driver.setLicenseStatus(LicenseStatusEnum.PENDING);
+
         assignDriverRoleToUser(user);
         normalizedDriverFields(driver);
         driverRepository.save(driver);
+
+        /*
+            * Subimos las fotos del carnet a R2 Storage y guardamos la información de los archivos en la base de datos.
+            * Esto es necesario para que el sistema pueda acceder a las fotos del carnet cuando sea necesario, para la verificación de los carnets por parte de los administradores.
+         */
+        Media frontMedia = r2StorageService.uploadFile(frontPhoto, user, CategoryMediaEnum.LICENSE_FRONT);
+            mediaRepository.save(frontMedia);
+
+        Media backMedia = r2StorageService.uploadFile(backPhoto, user, CategoryMediaEnum.LICENSE_BACK);
+            mediaRepository.save(backMedia);
 
         /*
          * Llamos al metodo provadi para actualizar el SecurityContextHolder.
@@ -144,6 +173,110 @@ public class DriverImplementation implements IDriverService {
         TokenResponseDTO tokens = new TokenResponseDTO(accessToken, refreshToken);
 
         return ResponseUtils.buildOKResponse(List.of("El perfil de chofer ha sido creado correctamente."), tokens);
+    }
+
+    @Override
+    public Response<DriverPendingPageResponseDTO> getPendingLicenses(int skip, String orderBy) {
+
+        log.info("Obteniendo conductores con licencias pendientes. Skip: {}, OrderBy: {}", skip, orderBy);
+
+        Page<Driver> page = driverRepository.findAllPendingLicenses(
+            getPageable(orderBy, skip)
+        );
+
+        List<DriverPendingResponseDTO> drivers = page.getContent().stream().map(driver -> {
+
+            String frontUrl = mediaRepository
+                    .findByUserIdAndCategory(driver.getUser().getId(), CategoryMediaEnum.LICENSE_FRONT)
+                    .map(mediaService::generatePresignedUrlPublic)
+                    .orElse(null);
+
+            String backUrl = mediaRepository
+                    .findByUserIdAndCategory(driver.getUser().getId(), CategoryMediaEnum.LICENSE_BACK)
+                    .map(mediaService::generatePresignedUrlPublic)
+                    .orElse(null);
+
+            return driverMapper.convertDriverToDriverPendingResponseDTO(driver, frontUrl, backUrl);
+
+        }).toList();
+
+        String message = drivers.isEmpty()
+            ? "No hay carnets pendientes de verificación."
+            : "Carnets pendientes obtenidos con éxito.";
+
+        DriverPendingPageResponseDTO response = DriverPendingPageResponseDTO.builder()
+            .total(page.getTotalElements())
+            .drivers(drivers)
+            .build();
+
+        return ResponseUtils.buildOKResponse(List.of(message), response);
+    }
+
+    @Override
+    @Transactional
+    public Response<Void> verifyLicense(Long driverId, DriverLicenseVerifyRequestDTO dto) {
+        Driver driver = driverRepository.findById(driverId)
+                .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado."));
+
+        if (driver.getLicenseStatus() != LicenseStatusEnum.PENDING) {
+            throw new ConflictException("El carnet de este chofer ya fue procesado.");
+        }
+
+        if (dto.getApproved()) {
+            driver.setLicenseStatus(LicenseStatusEnum.APPROVED);
+            driver.setRejectionReason(null);
+            driverRepository.save(driver);
+            notificationService.send(
+                    driver.getUser(),
+                    NotificationEventEnum.LICENSE_APPROVED,
+                    driver);
+        } else {
+
+            driver.setLicenseStatus(LicenseStatusEnum.REJECTED);
+            driver.setRejectionReason(dto.getRejectionReason());
+            driverRepository.save(driver);
+            notificationService.send(
+                    driver.getUser(),
+                    NotificationEventEnum.LICENSE_REJECTED,
+                    driver);
+        }
+
+        return ResponseUtils.buildOKResponse(
+            List.of(dto.getApproved() ? "Carnet aprobado con éxito." : "Carnet rechazado con éxito."),
+                null);
+    }
+
+
+    @Override
+    public Response<DriverResponseDTO> getMyDriverProfile() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        User user = userRepository.findByUsernameAndDeletedAtIsNull(username)
+            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+
+        Driver driver = driverRepository.findByUserId(user.getId())
+            .orElseThrow(() -> new ResourceNotFoundException("El usuario no tiene perfil de chofer."));
+
+        String frontUrl = mediaRepository
+            .findByUserIdAndCategory(user.getId(), CategoryMediaEnum.LICENSE_FRONT)
+            .map(mediaService::generatePresignedUrlPublic)
+            .orElse(null
+        );
+
+        String backUrl = mediaRepository
+            .findByUserIdAndCategory(user.getId(), CategoryMediaEnum.LICENSE_BACK)
+            .map(mediaService::generatePresignedUrlPublic)
+            .orElse(null
+        );
+
+        DriverResponseDTO response = driverMapper.convertDriverToDriverResponseDTO(
+            driver,
+            frontUrl,
+            backUrl
+        );
+
+        return ResponseUtils.buildOKResponse( List.of("Perfil de chofer obtenido con éxito."), response);
     }
 
     /**
@@ -218,5 +351,24 @@ public class DriverImplementation implements IDriverService {
      */
     private void normalizedDriverFields(Driver driver){
         driver.setAddressStreet(driver.getAddressStreet().toUpperCase().trim());
+    }
+
+    /**
+     * Metodo utilizado para obtener un objeto Pageable a partir de los parametros de ordenamiento y paginacion.
+     * @param type tipo de ordenamiento (RECENT, OLD)
+     * @param skip cantidad de registros a saltar para la paginacion
+     * @return Pageable objeto Pageable con la configuracion de paginacion y ordenamiento
+     */
+    private Pageable getPageable(String type, int skip) {
+        final int PAGE_SIZE = 10;
+        int page = skip / PAGE_SIZE;
+
+        Sort sort = switch (type) {
+            case "RECENT" -> Sort.by("id").descending();
+            case "OLD"    -> Sort.by("id").ascending();
+            default       -> Sort.by("id").descending();
+        };
+
+        return PageRequest.of(page, PAGE_SIZE, sort);
     }
 }

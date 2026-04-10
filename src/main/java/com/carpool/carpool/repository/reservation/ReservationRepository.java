@@ -180,4 +180,43 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
      */
     boolean existsByUserIdAndTripId(Long userId, Long tripId);
 
+    @Query(value = """
+    SELECT COUNT(r.id) > 0
+    FROM reservation r
+    JOIN trip_stop ts_start ON r.start_city_id = ts_start.id
+    JOIN trip_stop ts_end   ON r.destination_city_id = ts_end.id
+    JOIN state_history sh   ON r.id = sh.reservation_id
+    JOIN state s            ON s.id = sh.state_id
+    WHERE r.user_id = :userId
+      AND sh.finish_datetime IS NULL
+      AND s.name IN ('ACCEPTED', 'IN_PROGRESS')
+      AND :newStart < (ts_end.estimated_arrival_date_time   + INTERVAL '30 minutes')
+      AND :newEnd   > (ts_start.estimated_arrival_date_time - INTERVAL '30 minutes')
+    """, nativeQuery = true)
+    boolean hasOverlappingReservation(
+        @Param("userId")   Long userId,
+        @Param("newStart") LocalDateTime newStart,
+        @Param("newEnd")   LocalDateTime newEnd
+    );
+
+   @Query(value = """
+        SELECT r.*
+        FROM reservation r
+        JOIN trip_stop ts_start ON r.start_city_id = ts_start.id
+        JOIN trip_stop ts_end   ON r.destination_city_id = ts_end.id
+        JOIN state_history sh   ON r.id = sh.reservation_id
+        JOIN state s ON s.id = sh.state_id
+        WHERE r.user_id = :userId
+            AND r.id <> :excludeReservationId
+            AND sh.finish_datetime IS NULL
+            AND s.name = 'PENDING'
+            AND :newStart < (ts_end.estimated_arrival_date_time   + INTERVAL '30 minutes')
+            AND :newEnd   > (ts_start.estimated_arrival_date_time - INTERVAL '30 minutes')
+    """, nativeQuery = true)
+    List<Reservation> findOverlappingPendingReservations(
+        @Param("userId") Long userId,
+        @Param("newStart") LocalDateTime newStart,
+        @Param("newEnd") LocalDateTime newEnd,
+        @Param("excludeReservationId") Long excludeReservationId);
+
 }

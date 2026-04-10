@@ -65,7 +65,7 @@ public interface ITripService {
      * @throws ConflictException si el chofer ya tiene un viaje planificado en la
      *                           fecha y hora dadas.
      */
-    Response<Void> checkTripAvailability(LocalDateTime startDateTime, Long idTrip);
+    Response<Void> checkTripAvailability(LocalDateTime startDateTime, Long idTrip, Long idOriginCity, Long idDestinationCity);
 
     /**
      * Metodo para obtener los viajes que creó un chofer que se encuentra en la

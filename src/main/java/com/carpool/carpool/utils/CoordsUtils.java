@@ -1,5 +1,9 @@
 package com.carpool.carpool.utils;
 
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
+
 public class CoordsUtils {
     private static final int EARTH_RADIUS = 6371; // Radio de la tierra en km
 
