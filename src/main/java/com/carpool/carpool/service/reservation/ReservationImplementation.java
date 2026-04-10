@@ -450,19 +450,29 @@ public class ReservationImplementation implements IReservationService {
         User user = this.getAuthenticatedActiveUser();
 
         if (!user.getId().equals(reservation.getUser().getId())) {
+            log.warn("Usuario sin permisos para cancelar la reserva. userId={}, reservationId={}",
+                    user.getId(), reservationId);
             throw new ConflictException("El usuario en sesión no tiene permisos para cancelar la reserva");
         }
 
         // La cancelación se podrá realizar, al menos 1 (una) hora antes del inicio del viaje.
         Trip trip = tripRepository.findById(reservation.getTrip().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Viaje no encontrado."));
+                .orElseThrow(() -> {
+                    log.error("Viaje asociado no encontrado. tripId={}", reservation.getTrip().getId());
+                    return new ResourceNotFoundException("Viaje no encontrado.");
+                });
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime tripStart = trip.getStartTripDateTime();
 
         long minutesUntilTrip = Duration.between(now, tripStart).toMinutes();
 
+        log.info("Validando tiempo para cancelación. now={}, tripStart={}, minutosRestantes={}",
+                now, tripStart, minutesUntilTrip);
+
         if (minutesUntilTrip < 60) {
+            log.warn("Cancelación rechazada por tiempo insuficiente. reservationId={}, minutosRestantes={}",
+                    reservationId, minutesUntilTrip);
             throw new ConflictException("La reserva solo puede cancelarse con al menos 1 hora de anticipación.");
         }
 
@@ -475,15 +485,29 @@ public class ReservationImplementation implements IReservationService {
                         ReservationStateEnum.ACCEPTED.name()),
                 ReservationStateEnum.CANCELLED.name());
 
+        log.info("Reserva cancelada correctamente. reservationId={}, previousState={}, newState=CANCELLED",
+                reservationId, currentStateReservation);
+
         // Si el viaje se encuentra cerrado por cupo completo, se tiene que abrir nuevamente para habilitar nuevas solicitudes de reservas.
 
         if(currentStateReservation.getState().getName().equals(ReservationStateEnum.ACCEPTED.name())){
+            log.info("Reserva estaba ACCEPTED, liberando asiento. tripId={}, asientosAntes={}",
+                    trip.getId(), trip.getCurrentAvailableSeats());
+
             trip.setCurrentAvailableSeats(trip.getCurrentAvailableSeats()+1);
 
             StateHistory currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(trip.getId())
-                    .orElseThrow(() -> new ConflictException("Error al recuperar el estado del viaje de la reserva."));
+                    .orElseThrow(() -> {
+                        log.error("No se pudo obtener el estado actual del viaje. tripId={}", trip.getId());
+                        return new ConflictException("Error al recuperar el estado del viaje de la reserva.");
+                    });
+
+            log.info("Estado actual del viaje. tripId={}, state={}",
+                    trip.getId(), currentStateTrip.getState().getName());
 
             if (currentStateTrip.getState().getName().equals(TripStateEnum.CLOSED.name())) {
+                log.info("Reabriendo viaje (CLOSED -> CREATED). tripId={}", trip.getId());
+
                 stateTransitionService.transition(
                         trip,
                         ScopeEnum.TRIP,
@@ -491,16 +515,21 @@ public class ReservationImplementation implements IReservationService {
                         TripStateEnum.CREATED.name()
                 );
             }
+
+            log.info("Asiento liberado correctamente. tripId={}, asientosAhora={}",
+                    trip.getId(), trip.getCurrentAvailableSeats());
         }
 
         // El chofer será notificado si un pasajero que ya fue confirmado cancela la reserva, y el asiento del vehículo será liberado.
         if (currentStateReservation.getState().getName().equals(ReservationStateEnum.ACCEPTED.name())){
-            log.info("Enviando notificacion a chofer");
+            log.info("Enviando notificación al chofer por cancelación. reservationId={}", reservationId);
             this.notificationService.send(
                     reservation.getTrip().getVehicle().getDriver().getUser(),
                     NotificationEventEnum.RESERVATION_CANCELLED_BY_PASSENGER,
                     reservation);
         }
+
+        log.info("Finalizó cancelación de reserva por pasajero. reservationId={}", reservationId);
 
         return ResponseUtils.buildOKResponse(List.of("Reserva cancelada correctamente"), null);
     }
