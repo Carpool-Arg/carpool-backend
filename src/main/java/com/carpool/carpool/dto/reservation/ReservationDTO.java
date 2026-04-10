@@ -19,4 +19,5 @@ public class ReservationDTO {
     private Double ratingUser;
     private String urlImage;
     private String state;
+    private LocalDateTime tripStartDatetime;
 }

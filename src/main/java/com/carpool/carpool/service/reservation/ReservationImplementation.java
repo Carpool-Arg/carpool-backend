@@ -17,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.carpool.carpool.dto.reservation.CreateReservationRequestDTO;
+import com.carpool.carpool.dto.reservation.DeleteTripPassengerRequestDTO;
 import com.carpool.carpool.dto.reservation.ReservationDTO;
 import com.carpool.carpool.dto.reservation.ReservationResponseDTO;
 import com.carpool.carpool.dto.reservation.ReservationUpdateRequestDTO;
@@ -26,6 +27,7 @@ import com.carpool.carpool.enums.state.ScopeEnum;
 import com.carpool.carpool.enums.trip.TripStateEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
+import com.carpool.carpool.exception.UnauthorizedException;
 import com.carpool.carpool.mappers.reservation.ReservationMapper;
 import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.reservation.Reservation;
@@ -45,10 +47,12 @@ import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.notification.INotificationService;
+import com.carpool.carpool.service.review.ModerationService;
 import com.carpool.carpool.service.state.StateTransitionService;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.carpool.carpool.utils.TripCostUtils;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -68,7 +72,7 @@ public class ReservationImplementation implements IReservationService{
     private final IMediaService mediaService;
     private final CityRepository cityRepository;
     private final StateTransitionService stateTransitionService;
-
+    private final ModerationService moderationService;
 
     @Override
     public Response<ReservationResponseDTO> getReservation(Long idTrip, Long idStartCity, Long idDestinationCity, Boolean baggage, String nameState, int page, int size) {
@@ -104,6 +108,7 @@ public class ReservationImplementation implements IReservationService{
     }
 
     @Override
+    @Transactional
     public Response<Void> createReservation(CreateReservationRequestDTO createReservationRequestDTO) {
         State statePending = stateRepository.findByNameAndScope("PENDING", ScopeEnum.RESERVATION)
                 .orElseThrow(()->new ResourceNotFoundException("No se encontro el estado para crear la reserva."));
@@ -125,6 +130,7 @@ public class ReservationImplementation implements IReservationService{
     
         if (existingReservation.isPresent()) {
             // Obtenemos el estado actual de esa reserva existente
+            
             StateHistory currentSh = stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(existingReservation.get().getId())
                     .orElseThrow(() -> new ConflictException("Error al recuperar el estado de la reserva existente."));
 
@@ -145,7 +151,7 @@ public class ReservationImplementation implements IReservationService{
         }
 
         // Validaciones de las ciudades
-        TripStop[] tripStops =  cityValidations(createReservationRequestDTO.getStartCity(), createReservationRequestDTO.getDestinationCity(), trip);
+        TripStop[] tripStops =  cityValidations(userAuth,createReservationRequestDTO.getStartCity(), createReservationRequestDTO.getDestinationCity(), trip);
 
         Reservation newReservation = reservationMapper.convertReservationRequestDTOToReservation(
                 createReservationRequestDTO,
@@ -177,8 +183,10 @@ public class ReservationImplementation implements IReservationService{
     @Override
     public Response<Void> updateStateReservation(ReservationUpdateRequestDTO reservationUpdateRequestDTO) {
     	log.info("Iniciando actualizacion de estado de reserva");
-    	final var idReservation = reservationUpdateRequestDTO.getIdReservation();
+    	final Long idReservation = reservationUpdateRequestDTO.getIdReservation();
         final Reservation reservation = reservationRepository.getReferenceById(idReservation);
+
+        boolean hasOverlappingCancelled = false;
 
         if(reservation == null){
         	log.error("No se pudo encontrar la reserva en la base de datos con el id: {}", idReservation);
@@ -186,7 +194,7 @@ public class ReservationImplementation implements IReservationService{
         }
 
         final StateHistory lastestStateReservation = stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservation.getId()).orElseThrow(() -> new ConflictException("La reserva no tiene un estado actual."));
-        final var currentStateReservation = lastestStateReservation.getState();
+        final State currentStateReservation = lastestStateReservation.getState();
         if(currentStateReservation.isFinish()){
         	log.error("La reserva se encuentra en un estado final: {}", currentStateReservation.getName());
             throw new ConflictException("No se puede realizar acciones a la reserva ya que se encuentra en un estado final");
@@ -195,10 +203,17 @@ public class ReservationImplementation implements IReservationService{
         final Trip trip = reservation.getTrip();
 
         NotificationEventEnum notification = NotificationEventEnum.RESERVATION_REJECTED;
+
         if(!reservationUpdateRequestDTO.isReject()){
-        	log.info("Iniciando el proceso para aceptar la reserva");
-        	acceptReservation(trip, reservation);
-        	notification = NotificationEventEnum.RESERVATION_ACCEPTED;
+            log.info("Iniciando el proceso para aceptar la reserva");
+            hasOverlappingCancelled = acceptReservation(trip, reservation);
+
+            if(hasOverlappingCancelled){
+                notification = NotificationEventEnum.RESERVATION_ACCEPTED_WITH_OVERLAP;
+            } else {
+                notification = NotificationEventEnum.RESERVATION_ACCEPTED;
+            }
+            
         }else{
         	log.info("Iniciando el proceso para rechazar la reserva");
         	stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, ReservationStateEnum.PENDING.name(), ReservationStateEnum.REJECTED.name());
@@ -223,12 +238,21 @@ public class ReservationImplementation implements IReservationService{
      * @param trip				El viaje al que se le realizaron las reservas
      * @param reservation		Reserva realizada al viaje
      */
-    private void acceptReservation(Trip trip, Reservation reservation) {
-    	final int discountAvailableSeat = trip.getCurrentAvailableSeats() - 1;
+    private boolean acceptReservation(Trip trip, Reservation reservation) {
+    	
+        TripStop stopStartCity = reservation.getStartCity();
+        TripStop stopDestinationCity = reservation.getDestinationCity();
+
+        LocalDateTime newStart = stopStartCity.getEstimatedArrivalDateTime();
+        LocalDateTime newEnd   = stopDestinationCity.getEstimatedArrivalDateTime();
+
+        final int discountAvailableSeat = trip.getCurrentAvailableSeats() - 1;
+        
         if(discountAvailableSeat < 0){
         	log.error("El viaje ya alcanzo el cupo maximo. Asientos disponibles: [ {} ]", discountAvailableSeat);
             throw new ConflictException("Se alcanzó el cupo disponible, no se puede aceptar la reserva.");
         }
+        
         if(discountAvailableSeat == 0){
         	stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CREATED.name(), TripStateEnum.CLOSED.name());
 
@@ -240,6 +264,27 @@ public class ReservationImplementation implements IReservationService{
         stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, ReservationStateEnum.PENDING.name(), ReservationStateEnum.ACCEPTED.name());
         trip.setCurrentAvailableSeats(discountAvailableSeat);
         tripRepository.save(trip);
+
+        List<Reservation> overlappingPending = reservationRepository.findOverlappingPendingReservations(
+            reservation.getUser().getId(),
+            newStart,
+            newEnd,
+            reservation.getId()
+        );
+    
+        if(!overlappingPending.isEmpty()){
+            log.info("Se encontraron reservas en estado PENDING que se solapan con la reserva aceptada. Se procederá a cancelar por sistema dichas reservas.");
+        
+            for (Reservation r : overlappingPending) {
+                cancelBySystem(r.getId());
+            }
+        }
+
+        if(overlappingPending.size() > 0){
+            log.info("Se encontraron {} reservas en estado PENDING que se solapan con la reserva aceptada. Se procederá a cancelar por sistema dichas reservas.", overlappingPending.size());
+        }
+
+        return !overlappingPending.isEmpty();
     }
 
     @Override
@@ -350,6 +395,87 @@ public class ReservationImplementation implements IReservationService{
         stateHistoryRepository.save(newHistory);
     }
 
+    @Override
+    @Transactional
+    public Response<Void> deleteTripPassenger(DeleteTripPassengerRequestDTO request){
+        log.info("Ejecutando eliminacion de un pasajero de un viaje");
+
+        log.info("Buscando la reserva del pasajero");
+        Reservation reservation = reservationRepository.findById(request.getReservationId())
+        .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada con ID: " + request.getReservationId()));
+        
+        Trip trip = reservation.getTrip();
+        StateHistory currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(trip.getId())
+        .orElseThrow(() -> new ConflictException("Error al recuperar el estado del viaje de la reserva."));
+        
+        deleteTripPassengerValidations(reservation, trip, currentStateTrip);
+
+        log.info("Liberando asiento");
+        trip.setCurrentAvailableSeats(trip.getCurrentAvailableSeats()+1);
+
+        if(currentStateTrip.getState().getName().equals("CLOSED")){
+            log.info("Cambiando el estado del viaje");
+            stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CLOSED.name(), TripStateEnum.CREATED.name());
+        }
+        
+        log.info("Cambiando el estado de la reserva");
+        stateTransitionService.transition(reservation, ScopeEnum.RESERVATION, ReservationStateEnum.ACCEPTED.name(), ReservationStateEnum.CANCELLED.name());
+
+        if(request.getReason() != null && !request.getReason().isEmpty()){
+            if (moderationService.isToxic(request.getReason())) {
+                log.warn("Comentario bloqueado por contenido ofensivo (IA)");
+                throw new ConflictException("Tu comentario ha sido detectado como ofensivo. Por favor, mantén el respeto.");
+            }
+            reservation.setCancellationReason(request.getReason());
+        }
+
+        log.info("Guardando la reserva en la base de datos");
+        reservationRepository.save(reservation);
+        
+        log.info("Enviando notificacion a pasajero");
+        this.notificationService.send(
+                reservation.getUser(),
+                NotificationEventEnum.PASSENGER_DELETED_FROM_TRIP,
+                reservation
+        );
+
+        return ResponseUtils.buildOKResponse(List.of("Pasajero eliminado correctamente"), null);
+    }
+
+    private void deleteTripPassengerValidations(Reservation reservation, Trip trip, StateHistory currentStateTrip){
+        log.info("Validando usuario de eliminacion de pasajero");
+
+        User user = getAuthenticatedActiveUser();
+        if(trip.getVehicle().getDriver().getUser().getId() != user.getId()){
+            throw new UnauthorizedException("Solamente el chofer que publicó el viaje puede eliminar pasajeros del mismo");
+        }
+
+        log.info("Validando estado del viaje");
+        if(!currentStateTrip.getState().getName().equals("CREATED") && !currentStateTrip.getState().getName().equals("CLOSED")){
+            throw new ConflictException("No es posible eliminar al pasajero del viaje por el estado del mismo.");
+        }
+        
+        log.info("Validando horario de la eliminacion de pasajero del viaje");
+        LocalDateTime startTrip = reservation.getTrip().getStartTripDateTime();
+        LocalDateTime nowPlusOneHour = LocalDateTime.now().plusHours(1);
+
+        if (startTrip.isBefore(nowPlusOneHour)) {
+            throw new ConflictException("Esta acción debe realizarse con al menos una hora de antelación al inicio del viaje.");
+        }
+
+        log.info("Validando el estado de la reserva");
+        StateHistory currentSh = stateHistoryRepository.findByReservationIdAndFinishDateTimeIsNull(reservation.getId())
+            .orElseThrow(() -> new ConflictException("Error al recuperar el estado de la reserva existente."));
+
+        String currentState = currentSh.getState().getName();
+
+        if (!currentState.equals("ACCEPTED")){
+            throw new ConflictException("No es posible dar de baja al pasajero del viaje por el estado de su reserva.");
+        }
+
+
+    }   
+
     /**
      * Validaciones relacionadas al viaje. Comprobamos lo siguiente:
      * - Que el viaje NO esté lleno
@@ -367,7 +493,6 @@ public class ReservationImplementation implements IReservationService{
         State currentState = null;
         // 2. obtener el estado actual (sin fecha fin)
         Optional<StateHistory> currentStateOptional = stateHistoryRepository.findByTripAndFinishDateTimeIsNullAndReservationIdIsNull(trip);
-
         if(!currentStateOptional.isPresent()){
             //3. Si no se encuentra un estado actual, obtener el ultimo estado con fecha fin
             StateHistory stateHistory = currentStateOptional
@@ -379,7 +504,6 @@ public class ReservationImplementation implements IReservationService{
         } else {
             currentState = currentStateOptional.get().getState();
         }
-
         // 4. validar estados
         if (!currentState.getName().equals("CREATED")){
             throw new ConflictException("No es posible reservar el viaje, debido a su estado actual.");
@@ -398,21 +522,40 @@ public class ReservationImplementation implements IReservationService{
      * @return TripStop[] Arreglo con los TripStops correspondientes a las ciudades de origen y destino válidas.
      * @throws ConflictException si las ciudades son iguales, si no existen en tripStop o no respetan el orden.
      */
-    private TripStop[] cityValidations(Long startCity, Long destinationCity, Trip trip){
+    private TripStop[] cityValidations(User user,Long startCity, Long destinationCity, Trip trip){
         if (Objects.equals(startCity, destinationCity)){
             throw new ConflictException("La ciudad origen y destino no pueden ser iguales");
         }
 
-        TripStop stopStartCity = tripStopRepository.findByTripIdAndCityId(trip.getId(), startCity)
+        TripStop stopStartCity = tripStopRepository.findByTripIdAndCityIdAndDeletedAtIsNull(trip.getId(), startCity)
                 .orElseThrow(()->new ConflictException("La ciudad origen ingresada no pertenece al viaje"));
 
-        TripStop stopDestinationCity =  tripStopRepository.findByTripIdAndCityId(trip.getId(), destinationCity)
+        TripStop stopDestinationCity =  tripStopRepository.findByTripIdAndCityIdAndDeletedAtIsNull(trip.getId(), destinationCity)
                 .orElseThrow(()->new ConflictException("La ciudad destino ingresada no pertenece al viaje"));
 
         if (stopStartCity.getStopOrder() > stopDestinationCity.getStopOrder()){
             throw new ConflictException("El orden de las ciudades seleccionadas no es válido para este viaje.");
         }
 
+        LocalDateTime newStart = stopStartCity.getEstimatedArrivalDateTime();
+        LocalDateTime newEnd   = stopDestinationCity.getEstimatedArrivalDateTime();
+
+        log.info("Validando que el usuario no tenga reservas en progreso o aceptadass para el horario que quiere reservar");
+        if (reservationRepository.hasOverlappingReservation(user.getId(), newStart, newEnd)) {
+            throw new ConflictException(
+                "Ya tenés una reserva activa que se superpone con el horario de este viaje."
+            );
+        }   
+        
+        log.info("Verificando si el usuario tiene el rol de chofer.");
+        if(user.hasRole("ROLE_DRIVER")){
+            log.info("Validando que el usuario no tenga viajes pendientes, cerrados o en progreso para la hora a la que quiere reservar");
+            if (tripRepository.hasOverlappingTripAsDriver(user.getDriver().getId(), newStart, newEnd)) {
+                throw new ConflictException(
+                "Tenés un viaje propio activo que se superpone con el horario de esta reserva."
+                );
+            }
+        }
         // Retornar un arreglo de TripStop con las ciudades de inicio y destino
         return new TripStop[] { stopStartCity, stopDestinationCity };
     }
