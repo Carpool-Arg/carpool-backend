@@ -3,3 +3,4 @@
 --changeset RoberSalera:crear_rol_usuario_por_defecto_01
 INSERT INTO public."role" (id, "name") VALUES(1, 'ROLE_USER');
 INSERT INTO public."role" (id, "name") VALUES(2, 'ROLE_DRIVER');
+INSERT INTO public."role" (id, "name") VALUES(3, 'ROLE_ADMIN');
