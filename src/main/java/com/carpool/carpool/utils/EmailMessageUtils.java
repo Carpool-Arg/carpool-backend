@@ -168,4 +168,10 @@ public class EmailMessageUtils {
             "Esto se debe a que el viaje ha sido **cerrado** para nuevas admisiones al estar próximo a su hora de salida.<br>" +
             "¡Te invitamos a buscar otros viajes disponibles en la plataforma! \uD83D\uDE4C";
     public static final String MESSAGE_FOOTER_RESERVATION_CANCELLED_SYSTEM = "El equipo de Carpool";
+
+    public static final String SUBJECT_RESERVATION_CANCELLED_BY_PASSENGER = "Reserva Cancelada por el Pasajero - Carpool";
+    public static final String MESSAGE_RESERVATION_CANCELLED_BY_PASSENGER =
+            "El pasajero {passenger} ha cancelado su reserva para el viaje desde <strong>{origin}</strong> con destino a <strong>{destination}</strong>.";
+    public static final String MESSAGE_FOOTER_RESERVATION_CANCELLED_BY_PASSENGER =
+            "El asiento ha quedado disponible nuevamente para otros pasajeros. Si necesitás ayuda, no dudes en contactarnos.";
 }

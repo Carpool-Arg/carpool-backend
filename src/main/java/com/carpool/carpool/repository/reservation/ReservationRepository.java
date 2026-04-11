@@ -1,6 +1,8 @@
 package com.carpool.carpool.repository.reservation;
 
 import com.carpool.carpool.model.reservation.Reservation;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -135,6 +137,25 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
     """)
     Optional<Reservation> findExpiredReservationByUserId(
             @Param("userId") Long userId
+    );
+
+    @Query("""
+    SELECT r
+    FROM Reservation r
+    JOIN StateHistory sh ON sh.reservation.id = r.id
+    JOIN sh.state s
+    WHERE r.user.id = :userId
+      AND sh.finishDateTime IS NULL
+      AND s.name = :state
+      AND (CAST(:fromDate AS timestamp) IS NULL OR r.createdAt >= :fromDate)
+      AND (CAST(:toDate AS timestamp) IS NULL OR r.createdAt <= :toDate)
+""")
+    Page<Reservation> findMyReservationsWithFilters(
+            @Param ("state") String state,
+            @Param("userId") Long userId,
+            @Param("fromDate") LocalDateTime fromDate,
+            @Param("toDate") LocalDateTime toDate,
+            Pageable pageable
     );
 
     @Query("""

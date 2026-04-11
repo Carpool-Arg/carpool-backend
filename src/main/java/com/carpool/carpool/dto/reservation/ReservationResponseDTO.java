@@ -8,5 +8,6 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 public class ReservationResponseDTO {
+    private long total;
     private List<ReservationDTO> reservation;
 }
