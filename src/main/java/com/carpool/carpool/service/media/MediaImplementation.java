@@ -207,28 +207,24 @@ public class MediaImplementation implements IMediaService{
             throw new RuntimeException("Error al eliminar el archivo: " + e.getMessage());
         }
     }
-    
+
     @Override
-    public String getProfilePictureUrlByUserId(Long idUser) { 
-    
+    public String getProfilePictureUrlByUserId(Long idUser) {
+
         if (idUser == null) {
             LOGGER.warn("El ID de usuario proporcionado es nulo.");
             return null;
         }
 
         Optional<Media> mediaOptional = mediaRepository.findByUserIdAndCategory(idUser, CategoryMediaEnum.PROFILE);
-        
+
         if (mediaOptional.isEmpty()) {
             LOGGER.warn("No se encontró foto de perfil personalizada para el usuario {}. Usando URL por defecto.", idUser);
-            return null; 
-        }
-        
-        Media media = mediaOptional.get();
-
-       if (FILENAME_DEFAULT_PHOTO.equals(media.getObjectKey())) {
             return null;
         }
- 
+
+        Media media = mediaOptional.get();
+
         try {
             return generatePresignedUrl(media);
         } catch (Exception e) {

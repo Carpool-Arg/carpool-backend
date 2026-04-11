@@ -164,9 +164,13 @@ public class ReservationImplementation implements IReservationService {
                 ));
 
         Map<Long, String> urlImagesDrivers = page.getContent().stream()
+                .map(r -> r.getTrip().getVehicle().getDriver().getUser().getId())
+                .distinct()
                 .collect(Collectors.toMap(
-                        r -> r.getTrip().getVehicle().getDriver().getUser().getId(),
-                        r -> mediaService.getProfilePictureUrlByUserId(r.getTrip().getVehicle().getDriver().getUser().getId())
+                        id -> id,
+                        id -> Optional.ofNullable(
+                                mediaService.getProfilePictureUrlByUserId(id)
+                        ).orElse("")
                 ));
 
         List<ReservationDTO> list = ReservationMapper
