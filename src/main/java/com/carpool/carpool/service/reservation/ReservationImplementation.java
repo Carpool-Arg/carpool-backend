@@ -445,6 +445,7 @@ public class ReservationImplementation implements IReservationService {
         stateHistoryRepository.save(newHistory);
     }
 
+    @Transactional
     @Override
     public Response<Void>  cancelReservationByPassenger(Long reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
