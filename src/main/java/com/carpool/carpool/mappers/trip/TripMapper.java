@@ -103,16 +103,16 @@ public class TripMapper {
             .build();
     }
     
-    public TripHistoryUserDTO convertTripToHistoryDTO(Trip trip, Reservation reservation, StateHistory stateHistory) {
+    public TripHistoryUserDTO convertTripToHistoryDTO(Reservation reservation) {
 
+        Trip trip = reservation.getTrip();
         Driver driver = trip.getVehicle().getDriver();
         User user = driver.getUser();
-        VehicleResponseTripDTO vehicleEntity =  mapVehicleToVehicleResponseDTO(trip.getVehicle());
-        Long userId = reservation.getUser().getId();
-        
+        VehicleResponseTripDTO vehicleEntity = mapVehicleToVehicleResponseDTO(trip.getVehicle());
         boolean tripReviewed = trip.getReviews()
             .stream()
-            .anyMatch(review -> review.getReviewerUser().getId().equals(userId));
+        .anyMatch(r -> r.getReviewerUser().getId().equals(reservation.getUser().getId()));
+
 
         return TripHistoryUserDTO.builder()
                 .tripId(trip.getId())
@@ -125,7 +125,7 @@ public class TripMapper {
                 .destinationCity(reservation.getDestinationCity().getCity().getName())
                 .seatPrice(reservation.getTotal())
                 .reviewed(tripReviewed)
-                .tripState(stateHistory.getState().getName())
+                .tripState("FINISHED")
                 .build();
     }
 

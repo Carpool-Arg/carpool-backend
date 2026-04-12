@@ -100,7 +100,7 @@ public class TripController {
     }
     
 	@Operation(summary = "Obtiene el historial de viajes de un pasajero")
-	@ApiResponses({ @ApiResponse(responseCode = "200", description = "El viaje es posible"),
+	@ApiResponses({ @ApiResponse(responseCode = "200", description = "Viajes obtenidos con éxito"),
 			@ApiResponse(responseCode = "404", description = "Solicitud inválida") })
 	@GetMapping("/history-trip-user")
 	public Response<TripHistoryUserResponseDTO> getHistoryTripUser(
@@ -168,6 +168,22 @@ public class TripController {
         Response<CurrentTripResponseDTO> response = tripService.getCurrentTrip();
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @Operation(
+            summary = "Obtiene los pasajeros que participaron de un viaje")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Pasajeros obtenidos con exito."),
+            @ApiResponse(responseCode = "404", description = "No se pudieron recuperar los pasajeros.", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor al obtener el viaje.", content = @Content),
+    })
+    @GetMapping("/passengers")
+    public ResponseEntity<Response<TripPassengersResponseDTO>> getTripPassengers(
+        @RequestParam(required = true) Long tripId
+    ) {
+        Response<TripPassengersResponseDTO> response = tripService.getTripPassengers(tripId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 
     @Operation(summary = "Buscar viajes con filtros aplicados")
     @ApiResponses({

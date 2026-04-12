@@ -295,54 +295,29 @@ public class TripImplementation implements ITripService {
 		Long userId = getAuthenticatedUserId();
 		log.info("Iniciando busqueda de historial de viajes para usuario con id: {}", userId);
 		
-		 List<String> existingStates = stateRepository.findExistingStateNames(ScopeEnum.TRIP, namesStateTrip);
-		 
-		 // Se valida la existencia de los estados
-		 if(existingStates.size() != namesStateTrip.size()) {
-			List<String> invalidStates = namesStateTrip.stream().filter(state -> !existingStates.contains(state)).toList();
+        List<String> existingStates = stateRepository.findExistingStateNames(ScopeEnum.TRIP, namesStateTrip);
+        
+        // Se valida la existencia de los estados
+        if(existingStates.size() != namesStateTrip.size()) {
+        List<String> invalidStates = namesStateTrip.stream().filter(state -> !existingStates.contains(state)).toList();
 
-			throw new BadRequestException("Estados inválidos: " + String.join(", ", invalidStates));
-		 }
+        throw new BadRequestException("Estados inválidos: " + String.join(", ", invalidStates));
+        }
 		
-		// Se buscan los viajes  del usuario con el estado correspondiente
-		Page<Trip> tripsPage = tripRepository.findTripsByUserAndCurrentStates(userId, namesStateTrip, getPageable(skip));
-		log.info("Cantidad de historial de viajes obtenidos: [{}]", tripsPage.getTotalElements());
-		List<Trip> trips = tripsPage.getContent();
-		
-	    if(trips.isEmpty()){return ResponseUtils.buildOKResponse(List.of("El pasajero no cuenta con viajes"), null);}
-		
-	    // Se obtienen los id de los viajes
-	    List<Long> tripIds = trips.stream().map(Trip::getId).toList();
-	    
-	    // Se obtienen los estados actuales de cada viaje
-	    List<StateHistory> currentStates = stateHistoryRepository.findCurrentStatesByTripIds(tripIds);
-	    
-	    // Se obtienen las reservas del usuario en cada viaje
-	    List<Reservation> reservations = reservationRepository.findByTripIdInAndUserId(tripIds, userId);
-	    
-	    Map<Long, StateHistory> stateMap =
-	            currentStates.stream()
-	                    .collect(Collectors.toMap(
-	                            sh -> sh.getTrip().getId(),
-	                            Function.identity()
-	                    ));
-	    
-	    Map<Long, Reservation> reservationMap =
-	            reservations.stream()
-	                    .collect(Collectors.toMap(
-	                            r -> r.getTrip().getId(),
-	                            Function.identity()
-	                    ));
-	    
-	    log.info("Iniciando mappeo de response a DTO");
+		Page<Reservation> reservationsPage = reservationRepository.findUserReservationsByTripState(userId, namesStateTrip, getPageable(skip));
+        
+        List<Reservation> reservations = reservationsPage.getContent();
+
+        if (reservations.isEmpty()) {
+            return ResponseUtils.buildOKResponse(
+                    List.of("El pasajero no cuenta con viajes"),
+                    null
+            );
+        }
 	    List<TripHistoryUserDTO> tripDtos =
-	            trips.stream()
-	                    .map(trip -> tripMapper.convertTripToHistoryDTO(
-	                            trip,
-	                            reservationMap.get(trip.getId()),
-	                            stateMap.get(trip.getId())
-	                    ))
-	                    .toList();
+            reservations.stream()
+            .map(reservation -> tripMapper.convertTripToHistoryDTO(reservation))
+        .toList();
 	    log.info("Operacion completada con exito");
 	    
 	    TripHistoryUserResponseDTO response =

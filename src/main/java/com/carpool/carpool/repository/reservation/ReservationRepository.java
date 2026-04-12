@@ -183,8 +183,8 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
     @Query(value = """
     SELECT COUNT(r.id) > 0
     FROM reservation r
-    JOIN trip_stop ts_start ON r.start_city_id = ts_start.id
-    JOIN trip_stop ts_end   ON r.destination_city_id = ts_end.id
+    JOIN trip_stop ts_start ON r.start_city_id = ts_start.id AND ts_start.deleted_at IS NULL
+    JOIN trip_stop ts_end   ON r.destination_city_id = ts_end.id AND ts_end.deleted_at IS NULL
     JOIN state_history sh   ON r.id = sh.reservation_id
     JOIN state s            ON s.id = sh.state_id
     WHERE r.user_id = :userId
@@ -202,8 +202,8 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
    @Query(value = """
         SELECT r.*
         FROM reservation r
-        JOIN trip_stop ts_start ON r.start_city_id = ts_start.id
-        JOIN trip_stop ts_end   ON r.destination_city_id = ts_end.id
+        JOIN trip_stop ts_start ON r.start_city_id = ts_start.id AND ts_start.deleted_at IS NULL
+        JOIN trip_stop ts_end   ON r.destination_city_id = ts_end.id AND ts_end.deleted_at IS NULL
         JOIN state_history sh   ON r.id = sh.reservation_id
         JOIN state s ON s.id = sh.state_id
         WHERE r.user_id = :userId
@@ -218,5 +218,34 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
         @Param("newStart") LocalDateTime newStart,
         @Param("newEnd") LocalDateTime newEnd,
         @Param("excludeReservationId") Long excludeReservationId);
+
+    /**
+     * Metodo para obtener un listado de reservas en que se encuentren en ciertos estados
+     * @param userId
+     * @param state
+     * @return
+     */
+    @Query("""
+    SELECT r
+    FROM Reservation r
+    JOIN FETCH r.trip t
+    JOIN FETCH t.vehicle v
+    JOIN FETCH v.driver d
+    JOIN FETCH d.user u
+    JOIN FETCH r.startCity sc
+    JOIN FETCH sc.city c1
+    JOIN FETCH r.destinationCity dc
+    JOIN FETCH dc.city c2
+    JOIN StateHistory sh ON sh.trip = t
+    JOIN sh.state s
+    WHERE r.user.id = :userId
+      AND sh.finishDateTime IS NULL
+      AND s.name IN :states
+    """)
+    Page<Reservation> findUserReservationsByTripState(
+        @Param("userId") Long userId,
+        @Param("states") List<String> states,
+        Pageable pageable
+    );
 
 }
