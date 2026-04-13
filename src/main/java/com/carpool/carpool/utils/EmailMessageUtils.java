@@ -64,6 +64,9 @@ public class EmailMessageUtils {
     public static final String SUBJECT_EMAIL_RESERVATION_ACCEPTED = "¡Tu solicitud de reserva ha sido aceptada!";
     public static final String MESSAGE_RESERVATION_ACCEPTED ="\uD83E\uDD73 ¡Buenas noticias! Tu reserva para el viaje <strong>{origin}</strong> → <strong>{destination}</strong> fue aceptada por <strong>{driverName}</strong>.<br><br>" +
             "Ya tenés tu lugar confirmado. ¡Gracias por elegir <strong>Carpool</strong> y buen viaje!";
+    public static final String MESSAGE_RESERVATION_ACCEPTED_WITH_OLVERLAP = "\uD83E\uDD73 ¡Buenas noticias! Tu reserva para el viaje <strong>{origin}</strong> → <strong>{destination}</strong> fue aceptada por <strong>{driverName}</strong>.<br>" +
+            "Ya tenés tu lugar confirmado. ¡Gracias por elegir <strong>Carpool</strong> y buen viaje! <br><br> " +
+            "Te informamos que, al momento de aceptar tu reserva, habia reservas pendientes para el mismo rango horario. Por lo tanto, fueron canceladas automáticamente.";
     public static final String MESSAGE_FOOTER_RESERVATION_ACCEPTED = "El equipo de Carpool";
 
     //RESERVATION REJECTED
@@ -118,7 +121,7 @@ public class EmailMessageUtils {
     public static final String MESSAGE_FOOTER_TRIP_CLOSED_AUTOMATICALLY = "Gracias por ser parte de la comunidad <strong>Carpool</strong>.";
 
 
-// --- TRIP_STARTED ---
+    // --- TRIP_STARTED ---
     public static final String PUSH_TITLE_TRIP_STARTED = "🚗 ¡Viaje en marcha!";
     public static final String PUSH_BODY_TRIP_STARTED = "El conductor %s ha iniciado el viaje desde %s. ¡Prepárate!";
     public static final String SUBJECT_TRIP_STARTED = "¡Tu viaje ha comenzado! - Carpool";
@@ -140,4 +143,35 @@ public class EmailMessageUtils {
     public static final String MESSAGE_TRIP_CANCELLED = "El viaje que tenías reservado desde <strong>{origin}</strong> con destino a <strong>{destination}</strong> fue cancelado por el conductor {driver}.";
     public static final String MESSAGE_TRIP_CANCELLED_REASON = " El motivo informado fue el siguiente: {reason}.";
     public static final String FOOTER_TRIP_CANCELLED = "Sabemos que esto puede generar inconvenientes. Te invitamos a buscar otro viaje disponible o a contactarnos si necesitas ayuda.";
+
+    // --- LICENSE REJECTED ---
+    public static final String SUBJECT_LICENSE_REJECTED = "Tu carnet de conducir fue rechazado - Carpool";
+    public static final String TITLE_LICENSE_REJECTED = "Hola {name}, tu carnet no pudo ser verificado";
+    public static final String MESSAGE_LICENSE_REJECTED = "Lamentablemente tu carnet de conducir fue rechazado por el siguiente motivo: <strong>{reason}</strong>.";
+    public static final String FOOTER_LICENSE_REJECTED = "Por favor, volvé a subir las fotos de tu carnet asegurándote de que sean legibles y estén vigentes.";
+
+    // --- LICENSE APPROVED ---
+    public static final String SUBJECT_LICENSE_APPROVED = "Tu carnet de conducir fue aprobado - Carpool";
+    public static final String TITLE_LICENSE_APPROVED = "¡Felicitaciones {name}! Tu carnet fue verificado";
+    public static final String MESSAGE_LICENSE_APPROVED = "Tu carnet de conducir ha sido verificado exitosamente. Ya podés comenzar a publicar viajes en la plataforma.";
+    public static final String FOOTER_LICENSE_APPROVED = "¡Bienvenido a la comunidad de choferes de Carpool!";
+
+    // --- RESERVATION CANCELLED BY DRIVER ---
+    public static final String SUBJECT_RESERVATION_CANCELLED_BY_DRIVER = "Reserva Cancelada por el Conductor - Carpool";
+    public static final String TITLE_RESERVATION_CANCELLED_BY_DRIVER = "El conductor ha cancelado tu reserva";
+    public static final String MESSAGE_RESERVATION_CANCELLED_BY_DRIVER = "El conductor {driver} ha cancelado tu reserva para el viaje desde <strong>{origin}</strong> con destino a <strong>{destination}</strong>.";
+    public static final String MESSAGE_RESERVATION_CANCELLED_BY_DRIVER_REASON = " El motivo informado fue el siguiente: {reason}.";
+    public static final String FOOTER_RESERVATION_CANCELLED_BY_DRIVER = "Recuerda que puedes volver a solicitar un lugar en el viaje. Lamentamos los inconvenientes ocasionados. Si necesitás ayuda, no dudes en contactarnos.";
+    // --- RESERVATION_CANCELLED_BY_SYSTEM ---
+    public static final String SUBJECT_EMAIL_RESERVATION_CANCELLED_SYSTEM = "Tu solicitud de reserva ha sido cancelada";
+    public static final String MESSAGE_RESERVATION_CANCELLED_SYSTEM = "Te informamos que tu solicitud de reserva para el viaje <strong>{origin}</strong> → <strong>{destination}</strong> ha sido cancelada automáticamente.<br><br>" +
+            "Esto se debe a que el viaje ha sido **cerrado** para nuevas admisiones al estar próximo a su hora de salida.<br>" +
+            "¡Te invitamos a buscar otros viajes disponibles en la plataforma! \uD83D\uDE4C";
+    public static final String MESSAGE_FOOTER_RESERVATION_CANCELLED_SYSTEM = "El equipo de Carpool";
+
+    public static final String SUBJECT_RESERVATION_CANCELLED_BY_PASSENGER = "Reserva Cancelada por el Pasajero - Carpool";
+    public static final String MESSAGE_RESERVATION_CANCELLED_BY_PASSENGER =
+            "El pasajero {passenger} ha cancelado su reserva para el viaje desde <strong>{origin}</strong> con destino a <strong>{destination}</strong>.";
+    public static final String MESSAGE_FOOTER_RESERVATION_CANCELLED_BY_PASSENGER =
+            "El asiento ha quedado disponible nuevamente para otros pasajeros. Si necesitás ayuda, no dudes en contactarnos.";
 }

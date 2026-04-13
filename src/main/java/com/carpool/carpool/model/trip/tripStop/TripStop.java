@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.hibernate.annotations.SQLRestriction;
+
 import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.trip.Trip;
@@ -27,6 +29,7 @@ import lombok.*;
 @ToString
 @Entity
 @Table(name="trip_stop")
+@SQLRestriction("deleted_at IS NULL")
 public class TripStop implements Serializable{
     @Id
     @Column(name="id")
@@ -57,6 +60,9 @@ public class TripStop implements Serializable{
 
     @Column
     private LocalDateTime arrivalDateTime;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @ManyToOne
     @JoinColumn(name="city_id",nullable = false)

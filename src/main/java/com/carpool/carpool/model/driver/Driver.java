@@ -3,6 +3,7 @@ package com.carpool.carpool.model.driver;
 import java.io.Serializable;
 import java.time.LocalDate;
 
+import com.carpool.carpool.enums.licenseStatus.LicenseStatusEnum;
 import com.carpool.carpool.model.licenseClass.LicenseClass;
 import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.user.User;
@@ -17,7 +18,7 @@ import lombok.*;
 @ToString
 @Entity
 @Table(name = "driver")
-public class Driver implements Serializable{
+public class Driver implements Serializable {
 
     @Id
     @Column(name = "id")
@@ -31,6 +32,13 @@ public class Driver implements Serializable{
     private String addressStreet;
 
     private String addressNumber;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "license_status", nullable = false)
+    private LicenseStatusEnum licenseStatus;
+
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
 
     @ManyToOne
     @JoinColumn(name = "license_class_id", nullable = false)

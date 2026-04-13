@@ -29,6 +29,17 @@ public interface ITripService {
     Response<TripResponseDTO> getTripDetails(Long id);
 
     /**
+     * Metodo para que un chofer pueda obtener los detalles de su viaje
+     * Realiza control de permisos para validar que el viaje sea del chofer que esta en 
+     * sesion
+     *
+     * @param id identificador del viaje a solicitar
+     * @return Response<TripResponseDTO> devolviendo el viaje solicitado
+     * @throws ResourceNotFoundException si el viaje no existe
+     */
+    Response<TripResponseDTO> getMyTripDetails(Long id);
+
+    /**
      * Metodo para obtener los detalles de un viaje específico por su ID, para su EDICION.
      *
      * @param id identificador del viaje a solicitar
@@ -54,7 +65,7 @@ public interface ITripService {
      * @throws ConflictException si el chofer ya tiene un viaje planificado en la
      *                           fecha y hora dadas.
      */
-    Response<Void> checkTripAvailability(LocalDateTime startDateTime, Long idTrip);
+    Response<Void> checkTripAvailability(LocalDateTime startDateTime, Long idTrip, Long idOriginCity, Long idDestinationCity);
 
     /**
      * Metodo para obtener los viajes que creó un chofer que se encuentra en la

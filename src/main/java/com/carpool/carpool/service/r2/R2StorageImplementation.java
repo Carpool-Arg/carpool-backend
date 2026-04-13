@@ -38,7 +38,7 @@ public class R2StorageImplementation implements IR2StorageService{
         String contentType = file.getContentType();
         String originalFilename = file.getOriginalFilename();
         String fileExtension = getFileExtension(originalFilename);
-        String objectKey = generateObjectKey(originalFilename, fileExtension);
+        String objectKey = generateObjectKey(user, category, fileExtension);
 
         try (InputStream inputStream = file.getInputStream()) {
             PutObjectRequest putRequest = PutObjectRequest.builder()
@@ -49,7 +49,7 @@ public class R2StorageImplementation implements IR2StorageService{
                     .build();
 
             r2S3Client.putObject(putRequest, RequestBody.fromInputStream(inputStream, file.getSize()));
-            LOGGER.info("ARCHIVO SUBIDO EXITOSAMENTE AL R2: {}/{}", bucket, objectKey);
+            LOGGER.info("ARCHIVO SUBIDO EXITOSAMENTE AL R2: {}/{} | Categoría: {} | Usuario: {}", bucket, objectKey, category, user.getId());
 
             return buildMedia(user, bucket, category, objectKey, originalFilename, contentType, file.getSize());
         } catch (Exception e) {
@@ -121,31 +121,45 @@ public class R2StorageImplementation implements IR2StorageService{
      * @param extension Extension del archivo de tipo {@link String}
      * @return Key del archivo de tipo {@link String}
      */
-    private String generateObjectKey(String prefix, String extension) {
-
-        String base = stripExtension(prefix);
-
-        String key;
-        do {
-            String uuid = UUID.randomUUID().toString();
-            String timestamp = Long.toString(System.currentTimeMillis());
-            key = base + "_" + timestamp + "_" + uuid + extension;
-        } while (mediaRepository.existsByObjectKey(key));
-
-        return key;
+    private String generateObjectKey(User user, CategoryMediaEnum category, String extension) {
+        String uuid = UUID.randomUUID().toString();
+        String categoryPrefix = getCategoryPrefix(category);
+        String baseKey = String.format("%s/user/%d/%s%s", categoryPrefix, user.getId(), uuid, extension);
+ 
+        // Validar unicidad en BD
+        while (mediaRepository.existsByObjectKey(baseKey)) {
+            uuid = UUID.randomUUID().toString();
+            baseKey = String.format("%s/user/%d/%s%s", categoryPrefix, user.getId(), uuid, extension);
+        }
+ 
+        return baseKey;
     }
 
     /**
-     * Metodo encargado de recortar la extension del nombre de un archivo
-     * @param nameFile Nombre del archivo del tipo {@link String}
-     * @return Nombre de archivo sin extension del tipo {@link String}
+     * Obtiene el prefijo de categoría para la estructura de objectKey.
+     * 
+     * @param category Categoría del archivo
+     * @return Prefijo en minúsculas (ej: "profile", "license")
      */
-    private String stripExtension(String nameFile) {
-        if (nameFile == null) return "";
-        int dot = nameFile.lastIndexOf(".");
-        if(dot <= 0) return nameFile;
-        return nameFile.substring(0, dot);
+    private String getCategoryPrefix(CategoryMediaEnum category) {
+        return switch (category) {
+            case PROFILE -> "profile";
+            case LICENSE_FRONT, LICENSE_BACK -> "license";
+            default -> throw new IllegalArgumentException("Categoría no soportada: " + category);
+        };
     }
+
+    // /**
+    //  * Metodo encargado de recortar la extension del nombre de un archivo
+    //  * @param nameFile Nombre del archivo del tipo {@link String}
+    //  * @return Nombre de archivo sin extension del tipo {@link String}
+    //  */
+    // private String stripExtension(String nameFile) {
+    //     if (nameFile == null) return "";
+    //     int dot = nameFile.lastIndexOf(".");
+    //     if(dot <= 0) return nameFile;
+    //     return nameFile.substring(0, dot);
+    // }
 
     /**
      * Metodo encargado de crear un objeto {@link Media}

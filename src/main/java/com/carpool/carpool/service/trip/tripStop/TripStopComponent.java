@@ -1,6 +1,7 @@
 package com.carpool.carpool.service.trip.tripStop;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.stereotype.Component;
@@ -77,6 +78,57 @@ public class TripStopComponent {
                     .build();
 
             trip.getTripStops().add(newStop);
+            previousCity = currentCity;
+        }
+
+        return totalDistanceAccumulated;
+    }
+
+    /**
+     * Recalcula las distancias y tiempos estimados de las paradas activas de un viaje,
+     * en base a su orden y a una velocidad promedio.
+     *
+     * Actualiza los campos {@code distanceFromPrevious} y {@code estimatedArrivalDateTime}
+     * de cada {@link TripStop}, sin crear ni eliminar registros.
+     *
+     * @param trip El viaje a recalcular
+     * @param baseStartTime Fecha y hora de inicio del viaje
+     * @return Distancia total acumulada del viaje
+     */
+    public double recalculateStops(Trip trip, LocalDateTime baseStartTime) {
+
+        double averageSpeed = getAverageSpeed();
+
+        List<TripStop> activeStops = trip.getTripStops().stream()
+                .filter(s -> s.getDeletedAt() == null)
+                .sorted(Comparator.comparingInt(TripStop::getStopOrder))
+                .toList();
+
+        City previousCity = null;
+        double totalDistanceAccumulated = 0.0;
+        LocalDateTime currentArrivalTime = baseStartTime;
+
+        for (TripStop stop : activeStops) {
+
+            City currentCity = stop.getCity();
+
+            double distanceFromPrevious = 0.0;
+
+            if (previousCity != null) {
+                distanceFromPrevious = CoordsUtils.calculateDistance(
+                        previousCity.getLatitude(), previousCity.getLongitude(),
+                        currentCity.getLatitude(), currentCity.getLongitude()
+                );
+            }
+
+            totalDistanceAccumulated += distanceFromPrevious;
+
+            double estimatedHours = totalDistanceAccumulated / averageSpeed;
+            currentArrivalTime = baseStartTime.plusMinutes((long) (estimatedHours * 60));
+
+            stop.setDistanceFromPrevious(distanceFromPrevious);
+            stop.setEstimatedArrivalDateTime(currentArrivalTime);
+
             previousCity = currentCity;
         }
 
