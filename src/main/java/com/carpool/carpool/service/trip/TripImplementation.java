@@ -299,7 +299,7 @@ public class TripImplementation implements ITripService {
 		Long userId = getAuthenticatedUserId();
 		log.info("Iniciando busqueda de historial de viajes para usuario con id: {}", userId);
 		
-        List<String> existingStates = stateRepository.findExistingStateNames(ScopeEnum.TRIP, namesStateTrip);
+        List<String> existingStates = stateRepository.findExistingStateNames(ScopeEnum.RESERVATION, namesStateTrip);
         
         // Se valida la existencia de los estados
         if(existingStates.size() != namesStateTrip.size()) {
