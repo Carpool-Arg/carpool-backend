@@ -2,7 +2,7 @@ package com.carpool.carpool.service.statistics.passenger;
 
 import java.time.LocalDate;
 
-import com.carpool.carpool.dto.statistics.passenger.Co2StatResponseDTO;
+import com.carpool.carpool.dto.statistics.Co2StatResponseDTO;
 import com.carpool.carpool.dto.statistics.passenger.PassengerStatResponseDTO;
 import com.carpool.carpool.enums.statistics.GroupByEnum;
 import com.carpool.carpool.response.Response;

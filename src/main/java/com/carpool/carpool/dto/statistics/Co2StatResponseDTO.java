@@ -1,4 +1,4 @@
-package com.carpool.carpool.dto.statistics.passenger;
+package com.carpool.carpool.dto.statistics;
 
 import lombok.Builder;
 import lombok.Getter;

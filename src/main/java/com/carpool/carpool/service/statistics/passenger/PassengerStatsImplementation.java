@@ -9,9 +9,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import com.carpool.carpool.dto.statistics.passenger.Co2StatResponseDTO;
+import com.carpool.carpool.dto.statistics.Co2StatResponseDTO;
+import com.carpool.carpool.dto.statistics.StatMetricPointDTO;
 import com.carpool.carpool.dto.statistics.passenger.PassengerStatResponseDTO;
-import com.carpool.carpool.dto.statistics.passenger.StatMetricPointDTO;
 import com.carpool.carpool.enums.statistics.GroupByEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.model.user.User;

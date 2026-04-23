@@ -1,4 +1,4 @@
-package com.carpool.carpool.dto.statistics.passenger;
+package com.carpool.carpool.dto.statistics.driver;
 
 import java.util.List;
 
@@ -9,7 +9,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class PassengerStatResponseDTO {
+public class DriverStatResponseDTO {
     private double historialTotal;
     private double kmFiltered; 
     private List<StatMetricPointDTO> historialByPeriod;

@@ -3,7 +3,7 @@ package com.carpool.carpool.controller.statistics.passenger;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.carpool.carpool.dto.statistics.passenger.Co2StatResponseDTO;
+import com.carpool.carpool.dto.statistics.Co2StatResponseDTO;
 import com.carpool.carpool.dto.statistics.passenger.PassengerStatResponseDTO;
 import com.carpool.carpool.enums.statistics.GroupByEnum;
 import com.carpool.carpool.response.Response;
