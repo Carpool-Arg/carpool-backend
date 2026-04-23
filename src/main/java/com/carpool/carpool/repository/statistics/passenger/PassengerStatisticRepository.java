@@ -11,9 +11,50 @@ import java.util.List;
 import java.util.Optional;
 
 
-public interface PassengerStadisticRepository extends JpaRepository<Reservation,Long>, JpaSpecificationExecutor<Reservation> {
+public interface PassengerStatisticRepository extends JpaRepository<Reservation,Long>, JpaSpecificationExecutor<Reservation> {
     Optional<Reservation> findByUserId(Long userId);
 
+
+    @Query(value = """
+    SELECT COALESCE(SUM(
+            (SELECT COALESCE(SUM(ts2.distance_from_previous), 0)
+            FROM trip_stop ts2
+            WHERE ts2.trip_id = r.trip_id
+            AND ts2.stop_order > ts_start.stop_order
+            AND ts2.stop_order <= ts_end.stop_order
+            AND ts2.deleted_at IS NULL)
+        ), 0)
+        FROM reservation r
+        JOIN trip_stop ts_start     ON r.start_city_id = ts_start.id
+        JOIN trip_stop ts_end       ON r.destination_city_id = ts_end.id
+        JOIN state_history sh       ON r.id = sh.reservation_id
+        JOIN state s                ON s.id = sh.state_id
+        JOIN state_history sh_trip  ON r.trip_id = sh_trip.trip_id
+        JOIN state s_trip           ON s_trip.id = sh_trip.state_id
+        WHERE r.user_id = :userId
+        AND s.name = 'COMPLETED'
+        AND sh.finish_datetime IS NULL
+        AND s_trip.name = 'FINISHED'
+        AND sh_trip.finish_datetime IS NULL
+        AND sh_trip.reservation_id IS NULL
+    """, nativeQuery = true)
+    Double sumKmHistoricalByUserId(@Param("userId") Long userId);
+
+    @Query(value = """
+        SELECT COUNT(r.id)
+        FROM reservation r
+        JOIN state_history sh       ON r.id = sh.reservation_id
+        JOIN state s                ON s.id = sh.state_id
+        JOIN state_history sh_trip  ON r.trip_id = sh_trip.trip_id
+        JOIN state s_trip           ON s_trip.id = sh_trip.state_id
+        WHERE r.user_id = :userId
+        AND s.name = 'COMPLETED'
+        AND sh.finish_datetime IS NULL
+        AND s_trip.name = 'FINISHED'
+        AND sh_trip.finish_datetime IS NULL
+        AND sh_trip.reservation_id IS NULL
+    """, nativeQuery = true)
+    Long countCompletedTripsHistoricalByUserId(@Param("userId") Long userId);
 
     /*
         Consulta para calcular la suma total de kilómetros recorridos

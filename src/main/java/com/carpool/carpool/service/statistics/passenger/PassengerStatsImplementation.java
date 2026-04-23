@@ -15,7 +15,7 @@ import com.carpool.carpool.dto.statistics.passenger.PassengerStatResponseDTO;
 import com.carpool.carpool.enums.statistics.GroupByEnum;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.model.user.User;
-import com.carpool.carpool.repository.statistics.passenger.PassengerStadisticRepository;
+import com.carpool.carpool.repository.statistics.passenger.PassengerStatisticRepository;
 import com.carpool.carpool.repository.user.UserRepository;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.utils.ResponseUtils;
@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PassengerStatsImplementation implements IPassengerStatsService {
 
-    private final PassengerStadisticRepository passengerStadisticRepository;
+    private final PassengerStatisticRepository passengerStadisticRepository;
     private final UserRepository userRepository;
 
     private static final double CO2_PER_KM = 0.13;
@@ -42,17 +42,15 @@ public class PassengerStatsImplementation implements IPassengerStatsService {
 
         //Total del historico recorrido del passenger 
         double historialKmTotal = Optional.ofNullable(
-            passengerStadisticRepository.sumKmByUserIdAndDateRange(user.getId(), fromDateTime, toDateTime)
+            passengerStadisticRepository.sumKmHistoricalByUserId(user.getId())
         ).orElse(0.0);
 
         // Filtro de fechas 
-        double kmFiltered = Optional.ofNullable(
+        double totalFiltered = Optional.ofNullable(
             passengerStadisticRepository.sumKmByUserIdAndDateRange(user.getId(), fromDateTime, toDateTime)
         ).orElse(0.0);
         
-        // agrupados por métricas 
-        List<Object[]> kmStats = passengerStadisticRepository.findKmMetricsByGrouping(
-            user.getId(), fromDateTime, toDateTime, groupBy.name());
+        List<Object[]> kmStats = passengerStadisticRepository.findKmMetricsByGrouping(user.getId(), fromDateTime, toDateTime, groupBy.name());
         
         List<StatMetricPointDTO> metrics = kmStats.stream()
             .map(row -> StatMetricPointDTO.builder()
@@ -65,7 +63,7 @@ public class PassengerStatsImplementation implements IPassengerStatsService {
             List.of("Estadísticas de kilómetros obtenidas con éxito."),
             PassengerStatResponseDTO.builder()
                 .historialTotal(historialKmTotal)
-                .kmFiltered(kmFiltered)
+                .totalFiltered(totalFiltered)
                 .historialByPeriod(metrics)
                 .build()
         );
@@ -77,18 +75,17 @@ public class PassengerStatsImplementation implements IPassengerStatsService {
         User user = getAuthenticatedUser();
         
         LocalDateTime fromDateTime = fromDate.atStartOfDay();
-    LocalDateTime toDateTime   = toDate.atTime(23, 59, 59);
+        LocalDateTime toDateTime   = toDate.atTime(23, 59, 59);
 
         double historialTripsTotal = Optional.ofNullable(
-            passengerStadisticRepository.countCompletedTripsByUserIdAndDateRange(user.getId(), null, null)
+            passengerStadisticRepository.countCompletedTripsHistoricalByUserId(user.getId())
         ).orElse(0L).doubleValue();
 
-        double kmFiltered = Optional.ofNullable(
+        double totalFiltered = Optional.ofNullable(
             passengerStadisticRepository.countCompletedTripsByUserIdAndDateRange(user.getId(), fromDateTime, toDateTime)
         ).orElse(0L).doubleValue();
 
-        List<Object[]> tripStats = passengerStadisticRepository.findTripMetricsByGrouping(
-            user.getId(), fromDateTime, toDateTime, groupBy.name());
+        List<Object[]> tripStats = passengerStadisticRepository.findTripMetricsByGrouping(user.getId(), fromDateTime, toDateTime, groupBy.name());
 
         List<StatMetricPointDTO> metrics = tripStats.stream()
             .map(row -> StatMetricPointDTO.builder()
@@ -101,7 +98,7 @@ public class PassengerStatsImplementation implements IPassengerStatsService {
             List.of("Estadísticas de viajes obtenidas con éxito."),
             PassengerStatResponseDTO.builder()
                 .historialTotal(historialTripsTotal)
-                .kmFiltered(kmFiltered)
+                .totalFiltered(totalFiltered)
                 .historialByPeriod(metrics)
                 .build()
         );
