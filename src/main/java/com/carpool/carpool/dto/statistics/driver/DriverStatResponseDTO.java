@@ -11,6 +11,6 @@ import lombok.Getter;
 @Builder
 public class DriverStatResponseDTO {
     private double historialTotal;
-    private double kmFiltered; 
+    private double totalFiltered; 
     private List<StatMetricPointDTO> historialByPeriod;
 }

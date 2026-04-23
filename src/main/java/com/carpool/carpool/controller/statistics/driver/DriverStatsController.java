@@ -10,11 +10,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.carpool.carpool.dto.statistics.Co2StatResponseDTO;
 import com.carpool.carpool.dto.statistics.driver.DriverStatResponseDTO;
-import com.carpool.carpool.dto.statistics.passenger.PassengerStatResponseDTO;
 import com.carpool.carpool.enums.statistics.GroupByEnum;
 import com.carpool.carpool.response.Response;
-import com.carpool.carpool.service.statistics.driver.DriverStatsImplementation;
 import com.carpool.carpool.service.statistics.driver.IDriverStatsService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @Tag(name = "Driver Stats", description = "Estadisticas del chofer")
-@RequestMapping("/driver/stats")
+@RequestMapping("/stats/driver")
 @RequiredArgsConstructor
 public class DriverStatsController {
   private final IDriverStatsService driverStatsService;
@@ -67,4 +66,39 @@ public class DriverStatsController {
     return new ResponseEntity<>(driverStatsService.getEarningStats(fromDate, toDate, groupBy), HttpStatus.OK);
   }
 
+
+  @Operation(
+      summary = "Obtener estadísticas de ganancias del chofer",
+      description = "Obtiene estadísticas de ganancias del chofer en un rango de fechas específico, agrupados por día, semana o mes."
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Estadísticas de ganancias obtenidas con éxito."),
+      @ApiResponse(responseCode = "400", description = "Solicitud inválida, por ejemplo, si las fechas no son válidas o el rango es incorrecto."),
+      @ApiResponse(responseCode = "401", description = "No autorizado, el usuario no ha iniciado sesión o no tiene permisos adecuados."),
+      @ApiResponse(responseCode = "403", description = "Prohibido, el usuario no tiene acceso a estas estadísticas."),
+      @ApiResponse(responseCode = "500", description = "Error interno del servidor.")
+  })
+  @GetMapping("/trips")
+  public ResponseEntity<Response<DriverStatResponseDTO>> getTripsStats(
+      @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate fromDate,
+      @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate toDate,
+      @RequestParam(defaultValue = "MONTH") GroupByEnum groupBy) {
+    return new ResponseEntity<>(driverStatsService.getTripsStats(fromDate, toDate, groupBy), HttpStatus.OK);
+  }
+
+
+  @Operation(
+    summary = "Obtener estadísticas de CO2 ahorrado por el chofer",
+    description = "Obtiene estadísticas de cantidad de CO2 ahorrado por el"
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Estadísticas de CO2 obtenidas con éxito."),
+      @ApiResponse(responseCode = "401", description = "No autorizado, el usuario no ha iniciado sesión o no tiene permisos adecuados."),
+      @ApiResponse(responseCode = "403", description = "Prohibido, el usuario no tiene acceso a estas estadísticas."),
+      @ApiResponse(responseCode = "500", description = "Error interno del servidor.")
+  })
+  @GetMapping("/co2")
+  public ResponseEntity<Response<Co2StatResponseDTO>> getCo2Stats() {
+    return new ResponseEntity<>(driverStatsService.getCo2Stats(), HttpStatus.OK);
+  }
 }

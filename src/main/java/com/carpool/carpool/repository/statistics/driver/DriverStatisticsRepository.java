@@ -176,4 +176,106 @@ public interface DriverStatisticsRepository extends JpaRepository<Trip,Long>{
         @Param("toDate") LocalDateTime toDate,
         @Param("groupBy") String groupBy
     );
+
+    @Query(value = """
+        SELECT COUNT(t.id)
+        FROM trip t
+        JOIN vehicles v             ON t.vehicle_id = v.id
+        JOIN driver d               ON v.driver_id = d.id
+        JOIN state_history sh_trip  ON sh_trip.trip_id = t.id
+        JOIN state s_trip           ON s_trip.id = sh_trip.state_id
+        WHERE d.user_id = :userId
+        AND s_trip.name = 'FINISHED'
+        AND sh_trip.finish_datetime IS NULL
+        AND sh_trip.reservation_id IS NULL
+    """, nativeQuery = true)
+    Long countTripsHistoricalByUserId(@Param("userId") Long userId);
+
+    @Query(value = """
+        SELECT COUNT(t.id)
+        FROM trip t
+        JOIN vehicles v             ON t.vehicle_id = v.id
+        JOIN driver d               ON v.driver_id = d.id
+        JOIN state_history sh_trip  ON sh_trip.trip_id = t.id
+        JOIN state s_trip           ON s_trip.id = sh_trip.state_id
+        WHERE d.user_id = :userId
+        AND s_trip.name = 'FINISHED'
+        AND sh_trip.finish_datetime IS NULL
+        AND sh_trip.reservation_id IS NULL
+        AND (CAST(:fromDate AS timestamp) IS NULL OR t.start_date_time >= :fromDate)
+        AND (CAST(:toDate AS timestamp) IS NULL OR t.start_date_time <= :toDate)
+    """, nativeQuery = true)
+    Long countTripsByUserIdAndDateRange(
+        @Param("userId") Long userId,
+        @Param("fromDate") LocalDateTime fromDate,
+        @Param("toDate") LocalDateTime toDate
+    );
+
+    @Query(value = """
+        SELECT label, COUNT(id) AS value
+        FROM (
+            SELECT
+                CASE :groupBy
+                    WHEN 'YEAR'  THEN TO_CHAR(t.start_date_time, 'MM/YYYY')
+                    WHEN 'MONTH' THEN TO_CHAR(DATE_TRUNC('week', t.start_date_time), 'DD/MM/YYYY')
+                    WHEN 'WEEK'  THEN TO_CHAR(t.start_date_time, 'DD/MM/YYYY')
+                END AS label,
+                t.start_date_time AS start_date_time,
+                t.id AS id
+            FROM trip t
+            JOIN vehicles v             ON t.vehicle_id = v.id
+            JOIN driver d               ON v.driver_id = d.id
+            JOIN state_history sh_trip  ON sh_trip.trip_id = t.id
+            JOIN state s_trip           ON s_trip.id = sh_trip.state_id
+            WHERE d.user_id = :userId
+            AND s_trip.name = 'FINISHED'
+            AND sh_trip.finish_datetime IS NULL
+            AND sh_trip.reservation_id IS NULL
+            AND (CAST(:fromDate AS timestamp) IS NULL OR t.start_date_time >= :fromDate)
+            AND (CAST(:toDate AS timestamp) IS NULL OR t.start_date_time <= :toDate)
+        ) sub
+        GROUP BY label
+        ORDER BY MIN(start_date_time)
+    """, nativeQuery = true)
+    List<Object[]> findTripMetricsByGrouping(
+        @Param("userId") Long userId,
+        @Param("fromDate") LocalDateTime fromDate,
+        @Param("toDate") LocalDateTime toDate,
+        @Param("groupBy") String groupBy
+    );
+
+    @Query(value = """
+        SELECT COALESCE(SUM(tramo_km * :co2PerKm), 0)
+        FROM (
+            SELECT
+                (SELECT COALESCE(SUM(ts2.distance_from_previous), 0)
+                FROM trip_stop ts2
+                WHERE ts2.trip_id = r.trip_id
+                AND ts2.stop_order > ts_start.stop_order
+                AND ts2.stop_order <= ts_end.stop_order
+                AND ts2.deleted_at IS NULL) AS tramo_km
+
+            FROM trip t
+            JOIN vehicles v             ON t.vehicle_id = v.id
+            JOIN driver d               ON v.driver_id = d.id
+            JOIN reservation r          ON r.trip_id = t.id
+            JOIN trip_stop ts_start     ON r.start_city_id = ts_start.id
+            JOIN trip_stop ts_end       ON r.destination_city_id = ts_end.id
+            JOIN state_history sh_res   ON sh_res.reservation_id = r.id
+            JOIN state s_res            ON s_res.id = sh_res.state_id
+            JOIN state_history sh_trip  ON sh_trip.trip_id = t.id
+            JOIN state s_trip           ON s_trip.id = sh_trip.state_id
+            WHERE d.user_id = :userId
+            AND s_res.name = 'COMPLETED'
+            AND sh_res.finish_datetime IS NULL
+            AND s_trip.name = 'FINISHED'
+            AND sh_trip.finish_datetime IS NULL
+            AND sh_trip.reservation_id IS NULL
+        ) sub
+        WHERE tramo_km > 0
+    """, nativeQuery = true)
+    Double calculateCo2SavedByUserId(
+        @Param("userId") Long userId,
+        @Param("co2PerKm") double co2PerKm
+    );
 }
