@@ -126,7 +126,7 @@ public interface PassengerStatisticRepository extends JpaRepository<Reservation,
         SELECT label, COUNT(id) AS value
         FROM (
             SELECT
-                CASE :groupBy
+                CASE CAST(:groupBy AS text)
                     WHEN 'DAY'   THEN TO_CHAR(r.created_at, 'DD/MM/YYYY')
                     WHEN 'WEEK'  THEN TO_CHAR(DATE_TRUNC('week', r.created_at), 'DD/MM/YYYY')
                     WHEN 'MONTH' THEN TO_CHAR(r.created_at, 'MM/YYYY')
@@ -166,7 +166,7 @@ public interface PassengerStatisticRepository extends JpaRepository<Reservation,
         SELECT label, COALESCE(SUM(km), 0) AS value
         FROM (
             SELECT 
-                CASE :groupBy
+               CASE CAST(:groupBy AS text)
                     WHEN 'DAY'   THEN TO_CHAR(r.created_at, 'DD/MM/YYYY')
                     WHEN 'WEEK'  THEN TO_CHAR(DATE_TRUNC('week', r.created_at), 'DD/MM/YYYY')
                     WHEN 'MONTH' THEN TO_CHAR(r.created_at, 'MM/YYYY')
