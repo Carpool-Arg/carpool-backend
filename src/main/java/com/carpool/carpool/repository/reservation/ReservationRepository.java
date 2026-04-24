@@ -236,7 +236,7 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
     JOIN FETCH sc.city c1
     JOIN FETCH r.destinationCity dc
     JOIN FETCH dc.city c2
-    JOIN StateHistory sh ON sh.trip = t
+    JOIN StateHistory sh ON sh.reservation = r
     JOIN sh.state s
     WHERE r.user.id = :userId
       AND sh.finishDateTime IS NULL

@@ -34,8 +34,10 @@ public class TripController {
     })
     @GetMapping
     public ResponseEntity<Response<TripDriverResponseDTO>> getTrips(
-                    @RequestParam(defaultValue = "CREATED") List<String> tripState) {
-            return new ResponseEntity<>(tripService.getTrips(tripState), HttpStatus.OK);
+            @RequestParam(defaultValue = "CREATED") List<String> tripState,
+            @RequestParam(defaultValue = "0") int skip
+        ) {
+            return new ResponseEntity<>(tripService.getTrips(tripState, skip), HttpStatus.OK);
     }
 
     @Operation(
@@ -123,8 +125,8 @@ public class TripController {
     @GetMapping("/feed")
     public ResponseEntity<Response<List<TripSearchResponseDTO>>> getInitialFeed(
             @RequestParam(name = "cityId", required = false) Long userCityId,
-            @RequestParam(defaultValue = "10") int limit) {
-        return new ResponseEntity<>(tripService.getInitialFeed(userCityId, limit), HttpStatus.OK);
+            @RequestParam(defaultValue = "0") int skip) {
+        return new ResponseEntity<>(tripService.getInitialFeed(userCityId, skip), HttpStatus.OK);
     }
 
     @Operation(
@@ -141,7 +143,7 @@ public class TripController {
     }
 
     @Operation(
-            summary = "Calculos de los procios que se obtienen con el precio del asiento.")
+            summary = "Calculos de los precios que se obtienen con el precio del asiento.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Cálculo realizado con éxito"),
             @ApiResponse(responseCode = "400", description = "Parámetros inválidos (precio o asientos no son positivos)", content = @Content),
@@ -196,8 +198,8 @@ public class TripController {
     @PostMapping("/search")
     public ResponseEntity<Response<List<TripSearchResponseDTO>>> searchTrips(
             @RequestBody TripSearchRequestDTO request,
-            @RequestParam(defaultValue = "10") int limit) {
-        return new ResponseEntity<>(tripService.searchTrips(request, limit), HttpStatus.OK);
+            @RequestParam(defaultValue = "0") int skip) {
+        return new ResponseEntity<>(tripService.searchTrips(request, skip), HttpStatus.OK);
     }
 
     @Operation(
