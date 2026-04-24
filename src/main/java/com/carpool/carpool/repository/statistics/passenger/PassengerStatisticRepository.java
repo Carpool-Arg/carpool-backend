@@ -128,7 +128,7 @@ public interface PassengerStatisticRepository extends JpaRepository<Reservation,
             SELECT
                 CASE :groupBy
                     WHEN 'DAY'   THEN TO_CHAR(r.created_at, 'DD/MM/YYYY')
-                    WHEN 'WEEK'  THEN TO_CHAR(r.created_at, 'DD/MM/YYYY')
+                    WHEN 'WEEK'  THEN TO_CHAR(DATE_TRUNC('week', r.created_at), 'DD/MM/YYYY')
                     WHEN 'MONTH' THEN TO_CHAR(r.created_at, 'MM/YYYY')
                     WHEN 'YEAR'  THEN TO_CHAR(r.created_at, 'YYYY')
                 END AS label,
@@ -168,7 +168,7 @@ public interface PassengerStatisticRepository extends JpaRepository<Reservation,
             SELECT 
                 CASE :groupBy
                     WHEN 'DAY'   THEN TO_CHAR(r.created_at, 'DD/MM/YYYY')
-                    WHEN 'WEEK'  THEN TO_CHAR(r.created_at, 'DD/MM/YYYY')
+                    WHEN 'WEEK'  THEN TO_CHAR(DATE_TRUNC('week', r.created_at), 'DD/MM/YYYY')
                     WHEN 'MONTH' THEN TO_CHAR(r.created_at, 'MM/YYYY')
                     WHEN 'YEAR'  THEN TO_CHAR(r.created_at, 'YYYY')
                 END AS label,
