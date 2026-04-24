@@ -54,7 +54,7 @@ public interface DriverStatisticsRepository extends JpaRepository<Trip,Long>{
         SELECT label, COALESCE(SUM(km), 0) AS value
         FROM (
             SELECT
-                CASE :groupBy
+                CASE CAST(:groupBy AS text)
                     WHEN 'DAY'   THEN TO_CHAR(t.start_date_time, 'DD/MM/YYYY')
                     WHEN 'WEEK'  THEN TO_CHAR(DATE_TRUNC('week', t.start_date_time), 'DD/MM/YYYY')
                     WHEN 'MONTH' THEN TO_CHAR(t.start_date_time, 'MM/YYYY')
@@ -144,7 +144,7 @@ public interface DriverStatisticsRepository extends JpaRepository<Trip,Long>{
         SELECT label, COALESCE(SUM(earnings), 0) AS value
         FROM (
             SELECT
-                CASE :groupBy
+                CASE CAST(:groupBy AS text)
                     WHEN 'DAY'   THEN TO_CHAR(t.start_date_time, 'DD/MM/YYYY')
                     WHEN 'WEEK'  THEN TO_CHAR(DATE_TRUNC('week', t.start_date_time), 'DD/MM/YYYY')
                     WHEN 'MONTH' THEN TO_CHAR(t.start_date_time, 'MM/YYYY')
@@ -217,7 +217,7 @@ public interface DriverStatisticsRepository extends JpaRepository<Trip,Long>{
         SELECT label, COUNT(id) AS value
         FROM (
             SELECT
-                CASE :groupBy
+                CASE CAST(:groupBy AS text)
                     WHEN 'DAY'   THEN TO_CHAR(t.start_date_time, 'DD/MM/YYYY')
                     WHEN 'WEEK'  THEN TO_CHAR(DATE_TRUNC('week', t.start_date_time), 'DD/MM/YYYY')
                     WHEN 'MONTH' THEN TO_CHAR(t.start_date_time, 'MM/YYYY')
