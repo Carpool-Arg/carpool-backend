@@ -65,6 +65,41 @@ public class UserNotificationImplementation implements IUserNotificationService 
         return ResponseUtils.buildOKResponse(List.of("Token registrado con éxito") , null);
     }
 
+    @Override
+    public Response<Void> deletePushNotifications() {
+        // Obtener usuario autenticado
+        User userAuth = this.getAuthenticatedActiveUser();
+
+        // Borrar tokens de tipo PUSH_NOTIFICATION
+        userTokenRepository.deleteByUserIdAndType(
+                userAuth.getId(),
+                TokenTypeEnum.PUSH_NOTIFICATION
+        );
+
+        return ResponseUtils.buildOKResponse(
+                List.of("Notificaciones push eliminadas correctamente"),
+                null
+        );
+    }
+
+    @Override
+    public Response<Boolean> hasActiveTokens() {
+        User userAuth = this.getAuthenticatedActiveUser();
+
+        List<UserToken> tokens = userTokenRepository.findByUserAndTypeAndState(
+                userAuth,
+                TokenTypeEnum.PUSH_NOTIFICATION,
+                TokenStateEnum.ACTIVE
+        );
+
+        boolean hasActive = !tokens.isEmpty();
+
+        return ResponseUtils.buildOKResponse(
+                List.of("Estado de notificaciones obtenido"),
+                hasActive
+        );
+    }
+
     /**
      * Obtiene el usuario autenticado actualmente.
      * Si no hay un usuario autenticado, lanza una excepción.

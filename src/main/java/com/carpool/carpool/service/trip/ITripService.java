@@ -74,7 +74,7 @@ public interface ITripService {
      * @return Response<TripDriverResponseDTO> con el listado de viajes en caso
      *         exitoso o una lista vacia caso contrario
      */
-    Response<TripDriverResponseDTO> getTrips(List<String> tripState);
+    Response<TripDriverResponseDTO> getTrips(List<String> tripState, int skip);
 
     /**
      * Metodo para obtener el feed inicial de viajes.
@@ -82,11 +82,11 @@ public interface ITripService {
      * del usuario
      *
      * @param userCityId El ID de la ciudad del usuario
-     * @param limit      El numero maximo de resultados a devolver
+     * @param skip      El skip a aplicar para realizar el paginado
      * @return Response<List<TripSearchResponseDTO>> devolviendo la lista de viajes
      *         encontrados
      */
-    Response<List<TripSearchResponseDTO>> getInitialFeed(Long userCityId, int limit);
+    Response<List<TripSearchResponseDTO>> getInitialFeed(Long userCityId, int skip);
 
     /**
      * Metodo para buscar viajes con filtros aplicados.
@@ -99,7 +99,7 @@ public interface ITripService {
      * @throws ConflictException si no se completan los campos de origen y destino
      *                           en la busqueda de viajes
      */
-    Response<List<TripSearchResponseDTO>> searchTrips(TripSearchRequestDTO request, int limit);
+    Response<List<TripSearchResponseDTO>> searchTrips(TripSearchRequestDTO request, int skip);
 
     /**
      * Metodo para determinar si un chofer es dueño de ese viaje o no

@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import com.carpool.carpool.dto.trip.tripStop.TripStopRequestDTO;
 import com.carpool.carpool.enums.licenseStatus.LicenseStatusEnum;
@@ -196,10 +197,14 @@ public class TripImplementation implements ITripService {
     }
 
     @Override
-    public Response<TripDriverResponseDTO> getTrips(List<String> tripState) {
+    public Response<TripDriverResponseDTO> getTrips(List<String> tripState, int skip) {
         Driver driver = getAuthenticatedDriver();
 
-        List<Trip> trips = tripRepository.findTripsByDriverIdWithCurrentStateTrip(driver.getId(), tripState);
+        Pageable pageable = getPageable(skip);
+        Page<Trip> tripsPage = tripRepository.findTripsByDriverIdWithCurrentStateTrip(driver.getId(), tripState, pageable);
+
+        List<Trip> trips = tripsPage.getContent();
+        
         if (trips.isEmpty()) {
             return ResponseUtils.buildOKResponse(List.of("No existen viajes publicados por el chofer"), null);
         }
@@ -249,7 +254,7 @@ public class TripImplementation implements ITripService {
     }
 
     @Override
-    public Response<List<TripSearchResponseDTO>> getInitialFeed(Long userCityId, int limit) {
+    public Response<List<TripSearchResponseDTO>> getInitialFeed(Long userCityId, int skip) {
 
         Long userId = getAuthenticatedUserId();
 
@@ -261,11 +266,10 @@ public class TripImplementation implements ITripService {
                     + cityRepository.findById(userCityId).get().getName();
         }
 
-        List<Trip> trips = tripRepository.findTripsForInitialFeed(userCityId, userId, LocalDateTime.now());
+        Pageable pageable = getPageable("startTripDateTime", skip);
+        Page<Trip> tripsPage = tripRepository.findTripsForInitialFeed(userCityId, userId, LocalDateTime.now(), pageable);
 
-        if (trips.size() > limit) {
-            trips = trips.subList(0, limit);
-        }
+        List<Trip> trips = tripsPage.getContent();
         City originCity = cityRepository.findById(userCityId)
                 .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de origen del usuario."));
 
@@ -295,7 +299,7 @@ public class TripImplementation implements ITripService {
 		Long userId = getAuthenticatedUserId();
 		log.info("Iniciando busqueda de historial de viajes para usuario con id: {}", userId);
 		
-        List<String> existingStates = stateRepository.findExistingStateNames(ScopeEnum.TRIP, namesStateTrip);
+        List<String> existingStates = stateRepository.findExistingStateNames(ScopeEnum.RESERVATION, namesStateTrip);
         
         // Se valida la existencia de los estados
         if(existingStates.size() != namesStateTrip.size()) {
@@ -345,7 +349,7 @@ public class TripImplementation implements ITripService {
     }
 
     @Override
-    public Response<List<TripSearchResponseDTO>> searchTrips(TripSearchRequestDTO request, int limit) {
+    public Response<List<TripSearchResponseDTO>> searchTrips(TripSearchRequestDTO request, int skip) {
 
         Long userId = getAuthenticatedUserId();
 
@@ -359,24 +363,26 @@ public class TripImplementation implements ITripService {
         City destinationCity = cityRepository.findById(request.getDestinationCityId())
                 .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de destino de la busqueda."));
 
-        List<Trip> trips = tripRepository.findFilteredTrips(
-                request.getOriginCityId(),
-                request.getDestinationCityId(),
-                request.getDepartureDate(),
-                request.getMinPrice(),
-                request.getMaxPrice(),
-                userId,
-                request.getOrderByDriverRating(),
-                LocalDateTime.now());
+        Pageable pageable = getPageable(skip);
 
-        if (trips.size() > limit) {
-            trips = trips.subList(0, limit);
-        }
+        Page<Trip> tripsPage = tripRepository.findFilteredTrips(
+            request.getOriginCityId(),
+            request.getDestinationCityId(),
+            request.getDepartureDate(),
+            request.getMinPrice(),
+            request.getMaxPrice(),
+            userId,
+            request.getOrderByDriverRating(),
+            LocalDateTime.now(),
+            pageable
+        );
+        
+        List<Trip> trips = tripsPage.getContent();
 
         List<TripSearchResponseDTO> responseDTOs = trips.stream()
-                .map(trip -> tripMapper.converTripToTripSearchResponseDTO(trip,
-                        TripCostUtils.calculateTripTotal(originCity, destinationCity, trip)))
-                .collect(Collectors.toList());
+            .map(trip -> tripMapper.converTripToTripSearchResponseDTO(trip,
+            TripCostUtils.calculateTripTotal(originCity, destinationCity, trip)))
+        .collect(Collectors.toList());
 
         String message;
         if (responseDTOs.isEmpty()) {
@@ -1192,6 +1198,15 @@ public class TripImplementation implements ITripService {
         int page = skip / PAGE_SIZE;
 
         return PageRequest.of(page, PAGE_SIZE);
+    }
+
+    private Pageable getPageable(String orderByDesc, int skip) {
+        final int PAGE_SIZE = 10;
+        int page = skip / PAGE_SIZE;
+
+        Sort sort = Sort.by(orderByDesc).ascending();
+
+        return PageRequest.of(page, PAGE_SIZE, sort);
     }
 
     /**
