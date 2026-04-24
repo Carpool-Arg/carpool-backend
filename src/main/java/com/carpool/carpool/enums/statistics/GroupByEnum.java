@@ -7,5 +7,5 @@ package com.carpool.carpool.enums.statistics;
     {@code YEAR} Agrupación por año.
 */
 public enum GroupByEnum {
-    WEEK, MONTH, YEAR
+    DAY,WEEK, MONTH, YEAR
 }

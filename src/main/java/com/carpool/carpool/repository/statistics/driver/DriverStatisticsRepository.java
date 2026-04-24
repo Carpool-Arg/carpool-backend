@@ -55,9 +55,10 @@ public interface DriverStatisticsRepository extends JpaRepository<Trip,Long>{
         FROM (
             SELECT
                 CASE :groupBy
-                    WHEN 'YEAR'  THEN TO_CHAR(t.start_date_time, 'MM/YYYY')
-                    WHEN 'MONTH' THEN TO_CHAR(DATE_TRUNC('week', t.start_date_time), 'DD/MM/YYYY')
-                    WHEN 'WEEK'  THEN TO_CHAR(t.start_date_time, 'DD/MM/YYYY')
+                    WHEN 'DAY'   THEN TO_CHAR(t.start_date_time, 'DD/MM/YYYY')
+                    WHEN 'WEEK'  THEN TO_CHAR(DATE_TRUNC('week', t.start_date_time), 'DD/MM/YYYY')
+                    WHEN 'MONTH' THEN TO_CHAR(t.start_date_time, 'MM/YYYY')
+                    WHEN 'YEAR'  THEN TO_CHAR(t.start_date_time, 'YYYY')
                 END AS label,
                 t.start_date_time AS start_date_time,
                 COALESCE(SUM(ts.distance_from_previous), 0) AS km
@@ -144,9 +145,10 @@ public interface DriverStatisticsRepository extends JpaRepository<Trip,Long>{
         FROM (
             SELECT
                 CASE :groupBy
-                    WHEN 'YEAR'  THEN TO_CHAR(t.start_date_time, 'MM/YYYY')
-                    WHEN 'MONTH' THEN TO_CHAR(DATE_TRUNC('week', t.start_date_time), 'DD/MM/YYYY')
-                    WHEN 'WEEK'  THEN TO_CHAR(t.start_date_time, 'DD/MM/YYYY')
+                    WHEN 'DAY'   THEN TO_CHAR(t.start_date_time, 'DD/MM/YYYY')
+                    WHEN 'WEEK'  THEN TO_CHAR(DATE_TRUNC('week', t.start_date_time), 'DD/MM/YYYY')
+                    WHEN 'MONTH' THEN TO_CHAR(t.start_date_time, 'MM/YYYY')
+                    WHEN 'YEAR'  THEN TO_CHAR(t.start_date_time, 'YYYY')
                 END AS label,
                 t.start_date_time AS start_date_time,
                 r.total AS earnings
@@ -216,9 +218,10 @@ public interface DriverStatisticsRepository extends JpaRepository<Trip,Long>{
         FROM (
             SELECT
                 CASE :groupBy
-                    WHEN 'YEAR'  THEN TO_CHAR(t.start_date_time, 'MM/YYYY')
-                    WHEN 'MONTH' THEN TO_CHAR(DATE_TRUNC('week', t.start_date_time), 'DD/MM/YYYY')
-                    WHEN 'WEEK'  THEN TO_CHAR(t.start_date_time, 'DD/MM/YYYY')
+                    WHEN 'DAY'   THEN TO_CHAR(t.start_date_time, 'DD/MM/YYYY')
+                    WHEN 'WEEK'  THEN TO_CHAR(DATE_TRUNC('week', t.start_date_time), 'DD/MM/YYYY')
+                    WHEN 'MONTH' THEN TO_CHAR(t.start_date_time, 'MM/YYYY')
+                    WHEN 'YEAR'  THEN TO_CHAR(t.start_date_time, 'YYYY')
                 END AS label,
                 t.start_date_time AS start_date_time,
                 t.id AS id
