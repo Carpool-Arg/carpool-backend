@@ -127,9 +127,10 @@ public interface PassengerStatisticRepository extends JpaRepository<Reservation,
         FROM (
             SELECT
                 CASE :groupBy
-                    WHEN 'YEAR'  THEN TO_CHAR(r.created_at, 'YYYY')
+                    WHEN 'DAY'   THEN TO_CHAR(r.created_at, 'DD/MM/YYYY')
+                    WHEN 'WEEK'  THEN TO_CHAR(r.created_at, 'DD/MM/YYYY')
                     WHEN 'MONTH' THEN TO_CHAR(r.created_at, 'MM/YYYY')
-                    WHEN 'WEEK'  THEN TO_CHAR(DATE_TRUNC('week', r.created_at), 'DD/MM/YYYY')
+                    WHEN 'YEAR'  THEN TO_CHAR(r.created_at, 'YYYY')
                 END AS label,
                 r.created_at AS created_at,
                 r.id AS id
@@ -166,9 +167,10 @@ public interface PassengerStatisticRepository extends JpaRepository<Reservation,
         FROM (
             SELECT 
                 CASE :groupBy
-                    WHEN 'YEAR'  THEN TO_CHAR(r.created_at, 'YYYY')
+                    WHEN 'DAY'   THEN TO_CHAR(r.created_at, 'DD/MM/YYYY')
+                    WHEN 'WEEK'  THEN TO_CHAR(r.created_at, 'DD/MM/YYYY')
                     WHEN 'MONTH' THEN TO_CHAR(r.created_at, 'MM/YYYY')
-                    WHEN 'WEEK'  THEN TO_CHAR(DATE_TRUNC('week', r.created_at), 'DD/MM/YYYY')
+                    WHEN 'YEAR'  THEN TO_CHAR(r.created_at, 'YYYY')
                 END AS label,
                 r.created_at AS created_at,
                 (SELECT COALESCE(SUM(ts2.distance_from_previous), 0)
