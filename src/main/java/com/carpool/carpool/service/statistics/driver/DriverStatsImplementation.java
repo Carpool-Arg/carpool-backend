@@ -13,6 +13,7 @@ import com.carpool.carpool.dto.statistics.Co2StatResponseDTO;
 import com.carpool.carpool.dto.statistics.StatMetricPointDTO;
 import com.carpool.carpool.dto.statistics.driver.DriverStatResponseDTO;
 import com.carpool.carpool.enums.statistics.GroupByEnum;
+import com.carpool.carpool.exception.BadRequestException;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.repository.statistics.driver.DriverStatisticsRepository;
@@ -34,6 +35,10 @@ public class DriverStatsImplementation implements IDriverStatsService{
   @Override
   public Response<DriverStatResponseDTO> getKmStats(LocalDate fromDate, LocalDate toDate, GroupByEnum groupBy) {
     User user = getAuthenticatedUser();
+
+    if(fromDate.isAfter(toDate)){
+      throw new BadRequestException("La fecha desde no puede ser mayor a la fecha hasta.");
+    }
 
     LocalDateTime fromDateTime = fromDate.atStartOfDay();
     LocalDateTime toDateTime   = toDate.atTime(23, 59, 59);
@@ -70,7 +75,9 @@ public class DriverStatsImplementation implements IDriverStatsService{
   @Override
   public Response<DriverStatResponseDTO> getEarningStats(LocalDate fromDate, LocalDate toDate, GroupByEnum groupBy) {
     User user = getAuthenticatedUser();
-
+    if(fromDate.isAfter(toDate)){
+      throw new BadRequestException("La fecha desde no puede ser mayor a la fecha hasta.");
+    }
     LocalDateTime fromDateTime = fromDate.atStartOfDay();
     LocalDateTime toDateTime   = toDate.atTime(23, 59, 59);
     // Total histórico sin filtro de fechas
@@ -106,7 +113,9 @@ public class DriverStatsImplementation implements IDriverStatsService{
   @Override
   public Response<DriverStatResponseDTO> getTripsStats(LocalDate fromDate, LocalDate toDate, GroupByEnum groupBy) {
     User user = getAuthenticatedUser();
-
+    if(fromDate.isAfter(toDate)){
+      throw new BadRequestException("La fecha desde no puede ser mayor a la fecha hasta.");
+    }
     LocalDateTime fromDateTime = fromDate.atStartOfDay();
     LocalDateTime toDateTime   = toDate.atTime(23, 59, 59);
     // Total histórico sin filtro de fechas
