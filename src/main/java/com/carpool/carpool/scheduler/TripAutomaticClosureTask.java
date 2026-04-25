@@ -35,7 +35,7 @@ public class TripAutomaticClosureTask {
     private final IReservationService reservationService; 
     private final ReservationRepository reservationRepository; 
 
-    @Scheduled(cron = "0 */5 * * * *")
+    @Scheduled(cron = "0 */1 * * * *")
     @Transactional
     public void executeClosure() {
         LocalDateTime threshold = LocalDateTime.now().plusMinutes(30);
