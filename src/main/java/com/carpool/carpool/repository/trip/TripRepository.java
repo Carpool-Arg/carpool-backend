@@ -204,7 +204,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             FROM state_history sh2
             WHERE sh2.trip_id = t.id
         )
-        ORDER BY t.start_date_time ASC
+        CASE WHEN s.name = 'FINISHED' THEN 1 ELSE 0 END ASC,
+            t.start_date_time ASC
         """,
         countQuery = """
         SELECT COUNT(DISTINCT t.id)
