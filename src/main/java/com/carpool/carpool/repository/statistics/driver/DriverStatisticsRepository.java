@@ -89,7 +89,7 @@ public interface DriverStatisticsRepository extends JpaRepository<Trip,Long>{
 
 
     @Query(value = """
-        SELECT COALESCE(SUM(t.seat_price - t.driver_price_discount), 0)
+        SELECT COALESCE(SUM(r.total - (t.driver_price_discount * 2)), 0)
         FROM trip t
         JOIN vehicles v             ON t.vehicle_id = v.id
         JOIN driver d               ON v.driver_id = d.id
@@ -112,7 +112,7 @@ public interface DriverStatisticsRepository extends JpaRepository<Trip,Long>{
         basada en reservas COMPLETED de sus viajes.
      */
     @Query(value = """
-        SELECT COALESCE(SUM(t.seat_price - t.driver_price_discount), 0)
+        SELECT COALESCE(SUM(r.total - (t.driver_price_discount * 2)), 0)
         FROM trip t
         JOIN vehicles v             ON t.vehicle_id = v.id
         JOIN driver d               ON v.driver_id = d.id
@@ -151,7 +151,7 @@ public interface DriverStatisticsRepository extends JpaRepository<Trip,Long>{
                     WHEN 'YEAR'  THEN TO_CHAR(t.start_date_time, 'YYYY')
                 END AS label,
                 t.start_date_time AS start_date_time,
-                (t.seat_price - t.driver_price_discount) AS earnings
+                (r.total - (t.driver_price_discount * 2)) AS earnings
             FROM trip t
             JOIN vehicles v             ON t.vehicle_id = v.id
             JOIN driver d               ON v.driver_id = d.id
