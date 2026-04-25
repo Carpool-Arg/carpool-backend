@@ -6,6 +6,7 @@ import com.carpool.carpool.model.user.User;
 import com.carpool.carpool.security.model.CustomUserDetails;
 import com.carpool.carpool.security.utils.JwtUtils;
 import com.carpool.carpool.service.auth.blacklist.IAuthBlacklistService;
+import com.carpool.carpool.service.user.debt.IUserDebtService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;

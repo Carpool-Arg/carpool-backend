@@ -1,10 +1,8 @@
 --liquibase formatted sql
 
---changeset SantiGodoy:crear_tipos_de_vehiculos_por_defecto_01
-INSERT INTO public."vehicle_type" (id, "name", "description") VALUES 
-(1, 'CAR', 'VEHICULO DE USO PERSONAL ESTANDAR'),
-(2, 'SUV', 'VEHICULO FAMILIAR'),
-(3, 'PICKUP', 'CAMIONETA CON CAJA TRASERA')
-ON CONFLICT (id) DO NOTHING;
+--changeset AgustinAnil:crear_tabla_media
+CREATE UNIQUE INDEX uq_media_profile_primary
+  ON media(user_id)
+  WHERE category = 'PROFILE';
 
-
+-- Esto permite que cada usuario tenga unicamente un registro del tipo PROFILE en la abse de datos

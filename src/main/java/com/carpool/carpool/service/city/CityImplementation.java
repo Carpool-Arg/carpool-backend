@@ -4,12 +4,11 @@ import java.text.Normalizer;
 import java.util.List;
 
 import com.carpool.carpool.exception.ResourceNotFoundException;
-import com.carpool.carpool.service.setting.ISettingService;
+import com.carpool.carpool.service.parameters.IParametersService;
 import org.springframework.stereotype.Service;
 
 import com.carpool.carpool.dto.city.CityResponseDTO;
 import com.carpool.carpool.exception.BadRequestException;
-import com.carpool.carpool.exception.NoContentException;
 import com.carpool.carpool.mappers.city.CityMapper;
 import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.repository.city.CityRepository;
@@ -18,7 +17,6 @@ import com.carpool.carpool.utils.ResponseUtils;
 import static com.carpool.carpool.utils.TextUtils.normalize;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PathVariable;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +24,7 @@ public class CityImplementation implements ICityService {
     
     private final CityRepository cityRepository;
     private final CityMapper cityMapper;
-    private final ISettingService settingService;
+    private final IParametersService settingService;
 
     @Override
     public Response<CityResponseDTO> getCityById(Long id) {
@@ -70,8 +68,8 @@ public class CityImplementation implements ICityService {
                 .map(cityMapper::convertCityToCityResponseDTO)
                 .toList();
             
-        if (cityResponseDTO.isEmpty()) {
-           throw new NoContentException("No se encontraron localidades que coincidan con la búsqueda.");
+        if(cityResponseDTO.isEmpty()){
+            return ResponseUtils.buildOKResponse(List.of("No se encontraron localidades que coincidan con la búsqueda."), cityResponseDTO);
         }
             
         return ResponseUtils.buildOKResponse(List.of("Localidades obtenidas con éxito."), cityResponseDTO);

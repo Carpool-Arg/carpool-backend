@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import java.time.LocalDate;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -48,9 +47,8 @@ public class UserImplementation implements IUserService {
     }
 
     @Override
-    public Response<TokenResponseDTO> updateUserProfile(UserProfileUpdateRequestDTO userProfileUpdateRequestDTO, 
-                                                       MultipartFile profileImage) {
-        return userUpdateImplementation.updateUserProfile(userProfileUpdateRequestDTO, profileImage);
+    public Response<TokenResponseDTO> updateUserProfile(UserProfileUpdateRequestDTO userProfileUpdateRequestDTO) {
+        return userUpdateImplementation.updateUserProfile(userProfileUpdateRequestDTO);
     }
 
     @Override

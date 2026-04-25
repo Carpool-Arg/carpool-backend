@@ -17,9 +17,19 @@ public class UserNotificationController {
 
     private final IUserNotificationService userNotificationService;
 
+    @GetMapping
+    public ResponseEntity<Response<Boolean>> hasActiveTokens() {
+        return ResponseEntity.ok(userNotificationService.hasActiveTokens());
+    }
+
     @PostMapping("/register")
     public ResponseEntity<Response<Void>> registerToken(@RequestBody UserTokenRequestDTO userTokenRequestDTO) {
 
         return new ResponseEntity<>(userNotificationService.register(userTokenRequestDTO), HttpStatus.OK);
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Response<Void>> deletePushNotifications(){
+        return new ResponseEntity<>(userNotificationService.deletePushNotifications(), HttpStatus.OK);
     }
 }

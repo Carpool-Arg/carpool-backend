@@ -3,13 +3,9 @@ package com.carpool.carpool.controller.user;
 import com.carpool.carpool.dto.user.*;
 import com.carpool.carpool.service.user.account.IUserAccountService;
 import com.carpool.carpool.dto.security.token.TokenResponseDTO;
-import com.carpool.carpool.dto.user.UserTokenRequestDTO;
-import com.carpool.carpool.dto.user.UserPasswordChangeRequestDTO;
-import com.carpool.carpool.dto.user.UserProfileUpdateRequestDTO;
-import com.carpool.carpool.dto.user.EmailRequestDTO;
-import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
 import com.carpool.carpool.enums.user.UserGenderEnum;
 
+import com.carpool.carpool.service.user.debt.IUserDebtService;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Arrays;
@@ -17,13 +13,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import com.carpool.carpool.dto.user.UserRequestDTO;
-import com.carpool.carpool.dto.user.UserResponseDTO;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.user.IUserService;
 import com.carpool.carpool.utils.ResponseUtils;
@@ -43,6 +35,7 @@ public class UserController {
 
     private final IUserService userService;
     private final IUserAccountService userAccountService;
+    private final IUserDebtService userDebtService;
 
     @Operation(summary = "Validar si un username se encuentra en uso")
     @ApiResponses({
@@ -114,6 +107,16 @@ public class UserController {
         return new ResponseEntity<>(userService.getAuthenticatedUser(), HttpStatus.OK);
     }
 
+    @Operation(summary = "Verificar si el usuario es deudor o no")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Información sobre deuda disponible"),
+            @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
+    @GetMapping("/debtor")
+    public ResponseEntity<Response<UserDebtResponseDTO>> getDebtUser() {
+        return new ResponseEntity<>(userDebtService.isDebtor(), HttpStatus.OK);
+    }
+
     @Operation(
             summary = "Registrar un nuevo usuario"
     )
@@ -183,18 +186,17 @@ public class UserController {
         return new ResponseEntity<>(userService.confirmEmailChange(userTokenRequestDTO.getToken()), HttpStatus.OK);
     }
 
-    @Operation(summary = "Actualizar datos del perfil del usuario")
+    @Operation(summary = "Actualizar datos del perfil del usuario (Género y Teléfono)")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Perfil actualizado correctamente"),
-        @ApiResponse(responseCode = "409", description = "Errores de validación"),
+        @ApiResponse(responseCode = "409", description = "Errores de validación o conflicto"),
         @ApiResponse(responseCode = "401", description = "No autorizado"),
     })
-    @PutMapping(value = "/update-profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/update-profile")
     public ResponseEntity<Response<TokenResponseDTO>> updateProfile(
-                @RequestPart("userProfileUpdateRequestDTO") UserProfileUpdateRequestDTO userProfileUpdateRequestDTO,
-                @RequestPart(value = "file", required = false) MultipartFile file) {
-
-        return new ResponseEntity<>(userService.updateUserProfile(userProfileUpdateRequestDTO, file), HttpStatus.OK);
+        @Valid @RequestBody UserProfileUpdateRequestDTO userProfileUpdateRequestDTO) { 
+        
+        return new ResponseEntity<>(userService.updateUserProfile(userProfileUpdateRequestDTO), HttpStatus.OK);
     }
 
     @Operation(summary = "Actualizar la contraseña del usuario autenticado")

@@ -2,13 +2,16 @@ package com.carpool.carpool.security.config;
 
 import java.util.Arrays;
 
+import com.carpool.carpool.repository.reservation.ReservationRepository;
 import com.carpool.carpool.repository.user.token.UserTokenRepository;
 import com.carpool.carpool.security.filter.RecaptchaFilter;
+import com.carpool.carpool.security.filter.ReservationStateFilter;
 import com.carpool.carpool.security.handler.JwtAuthenticationEntryPoint;
 import com.carpool.carpool.service.auth.blacklist.IAuthBlacklistService;
 import com.carpool.carpool.service.auth.recaptcha.IAuthRecaptchaService;
 import com.carpool.carpool.service.email.IEmailService;
 import com.carpool.carpool.service.user.account.IUserAccountService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -44,6 +47,7 @@ public class SpringSecurityConfig {
     private final UserRepository userRepository;
     private final IEmailService emailImplementation;
     private final UserTokenRepository userTokenRepository;
+    private final ReservationRepository reservationRepository;
 
     @Value("${unlock.account.url}")
     private String urlUnlockAccount;
@@ -69,15 +73,20 @@ public class SpringSecurityConfig {
         .requestMatchers("/password-change", "/password-change/**").permitAll()
         .requestMatchers(HttpMethod.POST, "/auth-google/**").permitAll()
         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+        .requestMatchers("/ws/**").permitAll()
         
         
         // Endpoints para roles específicos
         .requestMatchers(HttpMethod.GET, "/vehicle-types").hasAnyRole("DRIVER", "ADMIN")
         .requestMatchers("/vehicles", "/vehicles/**").hasRole("DRIVER")
-        .requestMatchers("/trip", "/trip/check-trip-availability").hasRole("DRIVER")
+        .requestMatchers("/trip", "/trip/check-trip-availability", "/trip/current-trip", "/trip/arrive-tripstop").hasRole("DRIVER")
         .requestMatchers(HttpMethod.GET, "/trip/{id}").hasRole("USER")
         .requestMatchers(HttpMethod.GET, "/trip").hasAnyRole("DRIVER", "ADMIN")
         .requestMatchers(HttpMethod.POST, "/trip/filter").hasAnyRole("DRIVER", "ADMIN")
+
+        // Endpoints de admin
+        .requestMatchers("/admin/**").hasRole("ADMIN")
+
         
         // Todos los demas endpoints que solamente necesitan autenticación
         .anyRequest().authenticated())
@@ -85,8 +94,10 @@ public class SpringSecurityConfig {
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         )
         .addFilterBefore(new RecaptchaFilter(authRecaptchaService), UsernamePasswordAuthenticationFilter.class)
-        .addFilter(new JwtAuthenticationFilter(authenticationManager(),userRepository, userAccountService, emailImplementation, supportEmail, userTokenRepository, urlUnlockAccount))
+        .addFilter(new JwtAuthenticationFilter(authenticationManager(),userRepository, userAccountService, emailImplementation,
+                supportEmail, userTokenRepository, urlUnlockAccount))
         .addFilter(new JwtValidationFilter(authenticationManager(), authBlacklistService, userRepository))
+        .addFilterAfter(new ReservationStateFilter(reservationRepository, userRepository), JwtValidationFilter.class)
         .csrf(config-> config.disable())
         .cors(cors-> cors.configurationSource(corsConfigurationSource()))
         .sessionManagement(managment->managment.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

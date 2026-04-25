@@ -1,7 +1,6 @@
 --liquibase formatted sql
 
---changeset AgustinAnil:insercion_valor_state_reservation_02
-insert into state (name, scope) values ('ACCEPTED', 'RESERVATION');
-insert into state (name, scope) values ('REJECTED', 'RESERVATION');
-insert into state (name, scope) values ('CANCELLED', 'RESERVATION');
-insert into state (name, scope) values ('COMPLETED', 'RESERVATION');
+--changeset AnilAgustin:Insercion_Parametro_Velocidad
+INSERT INTO public.config_parameters
+(id, description, key_name, key_value)
+VALUES(4, 'Velocidad promedio utilizada en la aplicacion para la realizacion de calculos', 'average-speed-kmh', '80');

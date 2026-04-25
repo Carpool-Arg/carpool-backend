@@ -1,6 +1,7 @@
 package com.carpool.carpool.mappers.user;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.carpool.carpool.dto.user.UserUpdateRequestDTO;
 import com.carpool.carpool.enums.user.UserStateEnum;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Component;
 import com.carpool.carpool.dto.user.UserProfileUpdateRequestDTO;
 import com.carpool.carpool.dto.user.UserRequestDTO;
 import com.carpool.carpool.dto.user.UserResponseDTO;
+import com.carpool.carpool.model.driver.Driver;
 import com.carpool.carpool.model.role.Role;
 import com.carpool.carpool.model.user.User;
 import static com.carpool.carpool.utils.DateUtils.*;
@@ -76,6 +78,12 @@ public class UserMapper {
                 .phone(user.getPhone())
                 .status(user.getStatus())
                 .birthDate(formatDate(user.getBirthDate()))
+                .passengerRating(user.getRating())
+                .driverRating(    
+                    Optional.ofNullable(user.getDriver())
+                    .map(Driver::getRating)
+                    .orElse(null)
+                )
                 .build();
     }
 }

@@ -18,6 +18,5 @@ public class TripSearchResponseDTO {
     private LocalDateTime startDateTime;
     private List<TripStopSearchResponseDTO> tripStops;
     private int availableSeat;
-    private double seatPrice;
-    
+    private double seatPrice;    
 }

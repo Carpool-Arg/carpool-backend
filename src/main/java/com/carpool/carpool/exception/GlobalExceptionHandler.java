@@ -16,6 +16,7 @@ import com.carpool.carpool.response.Response;
 import com.carpool.carpool.utils.ResponseUtils;
 
 import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 
 @Hidden
@@ -74,6 +75,36 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Response<Void>> handleIllegalArgument(IllegalArgumentException ex) {
         return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(ex.getMessage())), HttpStatus.BAD_REQUEST);
+    }
+    
+    /**
+     * Excepcion utilizada para realizar acciones o acceder a area restringida
+     * @param ex Excepción
+     * @return {@link ResponseEntity} que contiene {@link Response} con data {@link Void}
+     */
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Response<Void>> handleForbidden(ForbiddenException ex) {
+        return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(ex.getMessage())), HttpStatus.FORBIDDEN);
+    }
+
+    /**
+     * Excepcion utilizada para cuando hay un error del lado del cliente. Se agregó para manejar las excepciones por instnaciar las clases Utils.
+     * @param ex Excepción
+     * @return {@link ResponseEntity} que contiene {@link Response} con data {@link Void}
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Response<Void>> handleIllegalState(IllegalArgumentException ex) {
+        return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(ex.getMessage())), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * Excepcion utilizada para cuando no se encuentra un dato en la base de datos. 
+     * @param ex Excepción
+     * @return {@link ResponseEntity} que contiene {@link Response} con data {@link Void}
+     */
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<Response<Void>> handleIllegalState(EntityNotFoundException ex) {
+        return new ResponseEntity<>(ResponseUtils.buildErrorResponse(List.of(ex.getMessage())), HttpStatus.NOT_FOUND);
     }
 
     /**

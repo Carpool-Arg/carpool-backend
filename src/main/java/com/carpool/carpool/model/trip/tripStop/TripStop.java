@@ -2,8 +2,12 @@ package com.carpool.carpool.model.trip.tripStop;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
+
+import org.hibernate.annotations.SQLRestriction;
 
 import com.carpool.carpool.model.province.city.City;
+import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.trip.Trip;
 
 import jakarta.persistence.Column;
@@ -13,6 +17,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,6 +32,7 @@ import lombok.ToString;
 @ToString
 @Entity
 @Table(name="trip_stop")
+@SQLRestriction("deleted_at IS NULL")
 public class TripStop implements Serializable{
     @Id
     @Column(name="id")
@@ -36,14 +42,30 @@ public class TripStop implements Serializable{
     private boolean isStart;
 
     private boolean isDestination;
-
+    
+    @Column(nullable = false)
     private String observation;
 
+    @Column(nullable = false)
     private int stopOrder;
 
+    @Column(nullable = false)
     private double distanceFromPrevious;
 
+    @Column(nullable = false)
     private LocalDateTime estimatedArrivalDateTime;
+
+    @OneToMany(mappedBy = "startCity")
+    private List<Reservation> startsReservations;
+
+    @OneToMany(mappedBy = "destinationCity")
+    private List<Reservation> destinationReservations;
+
+    @Column
+    private LocalDateTime arrivalDateTime;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @ManyToOne
     @JoinColumn(name="city_id",nullable = false)

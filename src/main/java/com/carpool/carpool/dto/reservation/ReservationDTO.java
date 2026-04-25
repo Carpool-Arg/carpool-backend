@@ -1,10 +1,9 @@
 package com.carpool.carpool.dto.reservation;
 
-import com.carpool.carpool.model.trip.tripStop.TripStop;
+import java.time.LocalDateTime;
+
 import lombok.Builder;
 import lombok.Getter;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Builder
@@ -17,5 +16,8 @@ public class ReservationDTO {
     private boolean baggage;
     private String nameUser;
     private String lastNameUser;
+    private Double ratingUser;
     private String urlImage;
+    private String state;
+    private LocalDateTime tripStartDatetime;
 }

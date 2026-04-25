@@ -17,7 +17,6 @@ import com.carpool.carpool.repository.user.token.UserTokenRepository;
 import com.carpool.carpool.response.Response;
 
 import com.carpool.carpool.service.email.IEmailService;
-import com.carpool.carpool.service.media.IMediaService;
 import com.carpool.carpool.service.user.UserBaseImplementation;
 import com.carpool.carpool.utils.ResponseUtils;
 
@@ -26,13 +25,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import static com.carpool.carpool.utils.EmailMessageUtils.CONFIRM_EMAIL_CHANGE;
 import static com.carpool.carpool.utils.EmailMessageUtils.MESSAGE_EMAIL_CHANGE;
 import static com.carpool.carpool.utils.EmailMessageUtils.MESSAGE_FOOTER_EMAIL_CHANGE;
 import static com.carpool.carpool.utils.EmailMessageUtils.SUBJECT_EMAIL_CHANGE;
-import static com.carpool.carpool.utils.EmailMessageUtils.TITLE_EMAIL_CHANGE;
+import static com.carpool.carpool.utils.EmailMessageUtils.TITLE_GREETING;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -46,7 +44,6 @@ public class UserUpdateImplementation {
     private final UserTokenRepository userTokenRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
-    private final IMediaService mediaService;
     private final IEmailService emailService;
     private final UpdateTokenImplementation updateTokenImplementation;
 
@@ -59,8 +56,7 @@ public class UserUpdateImplementation {
         return ResponseUtils.buildOKResponse(List.of("Usuario autenticado"), userResponseDTO);
     }
 
-    public Response<TokenResponseDTO> updateUserProfile(UserProfileUpdateRequestDTO userProfileUpdateRequestDTO, 
-                                                       MultipartFile profileImage) {
+    public Response<TokenResponseDTO> updateUserProfile(UserProfileUpdateRequestDTO userProfileUpdateRequestDTO) {
         User loggedUser = userBaseImplementation.getAuthenticatedActiveUser();
 
         try {
@@ -74,12 +70,9 @@ public class UserUpdateImplementation {
                 throw new ConflictException("El género no puede quedar en blanco.");
             }
 
-           
-            mediaService.uploadAndSaveFileUser(profileImage, loggedUser.getId());
             userMapper.updateUserProfileFromDTO(loggedUser, userProfileUpdateRequestDTO);
             loggedUser.setGender(userProfileUpdateRequestDTO.getGender());
             userRepository.save(loggedUser);
-
             
             TokenResponseDTO tokenResponseDTO = updateTokenImplementation.invalidateAllUserTokensAndGenerateNew(loggedUser);
             return ResponseUtils.buildOKResponse(List.of("Perfil actualizado correctamente."), tokenResponseDTO);
@@ -115,7 +108,7 @@ public class UserUpdateImplementation {
         emailService.sendEmail(
             emailRequestDTO.getEmail(),
             SUBJECT_EMAIL_CHANGE,
-            TITLE_EMAIL_CHANGE.replace("{name}", loggedUser.getName()),
+            TITLE_GREETING.replace("{name}", loggedUser.getName()),
             MESSAGE_EMAIL_CHANGE,
             null,
             confirmLink,
