@@ -217,12 +217,16 @@ public class VehicleImplementation implements IVehicleService {
     }
 
     /**
-     * Metodo para determinar si un vehiculo tiene un viaje pendiente o esta en un viaje en curso
+     * Metodo para determinar si un vehiculo se puede modificar
      */
 
     private void vehicleHasPendingOrInProgressTrip(Long vehicleId, boolean isEdit){
         if (tripRepository.vehicleHasInProgressTrip(vehicleId)){
             throw new ConflictException(isEdit ? "No se pueden modificar los datos del vehículo porque tiene un viaje en progreso." : "No se puede dar de baja el vehículo porque tiene un viaje en progreso.");
+        };
+
+        if (tripRepository.vehicleHasClosedTrip(vehicleId)){
+            throw new ConflictException(isEdit ? "No se pueden modificar los datos del vehículo porque tiene un viaje cerrado." : "No se puede dar de baja el vehículo porque tiene un viaje cerrado.");
         };
 
         if(tripRepository.vehicleHasPendingTrip(vehicleId)){

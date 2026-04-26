@@ -52,6 +52,20 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     """)
     boolean vehicleHasInProgressTrip(@Param("vehicleId") Long vehicleId);
 
+    /**
+     * Query para determinar si el vehiculo que se pasa por parametros tiene un viaje cerrado
+     */
+    @Query("""
+    SELECT COUNT(sh) > 0
+    FROM StateHistory sh
+    WHERE sh.state.scope = 'TRIP'
+      AND sh.state.name = 'CLOSED'
+      AND sh.finishDateTime IS NULL
+      AND sh.trip.vehicle.id = :vehicleId
+    """)
+    boolean vehicleHasClosedTrip(@Param("vehicleId") Long vehicleId);
+
+
 
     /*
      * Busca viajes para el caso del feed inicial (sin filtros aplicados)
