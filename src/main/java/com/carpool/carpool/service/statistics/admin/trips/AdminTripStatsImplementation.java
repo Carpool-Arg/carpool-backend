@@ -2,11 +2,9 @@ package com.carpool.carpool.service.statistics.admin.trips;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.carpool.carpool.dto.statistics.admin.trips.DriverPercentageStatResponseDTO;
 import com.carpool.carpool.dto.statistics.admin.trips.TakenSeatsStatResponseDTO;
 import com.carpool.carpool.dto.statistics.admin.trips.TopCityStatDTO;
 import com.carpool.carpool.dto.statistics.admin.trips.TopCityStatResponseDTO;
@@ -70,25 +68,6 @@ public class AdminTripStatsImplementation implements IAdminTripsStatsService{
             .build()
         );
 
-    }
-
-    @Override
-    public Response<DriverPercentageStatResponseDTO> getDriverPercentageByPeriod(LocalDate fromDate, LocalDate toDate) {
-
-        if(fromDate.isAfter(toDate)){
-            throw new BadRequestException("La fecha desde no puede ser mayor a la fecha hasta.");
-        }
-
-        double percentage = Optional.ofNullable(
-                adminTripsStatisticsRepository.calculateDriverPercentage(fromDate, toDate)
-        ).orElse(0.0);
-
-        return ResponseUtils.buildOKResponse(
-            List.of("Estadisticas de procentaje de choferes obtenida con éxito."), 
-            DriverPercentageStatResponseDTO.builder()
-                .driverPercentage(percentage)
-                .build()
-        );
     }
 
     @Override

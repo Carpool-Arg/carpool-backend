@@ -36,7 +36,8 @@ public class PassengerStatsImplementation implements IPassengerStatsService {
     @Override
     public Response<PassengerStatResponseDTO> getKmStats(LocalDate fromDate, LocalDate toDate, GroupByEnum groupBy) {
         User user = getAuthenticatedUser();
-        
+        validateDate(fromDate, toDate);
+
         LocalDateTime fromDateTime = fromDate.atStartOfDay();
         LocalDateTime toDateTime   = toDate.atTime(23, 59, 59);
 
@@ -73,6 +74,7 @@ public class PassengerStatsImplementation implements IPassengerStatsService {
     @Override
     public Response<PassengerStatResponseDTO> getTripStats(LocalDate fromDate, LocalDate toDate, GroupByEnum groupBy) {
         User user = getAuthenticatedUser();
+        validateDate(fromDate, toDate);
         
         LocalDateTime fromDateTime = fromDate.atStartOfDay();
         LocalDateTime toDateTime   = toDate.atTime(23, 59, 59);
@@ -120,13 +122,26 @@ public class PassengerStatsImplementation implements IPassengerStatsService {
         );
     }
     
-    //TODO: para el calculo de C02 ahorrado se debe de multiplicar el C02 ahorrado unitario * la cantidad de gente que viajo y a eso se le resta el unitario. Tengo que tener en cuenta toda la gente que viajo conmigo en todos los viajes que estuve. Debe de representar una cantidad ahorrada. hay que tener en cuenta varias cosas (cantidad de personas que viajaron conmigo, )
 
     private User getAuthenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         return userRepository.findByUsernameAndDeletedAtIsNull(username)
                 .orElseThrow(() -> new ConflictException("Usuario autenticado no encontrado."));
+    }
+
+    private void validateDate(LocalDate fromDate, LocalDate toDate) {
+        if (fromDate == null || toDate == null) {
+            throw new ConflictException("Las fechas 'desde' y 'hasta' son obligatorias.");
+        }
+        
+        if (fromDate.isAfter(toDate)) {
+            throw new ConflictException("La fecha 'desde' no puede ser mayor a la fecha 'hasta'.");
+        }
+
+        if (fromDate.isAfter(LocalDate.now())) {
+            throw new ConflictException("La fecha 'desde' no puede ser una fecha futura.");
+        }
     }
     
 }

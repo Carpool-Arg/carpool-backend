@@ -65,25 +65,4 @@ public interface AdminTripsStatisticsRepository extends JpaRepository<Trip,Long>
         @Param("fromDate") LocalDate fromDate,
         @Param("toDate") LocalDate toDate
     );
-
-    @Query(value = """
-      SELECT
-          CASE
-              WHEN COUNT(u.id) = 0 THEN 0
-              ELSE ROUND(
-                  COUNT(d.id) * 100.0 / COUNT(u.id),
-                  2
-              )
-          END
-      FROM users u
-      LEFT JOIN driver d ON d.user_id = u.id
-      WHERE u.status = 'ACTIVE'
-      AND u.deleted_at IS NULL
-      AND (CAST(:fromDate AS timestamp) IS NULL OR u.created_at >= :fromDate)
-      AND (CAST(:toDate AS timestamp) IS NULL OR u.created_at <= :toDate)
-  """, nativeQuery = true)
-  Double calculateDriverPercentage(
-      @Param("fromDate") LocalDate fromDate,
-      @Param("toDate") LocalDate toDate
-  );
 }

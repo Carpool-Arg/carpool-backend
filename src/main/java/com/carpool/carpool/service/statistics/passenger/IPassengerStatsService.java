@@ -8,18 +8,27 @@ import com.carpool.carpool.enums.statistics.GroupByEnum;
 import com.carpool.carpool.response.Response;
 
 public interface IPassengerStatsService {
-
-    Response<PassengerStatResponseDTO> getKmStats(
-        LocalDate fromDate,
-        LocalDate toDate,
-        GroupByEnum groupBy
-    );
+    /**
+     * 
+     * @param fromDate
+     * @param toDate
+     * @param groupBy
+     * @return
+     */
+    Response<PassengerStatResponseDTO> getKmStats(LocalDate fromDate, LocalDate toDate, GroupByEnum groupBy);
     
-    Response<PassengerStatResponseDTO> getTripStats(
-        LocalDate fromDate, 
-        LocalDate toDate, 
-        GroupByEnum groupBy
-    );
+    /**
+     * 
+     * @param fromDate
+     * @param toDate
+     * @param groupBy
+     * @return
+     */
+    Response<PassengerStatResponseDTO> getTripStats(LocalDate fromDate, LocalDate toDate, GroupByEnum groupBy);
     
+    /**
+     * 
+     * @return
+     */
     Response<Co2StatResponseDTO> getCo2Stats();
 }

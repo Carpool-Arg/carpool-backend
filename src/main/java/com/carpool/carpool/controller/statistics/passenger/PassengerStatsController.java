@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @Tag(name = "Passenger Stats", description = "Estadísticas del pasajero")
-@RequestMapping("/passenger/stats")
+@RequestMapping("/stats/passenger")
 @RequiredArgsConstructor
 public class PassengerStatsController {
     private final IPassengerStatsService passengerStatsService;
