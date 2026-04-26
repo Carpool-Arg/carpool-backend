@@ -33,7 +33,7 @@ public class Vehicle {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String domain;
 
     @Column(nullable = false)
@@ -52,11 +52,11 @@ public class Vehicle {
     private Integer availableSeats;
 
     @ManyToOne
-    @JoinColumn(name = "vehicle_type_id", nullable = false) 
+    @JoinColumn(name = "vehicle_type_id", nullable = false)
     private VehicleType vehicleType;
 
     @ManyToOne
-    @JoinColumn(name = "driver_id", nullable = false) 
+    @JoinColumn(name = "driver_id", nullable = false)
     private Driver driver;
 
     @Column(name = "created_at", nullable = false, updatable = false)
