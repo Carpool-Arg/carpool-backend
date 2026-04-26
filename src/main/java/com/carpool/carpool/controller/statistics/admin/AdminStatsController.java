@@ -11,9 +11,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.carpool.carpool.dto.statistics.admin.trips.DriverPercentageStatResponseDTO;
+import com.carpool.carpool.dto.statistics.admin.trips.TakenSeatsStatResponseDTO;
 import com.carpool.carpool.dto.statistics.admin.trips.TopCityStatResponseDTO;
-import com.carpool.carpool.dto.statistics.driver.DriverStatResponseDTO;
-import com.carpool.carpool.enums.statistics.GroupByEnum;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.statistics.admin.trips.IAdminTripsStatsService;
 
@@ -25,13 +24,13 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @Tag(name = "Admin Stats", description = "Estadisticas para el administrador")
-@RequestMapping("/stats/admin")
+@RequestMapping("/admin/stats")
 @RequiredArgsConstructor
 public class AdminStatsController {
   private final IAdminTripsStatsService adminTripsStatsService;
 
   @Operation(
-      summary = "Obtener el top 3 de localidades mas eleigdas como origen",
+      summary = "Obtener el top de localidades mas eleigdas como origen",
       description = "Obtiene estadísticas de las 3 localidades mas elegidas por los pasajeros como origen."
   )
   @ApiResponses({
@@ -42,12 +41,14 @@ public class AdminStatsController {
       @ApiResponse(responseCode = "500", description = "Error interno del servidor.")
   })
   @GetMapping("/top/origin")
-  public ResponseEntity<Response<TopCityStatResponseDTO>> getOriginCitiesTopStats() {
-    return new ResponseEntity<>(adminTripsStatsService.getTopOriginCitiesStat(), HttpStatus.OK);
+  public ResponseEntity<Response<TopCityStatResponseDTO>> getOriginCitiesTopStats(
+    @RequestParam(required = false, defaultValue = "3") int limit
+  ) {
+    return new ResponseEntity<>(adminTripsStatsService.getTopOriginCitiesStat(limit), HttpStatus.OK);
   }
 
   @Operation(
-      summary = "Obtener el top 3 de localidades mas eleigdas como destino",
+      summary = "Obtener el top de localidades mas eleigdas como destino",
       description = "Obtiene estadísticas de las 3 localidades mas elegidas por los pasajeros como destino."
   )
   @ApiResponses({
@@ -58,8 +59,28 @@ public class AdminStatsController {
       @ApiResponse(responseCode = "500", description = "Error interno del servidor.")
   })
   @GetMapping("/top/destination")
-  public ResponseEntity<Response<TopCityStatResponseDTO>> getDestinationCitiesTopStats() {
-    return new ResponseEntity<>(adminTripsStatsService.getTopDestinationCitiesStat(), HttpStatus.OK);
+  public ResponseEntity<Response<TopCityStatResponseDTO>> getDestinationCitiesTopStats(
+    @RequestParam(required = false, defaultValue = "3") int limit
+  ) {
+    return new ResponseEntity<>(adminTripsStatsService.getTopDestinationCitiesStat(limit), HttpStatus.OK);
+  }
+
+  @Operation(
+      summary = "Obtener estadísticas de porcentaje de asientos ocupados en un periodo",
+      description = "Obtiene estadísticas de porcentaje de asientos ocupados respecto a publicados en un rango de fechas específico."
+  )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Estadísticas de porcentaje de asientos obtenidas con éxito."),
+      @ApiResponse(responseCode = "400", description = "Solicitud inválida, por ejemplo, si las fechas no son válidas o el rango es incorrecto."),
+      @ApiResponse(responseCode = "401", description = "No autorizado, el usuario no ha iniciado sesión o no tiene permisos adecuados."),
+      @ApiResponse(responseCode = "403", description = "Prohibido, el usuario no tiene acceso a estas estadísticas."),
+      @ApiResponse(responseCode = "500", description = "Error interno del servidor.")
+  })
+  @GetMapping("/seats-percentage")
+  public ResponseEntity<Response<TakenSeatsStatResponseDTO>> getSeatsStats(
+      @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate fromDate,
+      @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate toDate) {
+    return new ResponseEntity<>(adminTripsStatsService.getTakenSeatsStat(fromDate, toDate), HttpStatus.OK);
   }
 
   @Operation(

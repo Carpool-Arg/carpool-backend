@@ -30,9 +30,41 @@ public interface AdminTripsStatisticsRepository extends JpaRepository<Trip,Long>
         AND ts.deleted_at IS NULL
         GROUP BY c.id, c.name
         ORDER BY reservationCount DESC
-        LIMIT 3
+        LIMIT :limit
     """, nativeQuery = true)
-    List<Object[]> findTop3CitiesByType(@Param("type") String type);
+    List<Object[]> findTopCitiesByType(@Param("type") String type, @Param("limit") int limit);
+
+
+    @Query(value = """
+        SELECT
+            SUM(t.available_seat - t.current_available_seats) AS taken,
+            SUM(t.current_available_seats)                    AS untaken
+        FROM trip t
+        JOIN state_history sh_trip  ON sh_trip.trip_id = t.id
+        JOIN state s_trip           ON s_trip.id = sh_trip.state_id
+        WHERE s_trip.name = 'FINISHED'
+        AND sh_trip.finish_datetime IS NULL
+        AND sh_trip.reservation_id IS NULL
+    """, nativeQuery = true)
+    Object[] getSeatStatsHistorical();
+
+    @Query(value = """
+        SELECT
+            SUM(t.available_seat - t.current_available_seats) AS taken,
+            SUM(t.current_available_seats)                    AS untaken
+        FROM trip t
+        JOIN state_history sh_trip  ON sh_trip.trip_id = t.id
+        JOIN state s_trip           ON s_trip.id = sh_trip.state_id
+        WHERE s_trip.name = 'FINISHED'
+        AND sh_trip.finish_datetime IS NULL
+        AND sh_trip.reservation_id IS NULL
+        AND (CAST(:fromDate AS timestamp) IS NULL OR t.start_date_time >= :fromDate)
+        AND (CAST(:toDate AS timestamp) IS NULL OR t.start_date_time <= :toDate)
+    """, nativeQuery = true)
+    Object[] getSeatStatsFiltered(
+        @Param("fromDate") LocalDate fromDate,
+        @Param("toDate") LocalDate toDate
+    );
 
     @Query(value = """
       SELECT

@@ -9,4 +9,5 @@ import lombok.Getter;
 @Getter
 public class TopCityStatResponseDTO {
   private List<TopCityStatDTO> cities;
+  private long totalReservationsCount;
 }
