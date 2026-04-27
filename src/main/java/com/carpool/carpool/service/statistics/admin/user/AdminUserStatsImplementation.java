@@ -44,16 +44,9 @@ public class AdminUserStatsImplementation implements IAdminUserStatsService {
     @Override
     public Response<AdminStatSimpleDTO> getNewUsersStats(LocalDate fromDate, LocalDate toDate, GroupByEnum groupBy) {
         validateDate(fromDate, toDate); 
-        LocalDateTime fromDateTime;
-        LocalDateTime toDateTime;
 
-        if (groupBy == GroupByEnum.WEEK) {
-            fromDateTime = LocalDateTime.now().minusDays(7);
-            toDateTime   = LocalDateTime.now();
-        } else {
-            fromDateTime = fromDate != null ? fromDate.atStartOfDay() : null;
-            toDateTime   = toDate   != null ? toDate.atTime(23, 59, 59) : null;
-        }
+        LocalDateTime fromDateTime = fromDate != null ? fromDate.atStartOfDay() : null;
+        LocalDateTime toDateTime   = toDate != null ? toDate.atTime(23, 59, 59) : null;
 
         double historicalTotal = Optional.ofNullable(
             adminUserStatisticsRepository.countNewUsersByDateRange(null, null)

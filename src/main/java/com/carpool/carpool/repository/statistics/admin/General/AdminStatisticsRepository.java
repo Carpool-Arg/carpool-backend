@@ -4,10 +4,10 @@ import java.time.LocalDateTime;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.carpool.carpool.model.reservation.Reservation;
-
-import io.lettuce.core.dynamic.annotation.Param;
+ 
 
 public interface AdminStatisticsRepository extends JpaRepository<Reservation, Long> {
     
@@ -183,4 +183,22 @@ public interface AdminStatisticsRepository extends JpaRepository<Reservation, Lo
         @Param("toDate") LocalDateTime toDate,
         @Param("co2PerKm") double co2PerKm
     );
+
+    /**
+     * 
+     *
+     */
+    @Query(value = """
+        SELECT COUNT(t.id)
+        FROM trip t
+        WHERE t.created_at >= :fromDate
+        AND t.created_at < :toDate
+        AND t.deleted_at IS NULL
+    """, nativeQuery = true)
+    Long countTripsByMonth(
+        @Param("fromDate") LocalDateTime fromDate,
+        @Param("toDate") LocalDateTime toDate
+    );
+    
+
 }

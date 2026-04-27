@@ -41,11 +41,11 @@ public interface AdminUserStatisticsRepository  extends JpaRepository<User, Long
         SELECT label, COUNT(id) AS value
         FROM (
             SELECT
-                CASE CAST(:groupBy AS text)
-                    WHEN 'DAY'   THEN TO_CHAR(u.created_at, 'DD/MM/YYYY')
-                    WHEN 'WEEK'  THEN TO_CHAR(DATE_TRUNC('week', u.created_at), 'DD/MM/YYYY')
-                    WHEN 'MONTH' THEN TO_CHAR(u.created_at, 'MM/YYYY')
-                    WHEN 'YEAR'  THEN TO_CHAR(u.created_at, 'YYYY')
+                CASE 
+                    WHEN CAST(:groupBy AS text) = 'DAY'   THEN TO_CHAR(u.created_at, 'DD/MM/YYYY')
+                    WHEN CAST(:groupBy AS text) = 'WEEK'  THEN TO_CHAR(DATE_TRUNC('week', u.created_at), 'DD/MM/YYYY')
+                    WHEN CAST(:groupBy AS text) = 'MONTH' THEN TO_CHAR(u.created_at, 'MM/YYYY')
+                    WHEN CAST(:groupBy AS text) = 'YEAR'  THEN TO_CHAR(u.created_at, 'YYYY')
                 END AS label,
                 u.created_at AS created_at,
                 u.id AS id
@@ -53,6 +53,7 @@ public interface AdminUserStatisticsRepository  extends JpaRepository<User, Long
             WHERE u.deleted_at IS NULL
             AND (CAST(:fromDate AS timestamp) IS NULL OR u.created_at >= :fromDate)
             AND (CAST(:toDate AS timestamp) IS NULL OR u.created_at <= :toDate)
+            GROUP BY u.id, u.created_at, label
         ) sub
         GROUP BY label
         ORDER BY MIN(created_at)

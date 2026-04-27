@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.carpool.carpool.dto.statistics.admin.AdminStatSimpleDTO;
 import com.carpool.carpool.dto.statistics.admin.general.AdminCo2StatDTO;
+import com.carpool.carpool.dto.statistics.admin.general.AdminTripMonthlyStatDTO;
 import com.carpool.carpool.dto.statistics.admin.trips.DriverPercentageStatResponseDTO;
 import com.carpool.carpool.dto.statistics.admin.trips.TakenSeatsStatResponseDTO;
 import com.carpool.carpool.dto.statistics.admin.trips.TopCityStatResponseDTO;
@@ -168,7 +169,14 @@ public class AdminStatsController {
     return new ResponseEntity<>(adminUserStatsService.getDriverPercentage(), HttpStatus.OK);
     }
 
-    @Operation(summary = "Nuevos usuarios por período")
+    @Operation(
+        summary = "Nuevos usuarios por período",
+        description = "Obtiene la cantidad de nuevos usuarios registrados agrupados por día, semana, mes o año dentro de un rango de fechas.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Estadísticas obtenidas con éxito"),
+        @ApiResponse(responseCode = "401", description = "No autorizado"),
+        @ApiResponse(responseCode = "403", description = "No tenés permisos para acceder a este recurso")
+    })
     @GetMapping("/users/new")
     public ResponseEntity<Response<AdminStatSimpleDTO>> getNewUsersStats(
         @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate fromDate,
@@ -177,9 +185,29 @@ public class AdminStatsController {
         return new ResponseEntity<>(adminUserStatsService.getNewUsersStats(fromDate, toDate, groupBy), HttpStatus.OK);
     }
 
-    @Operation(summary = "Total de usuarios verificados")
+    @Operation(
+        summary = "Total de usuarios verificados",
+        description = "Obtiene la cantidad total de usuarios activos y verificados registrados en la plataforma.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Total de usuarios verificados obtenido con éxito"),
+        @ApiResponse(responseCode = "401", description = "No autorizado"),
+        @ApiResponse(responseCode = "403", description = "No tenés permisos para acceder a este recurso")
+    })
     @GetMapping("/users/verified")
     public ResponseEntity<Response<VerifiedUserDTO>> getVerifiedUsersStats() {
         return new ResponseEntity<>(adminUserStatsService.getVerifiedUsersStats(), HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Viajes publicados en el mes actual vs mes anterior",
+        description = "Obtiene los viajes publicados dentro del mes y la diferencia de viajes de este mes contra el anteriror." )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Estadísticas obtenidas con éxito"),
+        @ApiResponse(responseCode = "401", description = "No autorizado"),
+        @ApiResponse(responseCode = "403", description = "No tenés permisos para acceder a este recurso")
+    })
+    @GetMapping("/trips/monthly")
+    public ResponseEntity<Response<AdminTripMonthlyStatDTO>> getMonthlyPublishedTripsStats() {
+        return new ResponseEntity<>(adminStatsService.getMonthlyPublishedTripsStats(), HttpStatus.OK);
     }
 }

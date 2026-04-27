@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.carpool.carpool.dto.statistics.admin.AdminStatSimpleDTO;
 import com.carpool.carpool.dto.statistics.admin.general.AdminCo2StatDTO;
+import com.carpool.carpool.dto.statistics.admin.general.AdminTripMonthlyStatDTO;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.repository.statistics.admin.general.AdminStatisticsRepository;
 import com.carpool.carpool.response.Response;
@@ -25,6 +26,7 @@ public class AdminStatsImplementation implements IAdminStatsService {
     private final AdminStatisticsRepository adminStatisticsRepository; 
     private static final double C02_PER_KM = 0.13;  
 
+    
     @Override
     public Response<AdminStatSimpleDTO> getAppEarningsStats(LocalDate fromDate, LocalDate toDate) {
         validateDate(fromDate, toDate); 
@@ -112,6 +114,36 @@ public class AdminStatsImplementation implements IAdminStatsService {
         );
     }
 
+    @Override
+    public Response<AdminTripMonthlyStatDTO> getMonthlyPublishedTripsStats() {
+        
+        LocalDateTime currentMonthStart  = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime previousMonthStart = currentMonthStart.minusMonths(1);
+
+        long currentMonthTrips = Optional.ofNullable(
+            adminStatisticsRepository.countTripsByMonth(currentMonthStart, LocalDateTime.now())
+        ).orElse(0L);
+
+        long previousMonthTrips = Optional.ofNullable(
+            adminStatisticsRepository.countTripsByMonth(previousMonthStart, currentMonthStart)
+        ).orElse(0L);
+
+        double delta = currentMonthTrips - previousMonthTrips;
+
+        return ResponseUtils.buildOKResponse(
+            List.of("Estadísticas de viajes del mes obtenidas con éxito."),
+            AdminTripMonthlyStatDTO.builder()
+                .currentMonthTrips(currentMonthTrips)
+                .delta(delta)
+                .build()
+        );
+    }
+
+    /**
+     * Valida que las fechas ingresadas esten normalizadas 
+     * @param fromDate
+     * @param toDate
+     */
     private void validateDate(LocalDate fromDate, LocalDate toDate) {
         if (fromDate == null || toDate == null) {
             throw new ConflictException("Las fechas 'desde' y 'hasta' son obligatorias.");
