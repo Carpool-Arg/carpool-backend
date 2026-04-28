@@ -33,10 +33,15 @@ public class AdminUserStatsImplementation implements IAdminUserStatsService {
             adminUserStatisticsRepository.calculateDriverPercentage()
         ).orElse(0.0);
 
+        Long totalDrivers = adminUserStatisticsRepository.countTotalDrivers();
+        Long totalActiveDrivers = adminUserStatisticsRepository.countTotalActiveDriversDrivers();
+
         return ResponseUtils.buildOKResponse(
             List.of("Estadística de porcentaje de choferes obtenida con éxito."), 
             DriverPercentageStatResponseDTO.builder()
                 .driverPercentage(percentage)
+                .totalDrivers(totalDrivers)
+                .totalActiveDrivers(totalActiveDrivers)
                 .build()
         );
     }

@@ -26,6 +26,22 @@ public interface AdminUserStatisticsRepository  extends JpaRepository<User, Long
         AND u.deleted_at IS NULL
     """, nativeQuery = true)
     Double calculateDriverPercentage();
+
+    // Total de choferes
+    @Query(value = """
+        SELECT COUNT(d.id)
+        FROM driver d
+    """, nativeQuery = true)
+    Long countTotalDrivers();
+
+    // Total de choferes habilitados
+    @Query(value = """
+        SELECT COUNT(d.id)
+        FROM driver d
+        WHERE d.license_status = 'APPROVED'
+    """, nativeQuery = true)
+    Long countTotalActiveDriversDrivers();
+
     
     // Total histórico de usuarios verificados
     @Query(value = """

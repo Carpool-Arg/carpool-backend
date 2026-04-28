@@ -7,4 +7,6 @@ import lombok.Getter;
 @Getter
 public class DriverPercentageStatResponseDTO {
   private double driverPercentage;
+  private Long totalDrivers;
+  private Long totalActiveDrivers;
 }
