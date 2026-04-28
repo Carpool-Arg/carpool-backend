@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.carpool.carpool.dto.statistics.admin.AdminStatSimpleDTO;
 import com.carpool.carpool.dto.statistics.admin.general.AdminCo2StatDTO;
-import com.carpool.carpool.dto.statistics.admin.general.AdminTripMonthlyStatDTO;
+import com.carpool.carpool.dto.statistics.admin.general.AdminTripPublishedStatDTO;
 import com.carpool.carpool.exception.ConflictException;
 import com.carpool.carpool.repository.statistics.admin.general.AdminStatisticsRepository;
 import com.carpool.carpool.response.Response;
@@ -115,26 +115,25 @@ public class AdminStatsImplementation implements IAdminStatsService {
     }
 
     @Override
-    public Response<AdminTripMonthlyStatDTO> getMonthlyPublishedTripsStats() {
-        
-        LocalDateTime currentMonthStart  = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
-        LocalDateTime previousMonthStart = currentMonthStart.minusMonths(1);
+    public Response<AdminTripPublishedStatDTO> getPublishedTripsStats(LocalDate fromDate, LocalDate toDate) {
+        validateDate(fromDate, toDate);
 
-        long currentMonthTrips = Optional.ofNullable(
-            adminStatisticsRepository.countTripsByMonth(currentMonthStart, LocalDateTime.now())
+        LocalDateTime fromDateTime = fromDate.atStartOfDay();
+        LocalDateTime toDateTime   = toDate.atTime(23, 59, 59);
+
+        long historicalTotal = Optional.ofNullable(
+            adminStatisticsRepository.countTripsHistorical()
         ).orElse(0L);
 
-        long previousMonthTrips = Optional.ofNullable(
-            adminStatisticsRepository.countTripsByMonth(previousMonthStart, currentMonthStart)
+        long totalFiltered = Optional.ofNullable(
+            adminStatisticsRepository.countTripsByMonth(fromDateTime, toDateTime)
         ).orElse(0L);
-
-        double delta = currentMonthTrips - previousMonthTrips;
 
         return ResponseUtils.buildOKResponse(
-            List.of("Estadísticas de viajes del mes obtenidas con éxito."),
-            AdminTripMonthlyStatDTO.builder()
-                .currentMonthTrips(currentMonthTrips)
-                .delta(delta)
+            List.of("Estadísticas de viajes publicados obtenidas con éxito."),
+            AdminTripPublishedStatDTO.builder()
+                .historicalTotal(historicalTotal)
+                .totalFiltered(totalFiltered)
                 .build()
         );
     }

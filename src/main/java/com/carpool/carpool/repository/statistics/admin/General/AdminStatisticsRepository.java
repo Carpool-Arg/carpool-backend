@@ -186,7 +186,7 @@ public interface AdminStatisticsRepository extends JpaRepository<Reservation, Lo
 
     /**
      * 
-     *
+     * Cuenta el total histórico de viajes publicados con filtro de fechas.
      */
     @Query(value = """
         SELECT COUNT(t.id)
@@ -199,6 +199,16 @@ public interface AdminStatisticsRepository extends JpaRepository<Reservation, Lo
         @Param("fromDate") LocalDateTime fromDate,
         @Param("toDate") LocalDateTime toDate
     );
+
+    /**
+     * Cuenta el total histórico de viajes publicados sin filtro de fechas.
+     */
+    @Query(value = """
+        SELECT COUNT(t.id)
+        FROM trip t
+        WHERE t.deleted_at IS NULL
+    """, nativeQuery = true)
+    Long countTripsHistorical();
     
 
 }

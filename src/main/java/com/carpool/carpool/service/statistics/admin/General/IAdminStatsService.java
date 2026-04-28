@@ -4,7 +4,7 @@ import java.time.LocalDate;
 
 import com.carpool.carpool.dto.statistics.admin.AdminStatSimpleDTO;
 import com.carpool.carpool.dto.statistics.admin.general.AdminCo2StatDTO;
-import com.carpool.carpool.dto.statistics.admin.general.AdminTripMonthlyStatDTO;
+import com.carpool.carpool.dto.statistics.admin.general.AdminTripPublishedStatDTO;
 import com.carpool.carpool.response.Response;
 
 public interface IAdminStatsService {
@@ -46,9 +46,9 @@ public interface IAdminStatsService {
      * Obtiene la cantidad de viajes publicados en el mes actual y el delta
      * respecto al mes anterior. El delta representa la diferencia entre los
      * viajes publicados en el mes actual y los del mes anterior.
-     * @return {@link Response} con {@link AdminTripMonthlyStatDTO} conteniendo
+     * @return {@link Response} con {@link AdminTripPublishedStatDTO} conteniendo
      *         la cantidad del mes actual y el delta
      */
-    Response<AdminTripMonthlyStatDTO> getMonthlyPublishedTripsStats();
+    Response<AdminTripPublishedStatDTO> getPublishedTripsStats(LocalDate fromDate, LocalDate toDate);
 
 }

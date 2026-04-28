@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class AdminTripMonthlyStatDTO {
-    private long currentMonthTrips; 
-    private double delta; 
+public class AdminTripPublishedStatDTO {
+    private long historicalTotal;
+    private long totalFiltered;
 }

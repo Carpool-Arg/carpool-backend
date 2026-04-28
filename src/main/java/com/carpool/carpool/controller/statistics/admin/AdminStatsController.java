@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.carpool.carpool.dto.statistics.admin.AdminStatSimpleDTO;
 import com.carpool.carpool.dto.statistics.admin.general.AdminCo2StatDTO;
-import com.carpool.carpool.dto.statistics.admin.general.AdminTripMonthlyStatDTO;
+import com.carpool.carpool.dto.statistics.admin.general.AdminTripPublishedStatDTO;
 import com.carpool.carpool.dto.statistics.admin.trips.DriverPercentageStatResponseDTO;
 import com.carpool.carpool.dto.statistics.admin.trips.TakenSeatsStatResponseDTO;
 import com.carpool.carpool.dto.statistics.admin.trips.TopCityStatResponseDTO;
@@ -206,8 +206,10 @@ public class AdminStatsController {
         @ApiResponse(responseCode = "401", description = "No autorizado"),
         @ApiResponse(responseCode = "403", description = "No tenés permisos para acceder a este recurso")
     })
-    @GetMapping("/trips/monthly")
-    public ResponseEntity<Response<AdminTripMonthlyStatDTO>> getMonthlyPublishedTripsStats() {
-        return new ResponseEntity<>(adminStatsService.getMonthlyPublishedTripsStats(), HttpStatus.OK);
+    @GetMapping("/trips/published")
+    public ResponseEntity<Response<AdminTripPublishedStatDTO>> getMonthlyPublishedTripsStats(
+        @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate fromDate,
+        @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate toDate) {
+        return new ResponseEntity<>(adminStatsService.getPublishedTripsStats(fromDate, toDate), HttpStatus.OK);
     }
 }
