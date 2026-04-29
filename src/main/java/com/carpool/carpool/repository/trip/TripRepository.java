@@ -182,7 +182,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     );  
 
     @Query(value = """
-        SELECT DISTINCT t.*
+        SELECT DISTINCT ON (t.id) t.*
         FROM trip t
         JOIN state_history sh ON sh.trip_id = t.id
         JOIN state s ON s.id = sh.state_id
@@ -204,8 +204,10 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             FROM state_history sh2
             WHERE sh2.trip_id = t.id
         )
-        CASE WHEN s.name = 'FINISHED' THEN 1 ELSE 0 END ASC,
-            t.start_date_time ASC
+        ORDER BY 
+            t.id,
+            CASE WHEN s.name = 'FINISHED' THEN 1 ELSE 0 END,
+            t.start_date_time
         """,
         countQuery = """
         SELECT COUNT(DISTINCT t.id)
