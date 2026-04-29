@@ -59,7 +59,7 @@ public interface AdminUserStatisticsRepository  extends JpaRepository<User, Long
             SELECT
                 CASE CAST(:groupBy AS text)
                     WHEN 'DAY'   THEN TO_CHAR(u.created_at, 'DD/MM/YYYY')
-                    WHEN 'WEEK'  THEN TO_CHAR(u.created_at, 'DD/MM/YYYY')
+                    WHEN 'WEEK' THEN TO_CHAR(DATE_TRUNC('week', u.created_at), 'DD/MM/YYYY')
                     WHEN 'MONTH' THEN TO_CHAR(u.created_at, 'MM/YYYY')
                     WHEN 'YEAR'  THEN TO_CHAR(u.created_at, 'YYYY')
                 END AS label,

@@ -50,10 +50,10 @@ public class AdminUserStatsImplementation implements IAdminUserStatsService {
     public Response<AdminStatSimpleDTO> getNewUsersStats(LocalDate fromDate, LocalDate toDate, GroupByEnum groupBy) {
         validateDate(fromDate, toDate); 
 
-       LocalDateTime fromDateTime;
+        LocalDateTime fromDateTime;
         LocalDateTime toDateTime;
 
-        if (groupBy == GroupByEnum.WEEK) {
+        if (groupBy == GroupByEnum.WEEK && fromDate == null && toDate == null) {
             fromDateTime = LocalDateTime.now().minusDays(7);
             toDateTime   = LocalDateTime.now();
         } else {
