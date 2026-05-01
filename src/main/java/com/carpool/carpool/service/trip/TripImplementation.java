@@ -32,6 +32,7 @@ import com.carpool.carpool.exception.ForbiddenException;
 import com.carpool.carpool.exception.ResourceNotFoundException;
 import com.carpool.carpool.mappers.trip.TripMapper;
 import com.carpool.carpool.model.driver.Driver;
+import com.carpool.carpool.model.parameters.ConfigParameters;
 import com.carpool.carpool.model.province.city.City;
 import com.carpool.carpool.model.reservation.Reservation;
 import com.carpool.carpool.model.state.State;
@@ -85,10 +86,9 @@ public class TripImplementation implements ITripService {
     private final StateTransitionService stateTransitionService;
     private final TripStopComponent tripStopComponent;
     private final ParametersRepository parametersRepository;
-    
-
 
     private static final String STATE_ACCEPTED = "ACCEPTED";
+    private static final String CONFIG_NOT_FOUND = "Clave de configuración '%s' no encontrada en la base de datos.";
 
     @Override
     @Transactional
@@ -98,16 +98,19 @@ public class TripImplementation implements ITripService {
 
         // Validar que el carnet esté aprobado
         if (authenticatedDriver.getLicenseStatus() != LicenseStatusEnum.APPROVED) {
-            throw new ForbiddenException("No podés publicar viajes hasta que tu carnet de conducir sea verificado y aprobado.");
+            throw new ForbiddenException(
+                    "No podés publicar viajes hasta que tu carnet de conducir sea verificado y aprobado.");
         }
 
         // Validar que el carnet no esté vencido
         if (authenticatedDriver.getLicenseExpirationDate().isBefore(LocalDate.now())) {
-            throw new ForbiddenException("Tu carnet de conducir se encuentra vencido. Por favor, actualizá tu información.");
+            throw new ForbiddenException(
+                    "Tu carnet de conducir se encuentra vencido. Por favor, actualizá tu información.");
         }
 
         if (authenticatedDriver.getLicenseExpirationDate().isBefore(tripRequestDTO.getStartDateTime().toLocalDate())) {
-            throw new ForbiddenException("Tu carnet de conducir se va a encontrar vencido para la fecha de inicio del viaje. Por favor, actualizá tu información.");
+            throw new ForbiddenException(
+                    "Tu carnet de conducir se va a encontrar vencido para la fecha de inicio del viaje. Por favor, actualizá tu información.");
         }
 
         Vehicle vehicle = vehicleRepository.findById(tripRequestDTO.getIdVehicle())
@@ -138,7 +141,8 @@ public class TripImplementation implements ITripService {
             throw new ConflictException("No podés publicar un nuevo viaje mientras tenés uno en curso.");
         }
         // Se verifica si el nuevo viaje interfiere con otros viajes del chofer.
-        if (tripRepository.hasOverlappingSchedule(authenticatedDriver.getUser().getId(),authenticatedDriver.getId(), tripRequestDTO.getStartDateTime(),
+        if (tripRepository.hasOverlappingSchedule(authenticatedDriver.getUser().getId(), authenticatedDriver.getId(),
+                tripRequestDTO.getStartDateTime(),
                 newEnd, null)) {
             throw new ConflictException(
                     "El horario para iniciar el viaje se superpone con otro viaje activo. Por favor, elige otro horario.");
@@ -187,8 +191,8 @@ public class TripImplementation implements ITripService {
     public Response<TripResponseDTO> getMyTripDetails(Long id) {
         Trip trip = findTrip(id);
         Driver driver = getAuthenticatedDriver();
-        
-        if(trip.getVehicle().getDriver().getId() != driver.getId()) {
+
+        if (trip.getVehicle().getDriver().getId() != driver.getId()) {
             throw new ConflictException("No puedes visualizar los detalles de este viaje, debido que no te pertenece.");
         }
 
@@ -201,10 +205,11 @@ public class TripImplementation implements ITripService {
         Driver driver = getAuthenticatedDriver();
 
         Pageable pageable = getPageable(skip);
-        Page<Trip> tripsPage = tripRepository.findTripsByDriverIdWithCurrentStateTrip(driver.getId(), tripState, pageable);
+        Page<Trip> tripsPage = tripRepository.findTripsByDriverIdWithCurrentStateTrip(driver.getId(), tripState,
+                pageable);
 
         List<Trip> trips = tripsPage.getContent();
-        
+
         if (trips.isEmpty()) {
             return ResponseUtils.buildOKResponse(List.of("No existen viajes publicados por el chofer"), null);
         }
@@ -217,7 +222,8 @@ public class TripImplementation implements ITripService {
     }
 
     @Override
-    public Response<Void> checkTripAvailability(LocalDateTime startDateTime, Long idTrip, Long idOriginCity, Long idDestinationCity) {
+    public Response<Void> checkTripAvailability(LocalDateTime startDateTime, Long idTrip, Long idOriginCity,
+            Long idDestinationCity) {
 
         Driver driver = getAuthenticatedDriver();
 
@@ -231,7 +237,8 @@ public class TripImplementation implements ITripService {
         City destinationCity = cityRepository.findById(idDestinationCity)
                 .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de destino."));
 
-        Double distance = CoordsUtils.calculateDistance(originCity.getLatitude(), originCity.getLongitude(), destinationCity.getLatitude(), destinationCity.getLongitude());
+        Double distance = CoordsUtils.calculateDistance(originCity.getLatitude(), originCity.getLongitude(),
+                destinationCity.getLatitude(), destinationCity.getLongitude());
         log.info("Distancia calculada entre {} y {}: {} km", originCity.getName(), destinationCity.getName(), distance);
         Double averageSpeed = getAverageSpeed();
         log.info("Velocidad promedio utilizada para el cálculo: {} km/h", averageSpeed);
@@ -241,12 +248,18 @@ public class TripImplementation implements ITripService {
         LocalDateTime estimatedEndTime = startDateTime.plusMinutes((long) (estimatedHours * 60));
 
         if (estimatedEndTime.isBefore(LocalDateTime.now())) {
-            log.warn("La fecha y hora de inicio estimada para este viaje ya ha pasado. startDateTime={}, estimatedEndTime={}", startDateTime, estimatedEndTime);
-            throw new ConflictException("La fecha y hora de inicio estimada para este viaje ya ha pasado. Por favor, elige una fecha y hora futuras.");
+            log.warn(
+                    "La fecha y hora de inicio estimada para este viaje ya ha pasado. startDateTime={}, estimatedEndTime={}",
+                    startDateTime, estimatedEndTime);
+            throw new ConflictException(
+                    "La fecha y hora de inicio estimada para este viaje ya ha pasado. Por favor, elige una fecha y hora futuras.");
         }
 
-        if (tripRepository.hasOverlappingSchedule(driver.getUser().getId(),driver.getId(), startDateTime, estimatedEndTime, idTrip)) {
-            log.warn("El viaje no está disponible. Se superpone con otro viaje activo del chofer. startDateTime={}, estimatedEndTime={}, driverId={}, idTrip={}", startDateTime, estimatedEndTime, driver.getId(), idTrip);
+        if (tripRepository.hasOverlappingSchedule(driver.getUser().getId(), driver.getId(), startDateTime,
+                estimatedEndTime, idTrip)) {
+            log.warn(
+                    "El viaje no está disponible. Se superpone con otro viaje activo del chofer. startDateTime={}, estimatedEndTime={}, driverId={}, idTrip={}",
+                    startDateTime, estimatedEndTime, driver.getId(), idTrip);
             throw new ConflictException("El viaje esta superpuesto con otro de tus viajes o reservas.");
         }
 
@@ -267,7 +280,8 @@ public class TripImplementation implements ITripService {
         }
 
         Pageable pageable = getPageable("startTripDateTime", skip);
-        Page<Trip> tripsPage = tripRepository.findTripsForInitialFeed(userCityId, userId, LocalDateTime.now(), pageable);
+        Page<Trip> tripsPage = tripRepository.findTripsForInitialFeed(userCityId, userId, LocalDateTime.now(),
+                pageable);
 
         List<Trip> trips = tripsPage.getContent();
         City originCity = cityRepository.findById(userCityId)
@@ -293,48 +307,46 @@ public class TripImplementation implements ITripService {
 
     }
 
-	@Override
-	public Response<TripHistoryUserResponseDTO> getHistoryTripUser(List<String> namesStateTrip, int skip) {
-		
-		Long userId = getAuthenticatedUserId();
-		log.info("Iniciando busqueda de historial de viajes para usuario con id: {}", userId);
-		
-        List<String> existingStates = stateRepository.findExistingStateNames(ScopeEnum.RESERVATION, namesStateTrip);
-        
-        // Se valida la existencia de los estados
-        if(existingStates.size() != namesStateTrip.size()) {
-        List<String> invalidStates = namesStateTrip.stream().filter(state -> !existingStates.contains(state)).toList();
+    @Override
+    public Response<TripHistoryUserResponseDTO> getHistoryTripUser(List<String> namesStateTrip, int skip) {
 
-        throw new BadRequestException("Estados inválidos: " + String.join(", ", invalidStates));
+        Long userId = getAuthenticatedUserId();
+        log.info("Iniciando busqueda de historial de viajes para usuario con id: {}", userId);
+
+        List<String> existingStates = stateRepository.findExistingStateNames(ScopeEnum.RESERVATION, namesStateTrip);
+
+        // Se valida la existencia de los estados
+        if (existingStates.size() != namesStateTrip.size()) {
+            List<String> invalidStates = namesStateTrip.stream().filter(state -> !existingStates.contains(state))
+                    .toList();
+
+            throw new BadRequestException("Estados inválidos: " + String.join(", ", invalidStates));
         }
-		
-		Page<Reservation> reservationsPage = reservationRepository.findUserReservationsByTripState(userId, namesStateTrip, getPageable(skip));
-        
+
+        Page<Reservation> reservationsPage = reservationRepository.findUserReservationsByTripState(userId,
+                namesStateTrip, getPageable(skip));
+
         List<Reservation> reservations = reservationsPage.getContent();
 
         if (reservations.isEmpty()) {
             return ResponseUtils.buildOKResponse(
                     List.of("El pasajero no cuenta con viajes"),
-                    null
-            );
+                    null);
         }
-	    List<TripHistoryUserDTO> tripDtos =
-            reservations.stream()
-            .map(reservation -> tripMapper.convertTripToHistoryDTO(reservation))
-        .toList();
-	    log.info("Operacion completada con exito");
-	    
-	    TripHistoryUserResponseDTO response =
-	            TripHistoryUserResponseDTO.builder()
-	                    .trips(tripDtos)
-	                    .build();
-	    
-	    return ResponseUtils.buildOKResponse(
-	    		List.of("Viajes obtenidos correctamente"),
-	    		response
-	    );
-	}
-    
+        List<TripHistoryUserDTO> tripDtos = reservations.stream()
+                .map(reservation -> tripMapper.convertTripToHistoryDTO(reservation))
+                .toList();
+        log.info("Operacion completada con exito");
+
+        TripHistoryUserResponseDTO response = TripHistoryUserResponseDTO.builder()
+                .trips(tripDtos)
+                .build();
+
+        return ResponseUtils.buildOKResponse(
+                List.of("Viajes obtenidos correctamente"),
+                response);
+    }
+
     @Override
     public Response<Boolean> isTripCreator(Long tripId) {
 
@@ -366,23 +378,22 @@ public class TripImplementation implements ITripService {
         Pageable pageable = getPageable(skip);
 
         Page<Trip> tripsPage = tripRepository.findFilteredTrips(
-            request.getOriginCityId(),
-            request.getDestinationCityId(),
-            request.getDepartureDate(),
-            request.getMinPrice(),
-            request.getMaxPrice(),
-            userId,
-            request.getOrderByDriverRating(),
-            LocalDateTime.now(),
-            pageable
-        );
-        
+                request.getOriginCityId(),
+                request.getDestinationCityId(),
+                request.getDepartureDate(),
+                request.getMinPrice(),
+                request.getMaxPrice(),
+                userId,
+                request.getOrderByDriverRating(),
+                LocalDateTime.now(),
+                pageable);
+
         List<Trip> trips = tripsPage.getContent();
 
         List<TripSearchResponseDTO> responseDTOs = trips.stream()
-            .map(trip -> tripMapper.converTripToTripSearchResponseDTO(trip,
-            TripCostUtils.calculateTripTotal(originCity, destinationCity, trip)))
-        .collect(Collectors.toList());
+                .map(trip -> tripMapper.converTripToTripSearchResponseDTO(trip,
+                        TripCostUtils.calculateTripTotal(originCity, destinationCity, trip)))
+                .collect(Collectors.toList());
 
         String message;
         if (responseDTOs.isEmpty()) {
@@ -407,8 +418,15 @@ public class TripImplementation implements ITripService {
         }
         double totalCommissionPerSeat = seatPrice * (settingService.getDiscountPercentage() / 100.0);
 
+        ConfigParameters config = parametersRepository
+                .findByKeyName(ParametersEnum.DISCOUNT_PERCENTAGE.getKey())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format(CONFIG_NOT_FOUND, ParametersEnum.DISCOUNT_PERCENTAGE.getKey())));
+
+        double commissionPercentage = Double.parseDouble(config.getKeyValue());
+
         TripPriceCalculationResponseDTO calculation = tripMapper.convertTriptoTripPriceCalculationResponseDTO(seatPrice,
-                totalCommissionPerSeat);
+                totalCommissionPerSeat, commissionPercentage);
 
         return ResponseUtils.buildOKResponse(List.of("Cálculo de precios realizado con éxito"), calculation);
     }
@@ -429,22 +447,25 @@ public class TripImplementation implements ITripService {
 
         if (now.isAfter(scheduledStart.plusMinutes(15))) {
             notifyPassengers(trip, NotificationEventEnum.TRIP_CANCELLED_BY_SYSTEM);
-            stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CLOSED.name(), TripStateEnum.CANCELLED.name());
+            stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CLOSED.name(),
+                    TripStateEnum.CANCELLED.name());
             cancelAllReservations(trip);
-            return ResponseUtils.buildErrorResponse(List.of("El tiempo límite para iniciar el viaje ha expirado (máximo 15 min de demora). El viaje ha sido cancelado automáticamente."));
+            return ResponseUtils.buildErrorResponse(List.of(
+                    "El tiempo límite para iniciar el viaje ha expirado (máximo 15 min de demora). El viaje ha sido cancelado automáticamente."));
         }
 
         TripStop startStop = trip.getTripStops().stream()
-            .filter(ts -> ts.getStopOrder() == 1)
-            .findFirst()
-            .orElseThrow(() -> new ConflictException("No se encontró la parada inicial del viaje."));
+                .filter(ts -> ts.getStopOrder() == 1)
+                .findFirst()
+                .orElseThrow(() -> new ConflictException("No se encontró la parada inicial del viaje."));
 
         startStop.setArrivalDateTime(now);
 
-        stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CLOSED.name(),TripStateEnum.IN_PROGRESS.name());
+        stateTransitionService.transition(trip, ScopeEnum.TRIP, TripStateEnum.CLOSED.name(),
+                TripStateEnum.IN_PROGRESS.name());
 
         List<Reservation> pendingReservations = reservationRepository
-            .findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
+                .findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
 
         for (Reservation pending : pendingReservations) {
             reservationService.cancelReservation(pending.getId());
@@ -474,12 +495,14 @@ public class TripImplementation implements ITripService {
                 STATE_ACCEPTED);
 
         log.info("Buscando reservas pendientes");
-        List<Reservation> pendingReservations = reservationRepository.findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
+        List<Reservation> pendingReservations = reservationRepository.findByTripIdAndStateName(trip.getId(),
+                ReservationStateEnum.PENDING.name());
 
         // Validar que si hay reservas activas, debe haber una razón
-        if (!acceptedReservations.isEmpty() || !pendingReservations.isEmpty())  {
+        if (!acceptedReservations.isEmpty() || !pendingReservations.isEmpty()) {
             if (tripCancellRequestDTO.getReason() == null || tripCancellRequestDTO.getReason().isBlank()) {
-                throw new ConflictException("Este viaje cuenta con reservas activas, por lo que tenés que justificar el motivo de su cancelación.");
+                throw new ConflictException(
+                        "Este viaje cuenta con reservas activas, por lo que tenés que justificar el motivo de su cancelación.");
             }
             trip.setCancellationReason(tripCancellRequestDTO.getReason());
         } else {
@@ -494,7 +517,8 @@ public class TripImplementation implements ITripService {
         reservationsToCancel.addAll(pendingReservations);
 
         log.info("Iniciando cambio de estado");
-        stateTransitionService.transition(trip, ScopeEnum.TRIP, List.of(TripStateEnum.CREATED.name(), TripStateEnum.CLOSED.name()), TripStateEnum.CANCELLED.name());
+        stateTransitionService.transition(trip, ScopeEnum.TRIP,
+                List.of(TripStateEnum.CREATED.name(), TripStateEnum.CLOSED.name()), TripStateEnum.CANCELLED.name());
 
         for (Reservation res : reservationsToCancel) {
 
@@ -516,72 +540,67 @@ public class TripImplementation implements ITripService {
     public Response<CurrentTripResponseDTO> getCurrentTrip() {
         Driver driver = getAuthenticatedDriver();
 
-        Optional<Trip> currentTripOpt =
-            tripRepository.findCurrentTripByDriver(driver.getId());
+        Optional<Trip> currentTripOpt = tripRepository.findCurrentTripByDriver(driver.getId());
 
         if (currentTripOpt.isEmpty()) {
             return ResponseUtils.buildOKResponse(
-                List.of("El chofer no tiene un viaje en curso"),
-                null
-            );
+                    List.of("El chofer no tiene un viaje en curso"),
+                    null);
         }
 
         return ResponseUtils.buildOKResponse(
-            List.of("Viaje en curso recuperado con éxito"),
-            tripMapper.covertTripToCurrentTripResponseDTO(currentTripOpt.get())
-        );
+                List.of("Viaje en curso recuperado con éxito"),
+                tripMapper.covertTripToCurrentTripResponseDTO(currentTripOpt.get()));
     }
 
-
     @Override
-    public Response<Void> arriveTripStop(TripArriveRequestDTO tripArriveRequestDTO){
+    public Response<Void> arriveTripStop(TripArriveRequestDTO tripArriveRequestDTO) {
         Driver driver = getAuthenticatedDriver();
 
         Trip currentTrip = tripRepository.findCurrentTripByDriver(driver.getId())
-            .orElseThrow(() -> new EntityNotFoundException("El chofer no tiene un viaje en curso en este momento."));
-
+                .orElseThrow(
+                        () -> new EntityNotFoundException("El chofer no tiene un viaje en curso en este momento."));
 
         TripStop stop = currentTrip.getTripStops().stream()
-            .filter(ts -> ts.getId() == tripArriveRequestDTO.getIdTripStop())
-            .findFirst()
-            .orElseThrow(() ->
-                new EntityNotFoundException("Parada no encontrada en el viaje")
-        );
+                .filter(ts -> ts.getId() == tripArriveRequestDTO.getIdTripStop())
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("Parada no encontrada en el viaje"));
 
         validateStopOrderToClose(currentTrip, stop);
 
-        List<Reservation> reservations = reservationRepository.findReservationsByTripAndDestinationAndState(currentTrip.getId(), stop.getId(), "IN_PROGRESS");
+        List<Reservation> reservations = reservationRepository
+                .findReservationsByTripAndDestinationAndState(currentTrip.getId(), stop.getId(), "IN_PROGRESS");
 
-        if(reservations != null && !reservations.isEmpty()){
+        if (reservations != null && !reservations.isEmpty()) {
             reservations.forEach(reservationService::finishTripReservation);
         }
 
         stop.setArrivalDateTime(LocalDateTime.now());
         tripStopRepository.save(stop);
-        if(stop.isDestination()){
+        if (stop.isDestination()) {
             return finishTrip(currentTrip);
-        }else{
-            return ResponseUtils.buildOKResponse(List.of("Llegada a parada registrada con éxito.") , null);
+        } else {
+            return ResponseUtils.buildOKResponse(List.of("Llegada a parada registrada con éxito."), null);
         }
     }
-    
-	@Override
-	@Transactional
-	public Response<Void> updateTrip(TripUpdateRequestDTO tripUpdateRequestDTO) {
-		final Long idTrip = tripUpdateRequestDTO.getIdTrip();
-		Trip trip = tripRepository.findById(idTrip).orElseThrow(() -> {
-			log.error("No existe el viaje con id: {}", idTrip);
-			return new EntityNotFoundException("El viaje que desea modificar no existe.");
-		});
+
+    @Override
+    @Transactional
+    public Response<Void> updateTrip(TripUpdateRequestDTO tripUpdateRequestDTO) {
+        final Long idTrip = tripUpdateRequestDTO.getIdTrip();
+        Trip trip = tripRepository.findById(idTrip).orElseThrow(() -> {
+            log.error("No existe el viaje con id: {}", idTrip);
+            return new EntityNotFoundException("El viaje que desea modificar no existe.");
+        });
 
         validateTripEditable(trip);
 
-		Driver driver = getAuthenticatedDriver();
+        Driver driver = getAuthenticatedDriver();
 
-		LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
 
         if (tripUpdateRequestDTO.getSeatPrice() != null) {
-            if (trip.getSeatPrice() != tripUpdateRequestDTO.getSeatPrice()){
+            if (trip.getSeatPrice() != tripUpdateRequestDTO.getSeatPrice()) {
                 double totalCommissionPerSeat = (double) tripUpdateRequestDTO.getSeatPrice()
                         * (settingService.getDiscountPercentage() / 100.0);
 
@@ -595,70 +614,72 @@ public class TripImplementation implements ITripService {
             }
         }
 
-		// Se valida que la nueva fecha sea futura y tenga al menos 12 horas desde el momento actual
-		if (tripUpdateRequestDTO.getStartDateTime() != null) {
-	        validateAndApplyNewStartDateTime(tripUpdateRequestDTO.getStartDateTime(), trip, driver.getId(), now, driver.getUser().getId());
-		}
+        // Se valida que la nueva fecha sea futura y tenga al menos 12 horas desde el
+        // momento actual
+        if (tripUpdateRequestDTO.getStartDateTime() != null) {
+            validateAndApplyNewStartDateTime(tripUpdateRequestDTO.getStartDateTime(), trip, driver.getId(), now,
+                    driver.getUser().getId());
+        }
 
         if (tripUpdateRequestDTO.getTripStops() != null) {
             changeTripStops(trip, tripUpdateRequestDTO.getTripStops());
         }
 
-		Vehicle finalVehicle = trip.getVehicle();
-		Integer finalSeatCapacity = trip.getAvailableSeat();
+        Vehicle finalVehicle = trip.getVehicle();
+        Integer finalSeatCapacity = trip.getAvailableSeat();
 
-		// Se realizan validaciones para cambiar el vehiculo
-		if (tripUpdateRequestDTO.getIdVehicle() != null) {
-			finalVehicle = changeVehicle(tripUpdateRequestDTO.getIdVehicle(), driver.getId());
-		}
+        // Se realizan validaciones para cambiar el vehiculo
+        if (tripUpdateRequestDTO.getIdVehicle() != null) {
+            finalVehicle = changeVehicle(tripUpdateRequestDTO.getIdVehicle(), driver.getId());
+        }
 
-		if (tripUpdateRequestDTO.getAvailableSeat() != null) {
-			finalSeatCapacity = tripUpdateRequestDTO.getAvailableSeat();
-		}
+        if (tripUpdateRequestDTO.getAvailableSeat() != null) {
+            finalSeatCapacity = tripUpdateRequestDTO.getAvailableSeat();
+        }
 
-		// Se valida que la capacidad que se desea modificar no supere la que tiene el
-		// vehiculo
-		if (finalSeatCapacity > finalVehicle.getAvailableSeats()) {
-			throw new ConflictException("La capacidad del viaje no puede superar la capacidad del vehículo.");
-		}
+        // Se valida que la capacidad que se desea modificar no supere la que tiene el
+        // vehiculo
+        if (finalSeatCapacity > finalVehicle.getAvailableSeats()) {
+            throw new ConflictException("La capacidad del viaje no puede superar la capacidad del vehículo.");
+        }
 
-		trip.setVehicle(finalVehicle);
-		trip.setAvailableSeat(finalSeatCapacity);
-		trip.setCurrentAvailableSeats(finalSeatCapacity);
+        trip.setVehicle(finalVehicle);
+        trip.setAvailableSeat(finalSeatCapacity);
+        trip.setCurrentAvailableSeats(finalSeatCapacity);
 
-		if (tripUpdateRequestDTO.getAvailableBaggage() != null) {
-			final String baggageValue = changeBaggage(tripUpdateRequestDTO.getAvailableBaggage());
-			trip.setAvailableBaggage(BaggageEnum.valueOf(baggageValue));
-		}
+        if (tripUpdateRequestDTO.getAvailableBaggage() != null) {
+            final String baggageValue = changeBaggage(tripUpdateRequestDTO.getAvailableBaggage());
+            trip.setAvailableBaggage(BaggageEnum.valueOf(baggageValue));
+        }
 
-		tripRepository.save(trip);
+        tripRepository.save(trip);
 
-		return ResponseUtils.buildOKResponse(List.of("Viaje modificado con éxito"), null);
-	}
+        return ResponseUtils.buildOKResponse(List.of("Viaje modificado con éxito"), null);
+    }
 
-        @Override
-    public Response<TripPassengersResponseDTO> getTripPassengers(Long idTrip){
+    @Override
+    public Response<TripPassengersResponseDTO> getTripPassengers(Long idTrip) {
         log.info("Comenzando la recuperacion de los pasajeros de un viaje.");
 
         Driver driver = getAuthenticatedDriver();
 
         Trip trip = findTrip(idTrip);
-        
-        if(trip.getVehicle().getDriver().getId() != driver.getId()){
+
+        if (trip.getVehicle().getDriver().getId() != driver.getId()) {
             throw new ConflictException("No puede realizar esta acción, el viaje no le pertenece");
         }
 
         final String message;
-        List<String> reservationStates = List.of("UNPAID", "COMPLETED","EXPIRED");
+        List<String> reservationStates = List.of("UNPAID", "COMPLETED", "EXPIRED");
 
         List<User> passengers = tripRepository.findUsersByTripIdAndReservationStates(idTrip, reservationStates);
         TripPassengersResponseDTO response = tripMapper.convertUserToTripPassengerDTO(passengers, trip.getId());
-        if (passengers == null){
+        if (passengers == null) {
             throw new ResourceNotFoundException("Ha ocurrido un error al recuperar los pasajeros del viaje.");
         }
-        if (passengers.isEmpty()){
+        if (passengers.isEmpty()) {
             message = "El viaje no tiene pasajeros para reseñar";
-        }else{
+        } else {
             message = "Pasajeros recuperados con exito";
         }
         return ResponseUtils.buildOKResponse(List.of(message), response);
@@ -669,17 +690,18 @@ public class TripImplementation implements ITripService {
      * <p>
      * Se realizan las siguientes verificaciones:
      * <ul>
-     *     <li>Que el viaje pertenezca al chofer autenticado.</li>
-     *     <li>Que el estado actual del viaje sea {@code CREATED}.</li>
-     *     <li>Que el viaje no tenga reservas asociadas.</li>
-     *     <li>Que falten al menos 12 horas para la fecha de inicio del viaje.</li>
+     * <li>Que el viaje pertenezca al chofer autenticado.</li>
+     * <li>Que el estado actual del viaje sea {@code CREATED}.</li>
+     * <li>Que el viaje no tenga reservas asociadas.</li>
+     * <li>Que falten al menos 12 horas para la fecha de inicio del viaje.</li>
      * </ul>
      *
      * @param trip el {@link Trip} que se desea validar para edición
      * @throws ForbiddenException si el viaje no pertenece al chofer autenticado
-     * @throws ConflictException si el viaje no cumple con las condiciones necesarias para ser editado
+     * @throws ConflictException  si el viaje no cumple con las condiciones
+     *                            necesarias para ser editado
      */
-    private void validateTripEditable(Trip trip){
+    private void validateTripEditable(Trip trip) {
         Driver driver = getAuthenticatedDriver();
 
         // Se valida que el viaje pertenezca al chofer
@@ -699,20 +721,24 @@ public class TripImplementation implements ITripService {
         LocalDateTime now = LocalDateTime.now();
         Duration duration = Duration.between(now, trip.getStartTripDateTime());
 
-        // Se valida que el horario actual no se encuentre dentro de las 12 horas del inicio del viaje
+        // Se valida que el horario actual no se encuentre dentro de las 12 horas del
+        // inicio del viaje
         if (duration.isNegative() || duration.toHours() < 12) {
             log.error(
                     "El viaje se encuentra dentro de las 12 horas de la salida. Horario de inicio del viaje: {}, horario actual: {}",
                     trip.getStartTripDateTime(), now);
-            throw new ConflictException("El viaje no puede ser editado dentro de las 12 horas siguientes al inicio del mismo.");
+            throw new ConflictException(
+                    "El viaje no puede ser editado dentro de las 12 horas siguientes al inicio del mismo.");
         }
     }
 
     /**
      * Obtiene un viaje a partir de su identificador.
      * <p>
-     * Este método se utiliza como punto central para recuperar un viaje desde la base
-     * de datos, asegurando que exista antes de continuar con cualquier lógica de negocio.
+     * Este método se utiliza como punto central para recuperar un viaje desde la
+     * base
+     * de datos, asegurando que exista antes de continuar con cualquier lógica de
+     * negocio.
      *
      * @param id el identificador del viaje que se desea obtener
      * @return el {@link Trip} correspondiente al ID proporcionado
@@ -723,37 +749,44 @@ public class TripImplementation implements ITripService {
                 .orElseThrow(() -> new ResourceNotFoundException("El viaje no existe."));
     }
 
-	/**
-	 * Metodo encargado de finalizar un viaje, realizando la transicion de estados correspondiente
-	 * @param trip		Viaje que se desea finalizar
-	 * @return {@link Response} con el mensaje correspondiente
-	 */
-    private Response<Void> finishTrip(Trip trip){
-        stateTransitionService.transition(trip, ScopeEnum.TRIP, "IN_PROGRESS", "FINISHED");
-        return ResponseUtils.buildOKResponse(List.of("Viaje finalizado con éxito") , null);
-    }
-    
     /**
-     * Este metodo permite corroborar si un viaje se encuentra en un determinado estado
-     * @param idTrip		Viaje a corroborar el estado
-     * @param nameState		Estado que se desea corroborar
+     * Metodo encargado de finalizar un viaje, realizando la transicion de estados
+     * correspondiente
+     * 
+     * @param trip Viaje que se desea finalizar
+     * @return {@link Response} con el mensaje correspondiente
      */
-    private void validateStateTrip(Long idTrip , String nameState) {
-		final StateHistory currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(idTrip)
-				.orElseThrow(() -> {
-					log.error("El viaje con id: {} no tiene un estado actual", idTrip);
-					return new EntityNotFoundException("El viaje no presenta un estado actual");
-				});
-
-		if (!nameState.equals(currentStateTrip.getState().getName())) {
-			throw new ConflictException("Solamente se pueden editar viajes que se encuentren en estado CREADO");
-		}
+    private Response<Void> finishTrip(Trip trip) {
+        stateTransitionService.transition(trip, ScopeEnum.TRIP, "IN_PROGRESS", "FINISHED");
+        return ResponseUtils.buildOKResponse(List.of("Viaje finalizado con éxito"), null);
     }
 
     /**
-     * Metodo que se utiliza para validar el orden de una parda intermedia que se quiere cerrar para un viaje
-     * Las paradas se deben cerrar en orden y no se puede cerrar si la anterior no tiene horario de llegada.
-     * A su vez no es posible iniciar un vijae con este endpoint, solamente cerrar desde la segunda parada intermedia hasta
+     * Este metodo permite corroborar si un viaje se encuentra en un determinado
+     * estado
+     * 
+     * @param idTrip    Viaje a corroborar el estado
+     * @param nameState Estado que se desea corroborar
+     */
+    private void validateStateTrip(Long idTrip, String nameState) {
+        final StateHistory currentStateTrip = stateHistoryRepository.findByTripIdAndFinishDateTimeIsNull(idTrip)
+                .orElseThrow(() -> {
+                    log.error("El viaje con id: {} no tiene un estado actual", idTrip);
+                    return new EntityNotFoundException("El viaje no presenta un estado actual");
+                });
+
+        if (!nameState.equals(currentStateTrip.getState().getName())) {
+            throw new ConflictException("Solamente se pueden editar viajes que se encuentren en estado CREADO");
+        }
+    }
+
+    /**
+     * Metodo que se utiliza para validar el orden de una parda intermedia que se
+     * quiere cerrar para un viaje
+     * Las paradas se deben cerrar en orden y no se puede cerrar si la anterior no
+     * tiene horario de llegada.
+     * A su vez no es posible iniciar un vijae con este endpoint, solamente cerrar
+     * desde la segunda parada intermedia hasta
      * el destino
      */
     private void validateStopOrderToClose(Trip trip, TripStop stopToClose) {
@@ -765,8 +798,7 @@ public class TripImplementation implements ITripService {
         if (lastClosedStop.isEmpty()) {
 
             throw new ConflictException(
-                "No hay ninguna parada cerrada hasta el momento."
-            );
+                    "No hay ninguna parada cerrada hasta el momento.");
 
         }
 
@@ -774,39 +806,43 @@ public class TripImplementation implements ITripService {
 
         if (stopToClose.getStopOrder() != expectedOrder) {
             throw new ConflictException(
-                "Orden inválido. Debe cerrarse la parada con orden " + expectedOrder
-            );
+                    "Orden inválido. Debe cerrarse la parada con orden " + expectedOrder);
         }
     }
-    
+
     /**
      * Metodo que permite actualizar el cambio de un vehiculo
-     * @param idVehicle		Id del vehiculo que se desea actualizar
-     * @param driverId		Id del conductor
+     * 
+     * @param idVehicle Id del vehiculo que se desea actualizar
+     * @param driverId  Id del conductor
      * @return Vehiculo a actualizar
      */
     private Vehicle changeVehicle(Long idVehicle, Long driverId) {
-		Vehicle vehicle = vehicleRepository.findById(idVehicle).orElseThrow(() -> {
-			log.error("El vehiculo con id: {} no existe", idVehicle);
-			return new EntityNotFoundException("El vehiculo no existe.");
-		});
+        Vehicle vehicle = vehicleRepository.findById(idVehicle).orElseThrow(() -> {
+            log.error("El vehiculo con id: {} no existe", idVehicle);
+            return new EntityNotFoundException("El vehiculo no existe.");
+        });
 
-		if (!vehicle.getDriver().getId().equals(driverId)) {
-			throw new ForbiddenException("No puede asignar un vehículo que no le pertenece.");
-		}
+        if (!vehicle.getDriver().getId().equals(driverId)) {
+            throw new ForbiddenException("No puede asignar un vehículo que no le pertenece.");
+        }
 
-		return vehicle;
+        return vehicle;
     }
-    
+
     /**
-     * Metodo que permite calcular la nueva fecha que se desea modificar el viaje y corroborar que la misma sea valida, como: que la misma no se encuentre dentro
-     * de las 12 horas previas al inicio del viaje, que no se superponga con otro viaje.
-     * @param newStartDateTime		Nueva fecha y hora a setear al viaje
-     * @param trip					El viaje que se desea modificar
-     * @param driverId				El id del conductor
-     * @param now					Fecha y hora actual
+     * Metodo que permite calcular la nueva fecha que se desea modificar el viaje y
+     * corroborar que la misma sea valida, como: que la misma no se encuentre dentro
+     * de las 12 horas previas al inicio del viaje, que no se superponga con otro
+     * viaje.
+     * 
+     * @param newStartDateTime Nueva fecha y hora a setear al viaje
+     * @param trip             El viaje que se desea modificar
+     * @param driverId         El id del conductor
+     * @param now              Fecha y hora actual
      */
-    private void validateAndApplyNewStartDateTime(LocalDateTime newStartDateTime, Trip trip, Long driverId, LocalDateTime now, Long userId) {
+    private void validateAndApplyNewStartDateTime(LocalDateTime newStartDateTime, Trip trip, Long driverId,
+            LocalDateTime now, Long userId) {
         Duration newDuration = Duration.between(now, newStartDateTime);
 
         if (newDuration.isNegative() || newDuration.toHours() < 12) {
@@ -819,29 +855,32 @@ public class TripImplementation implements ITripService {
                 .findFirst()
                 .orElseThrow(() -> new ConflictException("No se pudo calcular la fecha de llegada."));
 
-        if (tripRepository.hasOverlappingSchedule(userId,driverId, newStartDateTime, newEnd, trip.getId())) {
+        if (tripRepository.hasOverlappingSchedule(userId, driverId, newStartDateTime, newEnd, trip.getId())) {
             throw new ConflictException(
                     "El horario para iniciar el viaje se superpone con otro viaje activo. Por favor, elige otro horario.");
         }
 
         trip.setStartTripDateTime(newStartDateTime);
     }
-    
+
     /**
-     * Se realizan validaciones del tipo de equipaje 
-     * @param baggageValue		Tipo de equipaje
+     * Se realizan validaciones del tipo de equipaje
+     * 
+     * @param baggageValue Tipo de equipaje
      * @return El tipo de equipaje en caso de que exista
      */
     private String changeBaggage(String baggageValue) {
-		
-	    if (!BaggageEnum.contains(baggageValue)) {
-	    	log.error("El tipo de equipaje recibo de la request: {} no coincide con los definidos en el enum de equipaje", baggageValue);
-	        throw new ConflictException("El límite de equipaje indicado no es válido.");
-	    }
-	    
-	    return baggageValue;
+
+        if (!BaggageEnum.contains(baggageValue)) {
+            log.error(
+                    "El tipo de equipaje recibo de la request: {} no coincide con los definidos en el enum de equipaje",
+                    baggageValue);
+            throw new ConflictException("El límite de equipaje indicado no es válido.");
+        }
+
+        return baggageValue;
     }
-    
+
     /**
      * Actualiza las paradas de un viaje y recalcula métricas asociadas.
      *
@@ -1001,7 +1040,6 @@ public class TripImplementation implements ITripService {
         trip.setPublishedSeatPrice(seatPrice + commission);
     }
 
-
     /**
      * Validaciones del viaje en general. Comprobamos aspectos como:
      * - Que el vehiculo con el id ingresado sea del chofer que inicio el viaje
@@ -1033,6 +1071,7 @@ public class TripImplementation implements ITripService {
             throw new ConflictException("El tipo de equipaje es inválido.");
         }
     }
+
     public User getAuthenticatedActiveUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
@@ -1144,12 +1183,13 @@ public class TripImplementation implements ITripService {
      */
     private void cancelAllReservations(Trip trip) {
         List<Reservation> reservations = reservationRepository.findByTripIdAndStateName(trip.getId(), STATE_ACCEPTED);
-        List<Reservation> pendingReservations  = reservationRepository.findByTripIdAndStateName(trip.getId(), ReservationStateEnum.PENDING.name());
+        List<Reservation> pendingReservations = reservationRepository.findByTripIdAndStateName(trip.getId(),
+                ReservationStateEnum.PENDING.name());
 
         for (Reservation reservation : reservations) {
             reservationService.cancelBySystem(reservation.getId());
         }
-        
+
         for (Reservation reservation : pendingReservations) {
             reservationService.cancelBySystem(reservation.getId());
         }
@@ -1187,10 +1227,10 @@ public class TripImplementation implements ITripService {
         }
     }
 
-
     /**
      * Permite crear un objeto {@link Pageable} para filtrar por paginado
-     * @param skip	Pagina que se desea obtener
+     * 
+     * @param skip Pagina que se desea obtener
      * @return Objeto {@link Pageable}
      */
     private Pageable getPageable(int skip) {
