@@ -1,6 +1,7 @@
 package com.carpool.carpool.service.statistics.admin.trips;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -76,8 +77,11 @@ public class AdminTripStatsImplementation implements IAdminTripsStatsService{
             throw new BadRequestException("La fecha desde no puede ser mayor a la fecha hasta.");
         }
 
+        LocalDateTime fromDateTime = fromDate.atStartOfDay();
+        LocalDateTime toDateTime   = toDate.atTime(23, 59, 59);
+
         Object[] historical = (Object[]) adminTripsStatisticsRepository.getSeatStatsHistorical()[0];
-        Object[] filtered   = (Object[]) adminTripsStatisticsRepository.getSeatStatsFiltered(fromDate, toDate)[0];
+        Object[] filtered   = (Object[]) adminTripsStatisticsRepository.getSeatStatsFiltered(fromDateTime, toDateTime)[0];
 
 
         long takenHistorical   = toLong(historical[0]);

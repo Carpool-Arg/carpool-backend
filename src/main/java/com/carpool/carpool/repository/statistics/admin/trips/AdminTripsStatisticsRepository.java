@@ -1,6 +1,6 @@
 package com.carpool.carpool.repository.statistics.admin.trips;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -61,8 +61,8 @@ public interface AdminTripsStatisticsRepository extends JpaRepository<Trip,Long>
         AND (CAST(:fromDate AS timestamp) IS NULL OR t.start_date_time >= :fromDate)
         AND (CAST(:toDate AS timestamp) IS NULL OR t.start_date_time <= :toDate)
     """, nativeQuery = true)
-    Object[] getSeatStatsFiltered(
-        @Param("fromDate") LocalDate fromDate,
-        @Param("toDate") LocalDate toDate
+        Object[] getSeatStatsFiltered(
+        @Param("fromDate") LocalDateTime fromDate,
+        @Param("toDate") LocalDateTime toDate
     );
 }

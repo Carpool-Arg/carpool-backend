@@ -218,7 +218,7 @@ public interface PassengerStatisticRepository extends JpaRepository<Reservation,
                 AND ts2.stop_order <= ts_end.stop_order
                 AND ts2.deleted_at IS NULL) AS tramo_km,
 
-                (SELECT COUNT(r2.id)
+                (SELECT COUNT(r2.id) + 1
                 FROM reservation r2
                 JOIN trip_stop ts2_start ON r2.start_city_id = ts2_start.id
                 JOIN trip_stop ts2_end   ON r2.destination_city_id = ts2_end.id
@@ -246,7 +246,6 @@ public interface PassengerStatisticRepository extends JpaRepository<Reservation,
             AND sh_trip.finish_datetime IS NULL
             AND sh_trip.reservation_id IS NULL
         ) sub
-        WHERE pasajeros_compartidos > 0
     """, nativeQuery = true)
     Double calculateCo2SavedByUserId(
         @Param("userId") Long userId,
