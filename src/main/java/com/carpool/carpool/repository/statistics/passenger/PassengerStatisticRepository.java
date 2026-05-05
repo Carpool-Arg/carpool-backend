@@ -205,50 +205,33 @@ public interface PassengerStatisticRepository extends JpaRepository<Reservation,
         @Param("groupBy") String groupBy
     );
 
-    @Query(value = """
-    SELECT COALESCE(SUM(
-            tramo_km * :co2PerKm * pasajeros_compartidos
-        ), 0)
-        FROM (
-            SELECT 
-                (SELECT COALESCE(SUM(ts2.distance_from_previous), 0)
-                FROM trip_stop ts2
-                WHERE ts2.trip_id = r.trip_id
-                AND ts2.stop_order > ts_start.stop_order
-                AND ts2.stop_order <= ts_end.stop_order
-                AND ts2.deleted_at IS NULL) AS tramo_km,
-
-                (SELECT COUNT(r2.id) + 1
-                FROM reservation r2
-                JOIN trip_stop ts2_start ON r2.start_city_id = ts2_start.id
-                JOIN trip_stop ts2_end   ON r2.destination_city_id = ts2_end.id
-                JOIN state_history sh2   ON r2.id = sh2.reservation_id
-                JOIN state s2            ON s2.id = sh2.state_id
-                WHERE r2.trip_id = r.trip_id
-                AND r2.id != r.id
-                AND s2.name = 'COMPLETED'
-                AND sh2.finish_datetime IS NULL
-                AND ts2_start.stop_order < ts_end.stop_order
-                AND ts2_end.stop_order > ts_start.stop_order
-                ) AS pasajeros_compartidos
-
-            FROM reservation r
-            JOIN trip_stop ts_start     ON r.start_city_id = ts_start.id
-            JOIN trip_stop ts_end       ON r.destination_city_id = ts_end.id
-            JOIN state_history sh       ON r.id = sh.reservation_id
-            JOIN state s                ON s.id = sh.state_id
-            JOIN state_history sh_trip  ON r.trip_id = sh_trip.trip_id
-            JOIN state s_trip           ON s_trip.id = sh_trip.state_id
-            WHERE r.user_id = :userId
-            AND s.name = 'COMPLETED'
-            AND sh.finish_datetime IS NULL
-            AND s_trip.name = 'FINISHED'
-            AND sh_trip.finish_datetime IS NULL
-            AND sh_trip.reservation_id IS NULL
-        ) sub
-    """, nativeQuery = true)
-    Double calculateCo2SavedByUserId(
+@Query(value = """
+    SELECT COALESCE(SUM(tramo_km) * :co2PerKm, 0)
+    FROM (
+        SELECT
+            (SELECT COALESCE(SUM(ts2.distance_from_previous), 0)
+            FROM trip_stop ts2
+            WHERE ts2.trip_id = r.trip_id
+            AND ts2.stop_order > ts_start.stop_order
+            AND ts2.stop_order <= ts_end.stop_order
+            AND ts2.deleted_at IS NULL) AS tramo_km
+        FROM reservation r
+        JOIN trip_stop ts_start     ON r.start_city_id = ts_start.id
+        JOIN trip_stop ts_end       ON r.destination_city_id = ts_end.id
+        JOIN state_history sh       ON r.id = sh.reservation_id
+        JOIN state s                ON s.id = sh.state_id
+        JOIN state_history sh_trip  ON r.trip_id = sh_trip.trip_id
+        JOIN state s_trip           ON s_trip.id = sh_trip.state_id
+        WHERE r.user_id = :userId
+        AND s.name = 'COMPLETED'
+        AND sh.finish_datetime IS NULL
+        AND s_trip.name = 'FINISHED'
+        AND sh_trip.finish_datetime IS NULL
+        AND sh_trip.reservation_id IS NULL
+    ) sub
+""", nativeQuery = true)
+Double calculateCo2SavedByUserId(
         @Param("userId") Long userId,
         @Param("co2PerKm") double co2PerKm
-    );
+);
 }
