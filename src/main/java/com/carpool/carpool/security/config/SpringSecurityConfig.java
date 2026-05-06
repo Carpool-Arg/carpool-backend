@@ -78,7 +78,8 @@ public class SpringSecurityConfig {
         
         // Endpoints para roles específicos
         .requestMatchers(HttpMethod.GET, "/vehicle-types").hasAnyRole("DRIVER", "ADMIN")
-        .requestMatchers("/vehicles", "/vehicles/**").hasRole("DRIVER")
+        .requestMatchers("/vehicles", "/vehicles/**","/stats/driver/**").hasRole("DRIVER")
+        .requestMatchers("/stats/admin/**").hasRole("ADMIN")
         .requestMatchers("/trip", "/trip/check-trip-availability", "/trip/current-trip", "/trip/arrive-tripstop").hasRole("DRIVER")
         .requestMatchers(HttpMethod.GET, "/trip/{id}").hasRole("USER")
         .requestMatchers(HttpMethod.GET, "/trip").hasAnyRole("DRIVER", "ADMIN")
@@ -87,9 +88,11 @@ public class SpringSecurityConfig {
         .requestMatchers(HttpMethod.POST, "/reservation").hasRole("USER")
 
 
+        .requestMatchers("/stats/driver").hasAnyRole("DRIVER", "ADMIN")
 
         // Endpoints de admin
         .requestMatchers("/admin/**").hasRole("ADMIN")
+        .requestMatchers("/admin/stats").hasRole("ADMIN")
 
         
         // Todos los demas endpoints que solamente necesitan autenticación
