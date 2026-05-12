@@ -16,7 +16,7 @@ public interface AdminStatisticsRepository extends JpaRepository<Reservation, Lo
      * @return
      */
     @Query(value = """
-        SELECT COALESCE(SUM(t.driver_price_discount), 0)
+        SELECT COALESCE(SUM(t.driver_price_discount * 2), 0)
         FROM trip t
         JOIN reservation r          ON r.trip_id = t.id
         JOIN state_history sh_res   ON sh_res.reservation_id = r.id
@@ -35,7 +35,7 @@ public interface AdminStatisticsRepository extends JpaRepository<Reservation, Lo
      * Calcula la suma de las comisiones de los viajes finalizados dentro de un rango de fechas específico.
      */
     @Query(value = """
-        SELECT COALESCE(SUM(t.driver_price_discount), 0)
+        SELECT COALESCE(SUM(t.driver_price_discount * 2), 0)
         FROM trip t
         JOIN reservation r          ON r.trip_id = t.id
         JOIN state_history sh_res   ON sh_res.reservation_id = r.id
