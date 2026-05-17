@@ -37,7 +37,7 @@ public class EmailImplementation implements IEmailService{
                 MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
 
                 String body = buildTemplate(title, message, optionalMessage, buttonUrl, buttonText, messageFooter);
-                helper.setFrom(emailCarpool);
+                helper.setFrom(emailCarpool,"Carpool");
                 helper.setTo(to);
                 helper.setSubject(subject);
                 helper.setText(body, true);
@@ -79,7 +79,7 @@ public class EmailImplementation implements IEmailService{
                 MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "utf-8");
 
                 String body = buildTemplate(title, message, optionalMessage, buttonUrl, buttonText, messageFooter);
-                helper.setFrom(emailCarpool);
+                helper.setFrom(emailCarpool,"Carpool");
                 helper.setTo(to);
                 helper.setSubject(subject);
                 helper.setText(body, true);
