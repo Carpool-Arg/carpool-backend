@@ -31,7 +31,7 @@ public class PayReservationNotificationImplementation implements INotificationCo
                 .type("PAYMENT_PENDING")
                 .pushTitle("¡Pagá tu viaje!")
                 .pushBody(passengerName + " tenés un pago pendiente")
-                .data(Map.of( "total", reservation.getTotal(), "tripId", reservation.getTrip().getId()))
+                .data(Map.of( "total", reservation.getTotal(), "tripId", reservation.getTrip().getId(), "reservationId", reservation.getId()))
                 .emailSubject(SUBJECT_EMAIL_RESERVATION_UNPAID)
                 .emailTitle(TITLE_RESERVATION_UNPAID.replace("{name}", reservation.getUser().getName()))
                 .emailMessage( MESSAGE_RESERVATION_UNPAID.replace( "{total}",String.valueOf(reservation.getTotal())))

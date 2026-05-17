@@ -32,4 +32,8 @@ public class NotificationPayloadDTO {
 
     //Map para agregar información extra
     private Map<String, Object> data;
+
+    private byte[] emailAttachmentBytes;
+
+    private String emailAttachmentFilename;
 }

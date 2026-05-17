@@ -20,7 +20,21 @@ public class EmailOnlyPolicyImplementation implements INotificationDispatchPolic
     @Override
     public boolean execute(User user, NotificationPayloadDTO payload) {
         try {
-            emailService.sendEmail(
+            if (payload.getEmailAttachmentBytes() != null) {
+                emailService.sendEmailWithAttachment(
+                        user.getEmail(),
+                        payload.getEmailSubject(),
+                        payload.getEmailTitle(),
+                        payload.getEmailMessage(),
+                        payload.getEmailOptionalMessage(),
+                        payload.getEmailButtonUrl(),
+                        payload.getEmailButtonText(),
+                        payload.getEmailMessageFooter(),
+                        payload.getEmailAttachmentBytes(),
+                        payload.getEmailAttachmentFilename()
+                );
+            } else {
+                emailService.sendEmail(
                     user.getEmail(),
                     payload.getEmailSubject(),
                     payload.getEmailTitle(),
@@ -29,7 +43,9 @@ public class EmailOnlyPolicyImplementation implements INotificationDispatchPolic
                     payload.getEmailButtonUrl(),
                     payload.getEmailButtonText(),
                     payload.getEmailMessageFooter()
-            );
+                );
+            }
+
             return true; // Envío exitoso
         } catch (Exception e) {
             log.error("Error enviando email a {}: {}", user.getEmail(), e.getMessage());

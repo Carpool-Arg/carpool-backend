@@ -248,4 +248,24 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long>, 
         Pageable pageable
     );
 
+    /**
+     * Obtiene la reserva completada más reciente del usuario.
+     *
+     * @param userId id del usuario
+     * @return reserva con estado COMPLETED más reciente si existe
+     */
+    @Query("""
+    SELECT r
+    FROM Reservation r
+    JOIN StateHistory sh ON sh.reservation.id = r.id
+    JOIN sh.state s
+    WHERE r.user.id = :userId
+      AND r.id = :reservationId
+      AND s.name = 'COMPLETED'
+      AND sh.finishDateTime IS NULL
+""")
+    Optional<Reservation> findCompletedReservationByUserIdAndReservationId(
+            @Param("userId") Long userId,
+            @Param("reservationId") Long reservationId
+    );
 }
