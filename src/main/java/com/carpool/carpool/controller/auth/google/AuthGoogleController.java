@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.carpool.carpool.dto.google.GoogleAuthRequestDTO;
+import com.carpool.carpool.dto.google.GoogleAccessTokenRequest;
 import com.carpool.carpool.dto.google.GoogleAuthResponse;
 import com.carpool.carpool.response.Response;
 import com.carpool.carpool.service.auth.google.IAuthGoogleService;
@@ -36,7 +36,7 @@ public class AuthGoogleController {
             @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
     })
     @PostMapping
-    public ResponseEntity<Response<GoogleAuthResponse>> authenticateWithGoogle(@Valid @RequestBody GoogleAuthRequestDTO request) {
-        return new ResponseEntity<>(googleAuthService.authenticate(request.getIdToken()), HttpStatus.OK);
+    public ResponseEntity<Response<GoogleAuthResponse>> authenticateWithGoogle(@Valid @RequestBody GoogleAccessTokenRequest request) {
+        return new ResponseEntity<>(googleAuthService.authenticate(request), HttpStatus.OK);
     }
 }

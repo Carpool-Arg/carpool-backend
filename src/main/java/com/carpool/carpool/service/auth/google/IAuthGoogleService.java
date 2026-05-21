@@ -1,5 +1,6 @@
 package com.carpool.carpool.service.auth.google;
 
+import com.carpool.carpool.dto.google.GoogleAccessTokenRequest;
 import com.carpool.carpool.dto.google.GoogleAuthResponse;
 import com.carpool.carpool.response.Response;
 
@@ -12,5 +13,5 @@ public interface IAuthGoogleService {
      * @param idToken Token id proporcionado por Google.
      * @return Objeto {@link Response} que contiene el {@link GoogleAuthResponse}
      */
-    Response<GoogleAuthResponse> authenticate(String idToken);
+    Response<GoogleAuthResponse> authenticate(GoogleAccessTokenRequest request);
 }
