@@ -45,8 +45,8 @@ public class AuthGoogleImplementation implements IAuthGoogleService {
     private final RoleRepository roleRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${google.client-id}")
-    private String googleClientId;
+    @Value("${google.auth.url}")
+    private String googleAuthUrl;
 
     @Override
     public Response<GoogleAuthResponse> authenticate(GoogleAccessTokenRequest request){
