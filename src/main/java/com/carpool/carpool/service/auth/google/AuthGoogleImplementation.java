@@ -1,5 +1,20 @@
 package com.carpool.carpool.service.auth.google;
 
+import static com.carpool.carpool.service.user.register.UserRegisterImplementation.ROLE_USER;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.carpool.carpool.dto.google.GoogleAccessTokenRequest;
 import com.carpool.carpool.dto.google.GoogleAuthResponse;
 import com.carpool.carpool.enums.user.UserStateEnum;
 import com.carpool.carpool.exception.ConflictException;
@@ -15,22 +30,10 @@ import com.carpool.carpool.security.utils.JwtUtils;
 import com.carpool.carpool.security.utils.UserUtils;
 import com.carpool.carpool.utils.ResponseUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.util.*;
-
-import static com.carpool.carpool.service.user.register.UserRegisterImplementation.ROLE_USER;
 
 @Service
 @RequiredArgsConstructor
@@ -40,29 +43,72 @@ public class AuthGoogleImplementation implements IAuthGoogleService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${google.client-id}")
-    private String googleClientId;
+    @Value("${google.auth.url}")
+    private String googleAuthUrl;
 
     @Override
-    public Response<GoogleAuthResponse> authenticate(String idTokenString){
-        GoogleIdToken idToken = verifyIdToken(idTokenString);
-        Payload payload = idToken.getPayload();
-        String email = payload.getEmail();
-        String name = (String) payload.get(NAME);
+    public Response<GoogleAuthResponse> authenticate(GoogleAccessTokenRequest request){
+        Map<String, Object> googleUser =
+            getGoogleUserInfo(request.getAccessToken());
+
+        String email = (String) googleUser.get("email");
+        String name = (String) googleUser.get(NAME);
         User user = createUserIfNotExists(email, name);
 
         String token = "";
         String refreshToken = "";
-        if(user.getStatus().equals(UserStateEnum.ACTIVE) || user.getStatus().equals(UserStateEnum.PENDING_PROFILE)){
+
+        if(user.getStatus().equals(UserStateEnum.ACTIVE)
+            || user.getStatus().equals(UserStateEnum.PENDING_PROFILE)){
+
             CustomUserDetails userDetail = new CustomUserDetails(user);
+
             Claims claims = getAuthorities(userDetail);
-            token = JwtUtils.generateAccessToken(user.getUsername(), claims);
-            refreshToken = JwtUtils.generateRefreshToken(email, claims);
+
+            token = JwtUtils.generateAccessToken(
+                    user.getUsername(),
+                    claims
+            );
+
+            refreshToken = JwtUtils.generateRefreshToken(
+                    email,
+                    claims
+            );
         }
 
-        GoogleAuthResponse response = buildResponseGoogle(user, token, refreshToken);
-        return ResponseUtils.buildOKResponse(List.of("Operación exitosa") , response);
+        GoogleAuthResponse response =
+                buildResponseGoogle(user, token, refreshToken);
+
+        return ResponseUtils.buildOKResponse(
+                List.of("Operación exitosa"),
+                response
+        );
+    }
+
+    private Map<String, Object> getGoogleUserInfo(String accessToken){
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        try {
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    HttpMethod.GET,
+                    entity,
+                    Map.class
+            );
+            Map<String, Object> body = response.getBody();
+
+            if(body == null || body.get("email") == null){
+                throw new UnauthorizedException("No se pudo obtener el usuario de Google");
+            }
+
+            return body;
+
+        } catch (Exception e){
+            throw new UnauthorizedException("Token de Google inválido", e);
+        }
     }
 
     /**
@@ -98,26 +144,7 @@ public class AuthGoogleImplementation implements IAuthGoogleService {
         }
     }
 
-    /**
-     * Metodo encargado de validar si el token que se recibió es válido
-     * @param idTokenString Token recibido
-     * @return idToken del tipo {@link GoogleIdToken}
-     */
-    private GoogleIdToken verifyIdToken(String idTokenString){
-        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), JacksonFactory.getDefaultInstance())
-                .setAudience(Collections.singletonList(googleClientId))
-                .build();
 
-        try {
-            GoogleIdToken idToken = verifier.verify(idTokenString);
-            if(idToken == null) throw new IllegalArgumentException("El Token ID de Google es inválido");
-
-            return idToken;
-
-        } catch (GeneralSecurityException | IOException e) {
-            throw new UnauthorizedException("Error al verificar el token con Google", e);
-        }
-    }
 
     /**
      * Metodo encargado de crear un usuario en caso de que el mismo no se encuentre registrado en la base de datos. En caso de que se encuentre retorna el {@link User}.
