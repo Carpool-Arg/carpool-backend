@@ -128,4 +128,17 @@ public interface IReservationService {
      * @return
      */
     Response<Void> deleteTripPassenger(DeleteTripPassengerRequestDTO request);
+
+    /**
+     * Genera el comprobante PDF de una reserva completada del usuario en sesión.
+     * <p>
+     * Valida que la reserva exista, que pertenezca al usuario autenticado
+     * y que se encuentre en estado COMPLETED antes de generar el PDF.
+     * </p>
+     *
+     * @param reservationId id de la reserva de la cual se quiere generar el comprobante
+     * @return arreglo de bytes correspondiente al PDF generado
+     * @throws ResourceNotFoundException si la reserva no existe o no pertenece al usuario
+     */
+    byte[] generatePaymentReceipt(Long reservationId);
 }

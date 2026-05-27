@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -36,7 +37,7 @@ public class EmailImplementation implements IEmailService{
                 MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
 
                 String body = buildTemplate(title, message, optionalMessage, buttonUrl, buttonText, messageFooter);
-                helper.setFrom(emailCarpool);
+                helper.setFrom(emailCarpool,"Carpool");
                 helper.setTo(to);
                 helper.setSubject(subject);
                 helper.setText(body, true);
@@ -51,6 +52,51 @@ public class EmailImplementation implements IEmailService{
                     if(retryCount == 3){
                         LOGGER.error("Al intentar por última vez el envio del correo electrónico. Motivo: ",e.getMessage());
                     }
+                }
+                try {
+                    Thread.sleep(waitMillis);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+
+    @Override
+    public void sendEmailWithAttachment(
+            String to, String subject, String title, String message,
+            String optionalMessage, String buttonUrl, String buttonText,
+            String messageFooter, byte[] attachmentBytes, String attachmentFilename) {
+
+        int maxRetries = 3;
+        int retryCount = 0;
+        long waitMillis = 2000;
+
+        while (retryCount < maxRetries) {
+            try {
+                MimeMessage mimeMessage = mailSender.createMimeMessage();
+                // multipart = true para poder adjuntar archivos
+                MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "utf-8");
+
+                String body = buildTemplate(title, message, optionalMessage, buttonUrl, buttonText, messageFooter);
+                helper.setFrom(emailCarpool,"Carpool");
+                helper.setTo(to);
+                helper.setSubject(subject);
+                helper.setText(body, true);
+
+                // Adjuntar el PDF
+                helper.addAttachment(
+                        attachmentFilename,
+                        new ByteArrayResource(attachmentBytes),
+                        "application/pdf"
+                );
+
+                mailSender.send(mimeMessage);
+                return;
+            } catch (Exception e) {
+                retryCount++;
+                if (retryCount >= maxRetries) {
+                    LOGGER.error("Error enviando email con adjunto a {}: {}", to, e.getMessage());
                 }
                 try {
                     Thread.sleep(waitMillis);

@@ -31,7 +31,10 @@ public class VehicleUpdateRequestDTO {
     private Integer year;
 
     @NotBlank(message = "El color del vehiculo no puede estar en blanco.")
-    @Pattern(regexp = "^[a-zA-Z ]+$", message = "El color debe contener sólo letras y espacios.")
+    @Pattern(
+            regexp = "^[a-zA-Z0-9# ]+$",
+            message = "El color debe contener sólo letras, números, espacios o #."
+    )
     private String color;
 
     @NotNull(message = "La cantidad de asientos disponibles no puede estar en blanco.")

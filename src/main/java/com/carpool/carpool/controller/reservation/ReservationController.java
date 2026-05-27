@@ -14,7 +14,9 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -68,6 +70,23 @@ public class ReservationController {
             @RequestParam(required = false) Long idDestinationCity) {
         return new ResponseEntity<>(reservationService.calculateTotal(idTrip, idStartCity, idDestinationCity),
                 HttpStatus.OK);
+    }
+
+    @Operation(summary = "Descargar comprobante de pago de una reserva completada")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Comprobante generado con éxito"),
+            @ApiResponse(responseCode = "404", description = "Reserva no encontrada"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+    })
+    @GetMapping("/{reservationId}/receipt")
+    public ResponseEntity<byte[]> downloadReceipt(
+            @PathVariable @Positive(message = "El id de la reserva debe ser mayor a 0") Long reservationId) {
+        byte[] pdf = reservationService.generatePaymentReceipt(reservationId);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"comprobante-carpool.pdf\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
     }
 
     @Operation(summary = "Solicitar una reserva de un viaje")

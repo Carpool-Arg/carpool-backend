@@ -4,6 +4,7 @@ import com.carpool.carpool.dto.notificationPayload.NotificationPayloadDTO;
 import com.carpool.carpool.enums.dispatchPolicy.DispatchPolicyEnum;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.model.reservation.Reservation;
+import com.carpool.carpool.utils.NumberFormatUtils;
 import org.springframework.stereotype.Component;
 
 import static com.carpool.carpool.utils.EmailMessageUtils.*;
@@ -21,7 +22,7 @@ public class PaidReservationNotificationImplementation implements INotificationC
     public NotificationPayloadDTO build(Reservation reservation) {
         String passengerName = reservation.getUser().getName();
         String driverName = reservation.getTrip().getVehicle().getDriver().getUser().getName();
-        Double total = reservation.getTotal() - (reservation.getTrip().getDriverPriceDiscount() * 2);
+        double total = reservation.getTotal() - (reservation.getTrip().getDriverPriceDiscount() * 2);
 
         return NotificationPayloadDTO.builder()
                 .emailSubject(SUBJECT_EMAIL_RESERVATION_PAID)
@@ -29,7 +30,7 @@ public class PaidReservationNotificationImplementation implements INotificationC
                 .emailMessage(
                         MESSAGE_RESERVATION_PAID
                                 .replace("{name}", passengerName)
-                                .replace("{total}", String.valueOf(total))
+                                .replace("{total}", NumberFormatUtils.formatTwoDecimals(total))
                 )
                 .emailMessageFooter(MESSAGE_FOOTER_RESERVATION_PAID)
                 .build();
