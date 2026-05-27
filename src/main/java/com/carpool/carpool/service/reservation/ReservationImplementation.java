@@ -10,8 +10,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.carpool.carpool.exception.BadRequestException;
-import com.carpool.carpool.model.review.Review;
-import com.carpool.carpool.service.pdfGenerator.IPdfGeneratorService;
+import com.carpool.carpool.service.pdfgenerator.IPdfGeneratorService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

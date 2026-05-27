@@ -4,7 +4,7 @@ import com.carpool.carpool.dto.notificationPayload.NotificationPayloadDTO;
 import com.carpool.carpool.enums.dispatchPolicy.DispatchPolicyEnum;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.model.reservation.Reservation;
-import com.carpool.carpool.service.pdfGenerator.IPdfGeneratorService;
+import com.carpool.carpool.service.pdfgenerator.IPdfGeneratorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

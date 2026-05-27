@@ -1,4 +1,4 @@
-package com.carpool.carpool.service.pdfGenerator;
+package com.carpool.carpool.service.pdfgenerator;
 
 import com.carpool.carpool.model.reservation.Reservation;
 import lombok.RequiredArgsConstructor;
