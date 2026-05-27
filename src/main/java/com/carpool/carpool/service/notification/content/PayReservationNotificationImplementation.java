@@ -4,6 +4,7 @@ import com.carpool.carpool.dto.notificationPayload.NotificationPayloadDTO;
 import com.carpool.carpool.enums.dispatchPolicy.DispatchPolicyEnum;
 import com.carpool.carpool.enums.notificationEvent.NotificationEventEnum;
 import com.carpool.carpool.model.reservation.Reservation;
+import com.carpool.carpool.utils.NumberFormatUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -31,7 +32,7 @@ public class PayReservationNotificationImplementation implements INotificationCo
                 .type("PAYMENT_PENDING")
                 .pushTitle("¡Pagá tu viaje!")
                 .pushBody(passengerName + " tenés un pago pendiente")
-                .data(Map.of( "total", reservation.getTotal(), "tripId", reservation.getTrip().getId(), "reservationId", reservation.getId()))
+                .data(Map.of( "total", NumberFormatUtils.formatTwoDecimals(reservation.getTotal()), "tripId", reservation.getTrip().getId(), "reservationId", reservation.getId()))
                 .emailSubject(SUBJECT_EMAIL_RESERVATION_UNPAID)
                 .emailTitle(TITLE_RESERVATION_UNPAID.replace("{name}", reservation.getUser().getName()))
                 .emailMessage( MESSAGE_RESERVATION_UNPAID.replace( "{total}",String.valueOf(reservation.getTotal())))
