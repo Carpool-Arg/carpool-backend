@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.carpool.carpool.exception.BadRequestException;
-import com.carpool.carpool.model.review.Review;
+import com.carpool.carpool.service.pdfgenerator.IPdfGeneratorService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -77,6 +77,7 @@ public class ReservationImplementation implements IReservationService {
     private final CityRepository cityRepository;
     private final StateTransitionService stateTransitionService;
     private final ModerationService moderationService;
+    private final IPdfGeneratorService pdfGeneratorService;
 
     private static final String RESERVATION_NOT_FOUND_MESSAGE = "Reserva no encontrada.";
     private static final String CREATED_AT = "createdAt";
@@ -393,6 +394,12 @@ public class ReservationImplementation implements IReservationService {
         notificationService.send(reservation.getTrip().getVehicle().getDriver().getUser(),
                 NotificationEventEnum.RESERVATION_PAID, reservation);
 
+        notificationService.send(
+                userAuth,
+                NotificationEventEnum.RESERVATION_PAID_PASSENGER,
+                reservation
+        );
+
         return ResponseUtils.buildOKResponse(List.of("Pago realizado con éxito!"), null);
     }
 
@@ -631,6 +638,21 @@ public class ReservationImplementation implements IReservationService {
                 reservation);
 
         return ResponseUtils.buildOKResponse(List.of("Pasajero eliminado correctamente"), null);
+    }
+
+    @Override
+    public byte[] generatePaymentReceipt(Long reservationId) {
+        User userAuth = this.getAuthenticatedActiveUser();
+
+        log.info("Generando comprobante PDF para el usuario={}, reservationId={}",
+                userAuth.getUsername(), reservationId);
+
+        Reservation reservation = reservationRepository
+                .findCompletedReservationByUserIdAndReservationId(userAuth.getId(), reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No se encontró una reserva completada con el ID: " + reservationId));
+
+        return pdfGeneratorService.generatePaymentReceiptPdf(reservation);
     }
 
     private void deleteTripPassengerValidations(Reservation reservation, Trip trip, StateHistory currentStateTrip) {

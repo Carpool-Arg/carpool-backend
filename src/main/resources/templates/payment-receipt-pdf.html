@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html
+        lang="es"
+        xml:lang="es"
+        xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+
+    <title>Comprobante de Pago</title>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #111111;
+            color: #ffffff;
+            padding: 40px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #1a1a1a;
+            border-radius: 16px;
+            border: 1px solid #2a2a2a;
+            overflow: hidden;
+        }
+        .header {
+            padding: 32px;
+            border-bottom: 1px solid #2a2a2a;
+            display: block;
+        }
+        .logo {
+            width: 52px;
+            height: 52px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            text-align: center;
+            line-height: 52px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #000000;
+            margin-bottom: 16px;
+        }
+        .header-title {
+            font-size: 26px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 6px;
+        }
+        .header-subtitle {
+            font-size: 14px;
+            color: #9ca3af;
+        }
+        .success-badge {
+            display: block;
+            margin: 24px 32px 0 32px;
+            background-color: #052e16;
+            border: 1px solid #166534;
+            border-radius: 10px;
+            padding: 12px 20px;
+            text-align: center;
+            color: #4ade80;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .section {
+            padding: 24px 32px;
+        }
+        .section-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+        .card {
+            background-color: #252525;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .row {
+            padding: 10px 0;
+            border-bottom: 1px solid #2a2a2a;
+            display: block; /* Flying Saucer no soporta flex bien */
+            overflow: hidden;
+        }
+        .row:last-child { border-bottom: none; }
+        .label {
+            float: left;
+            font-size: 13px;
+            color: #9ca3af;
+        }
+        .value {
+            float: right;
+            font-size: 13px;
+            color: #ffffff;
+            font-weight: 600;
+            text-align: right;
+        }
+        .total-row {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #374151;
+            overflow: hidden;
+        }
+        .total-label {
+            float: left;
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        .total-value {
+            float: right;
+            font-size: 18px;
+            font-weight: bold;
+            color: #4ade80;
+        }
+        .footer {
+            padding: 24px 32px;
+            border-top: 1px solid #2a2a2a;
+            text-align: center;
+            font-size: 11px;
+            color: #4b5563;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <div class="logo">C</div>
+        <div class="header-title">Comprobante de Pago</div>
+        <div class="header-subtitle">Carpool — Transacción aprobada exitosamente</div>
+    </div>
+
+    <div class="success-badge">✓ PAGO APROBADO</div>
+
+    <!-- Datos del pasajero -->
+    <div class="section">
+        <div class="section-title">Pasajero</div>
+        <div class="card">
+            <div class="row">
+                <span class="label">Nombre</span>
+                <span class="value" th:text="${passengerName}">Juan Pérez</span>
+            </div>
+            <div class="row">
+                <span class="label">Fecha de pago</span>
+                <span class="value" th:text="${paymentDate}">01/01/2025 10:00:00</span>
+            </div>
+            <div class="row">
+                <span class="label">ID Transacción</span>
+                <span class="value" th:text="${transactionId}">TXN-00000000</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Datos del viaje -->
+    <div class="section">
+        <div class="section-title">Detalle del Viaje</div>
+        <div class="card">
+            <div class="row">
+                <span class="label">Origen</span>
+                <span class="value" th:text="${origin}">Ciudad A</span>
+            </div>
+            <div class="row">
+                <span class="label">Destino</span>
+                <span class="value" th:text="${destination}">Ciudad B</span>
+            </div>
+            <div class="row">
+                <span class="label">Fecha del viaje</span>
+                <span class="value" th:text="${tripDate}">01/01/2025</span>
+            </div>
+            <div class="total-row">
+                <span class="total-label">Total pagado</span>
+                <span class="total-value">ARS <span th:text="${total}">0</span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Este documento es tu comprobante oficial de pago.<br/>
+        Conservalo como constancia de tu transacción.<br/>
+        Carpool — <span th:text="${paymentDate}">01/01/2025</span>
+    </div>
+
+</div>
+</body>
+</html>
