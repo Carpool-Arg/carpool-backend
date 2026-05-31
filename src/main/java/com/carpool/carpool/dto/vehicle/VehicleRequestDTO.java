@@ -25,7 +25,7 @@ public class VehicleRequestDTO {
     private String domain;
 
     @NotBlank(message = "La marca del vehiculo no puede estar en blanco.")
-    @Pattern(regexp = "^[A-Za-z-]+$", message = "La marca debe contener sólo letras, números y espacios.")
+    @Pattern(regexp = "^[a-zA-Z0-9 ]+$", message = "La marca debe contener sólo letras, números y espacios.")
     private String brand;
 
     @NotBlank(message = "El modelo del vehiculo no puede estar en blanco.")
