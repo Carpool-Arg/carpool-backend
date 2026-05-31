@@ -232,6 +232,10 @@ public class TripImplementation implements ITripService {
             throw new ConflictException("Tu carnet de conducir se encontrará vencido para la fecha del viaje.");
         }
 
+        if(!startDateTime.isAfter(LocalDateTime.now().plusMinutes(30))){
+            throw new ConflictException("El inicio del viaje debe ser al menos 30 minutos después de la hora actual");
+        }
+
         City originCity = cityRepository.findById(idOriginCity)
                 .orElseThrow(() -> new ConflictException("No se pudo encontrar la ciudad de origen."));
         City destinationCity = cityRepository.findById(idDestinationCity)
